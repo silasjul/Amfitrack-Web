@@ -13,7 +13,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
@@ -23,10 +22,11 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
   SidebarRail,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Plus, Minus, Move3DIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "../ui/button";
+import Footer from "./footer";
 
 const data = {
   navMain: [
@@ -109,7 +109,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Other content */}
+        <SidebarFooter className="h-full w-full">
+          <Footer />
+        </SidebarFooter>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
