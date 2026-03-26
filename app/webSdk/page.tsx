@@ -10,7 +10,6 @@ export default function WebSdkPage() {
     startReading,
     stopReading,
     requestConnectionDevice,
-    metalDistortion,
   } = useAmfitrack();
 
   return (

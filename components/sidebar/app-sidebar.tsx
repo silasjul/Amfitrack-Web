@@ -24,8 +24,9 @@ import {
   SidebarMenuSubButton,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Move3DIcon } from "lucide-react";
 import Link from "next/link";
+import { Button } from "../ui/button";
 
 const data = {
   navMain: [
@@ -40,7 +41,7 @@ const data = {
       items: [
         {
           title: "Star Wars",
-          url: "/",
+          url: "/minigames/star-wars",
           isActive: true,
         },
       ],
@@ -56,9 +57,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <SidebarGroup>
-          <Link href="/">
-            <SidebarMenuButton>Viewer</SidebarMenuButton>
-          </Link>
+          <SidebarMenu>
+            <Link href="/viewer">
+              <SidebarMenuItem className="flex items-center gap-2">
+                <SidebarMenuButton className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground">
+                  <Move3DIcon />
+                  <span>Viewer</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </Link>
+          </SidebarMenu>
         </SidebarGroup>
 
         {/* Testing */}
