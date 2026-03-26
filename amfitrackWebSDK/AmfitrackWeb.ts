@@ -17,22 +17,39 @@ class AmfitrackWeb {
   private sensorDevice: HIDDevice | null = null;
   private sourceDevice: HIDDevice | null = null;
 
-  private listeners: { [K in keyof AmfitrackEventMap]: Set<(data: AmfitrackEventMap[K]) => void> } = {
+  private listeners: {
+    [K in keyof AmfitrackEventMap]: Set<(data: AmfitrackEventMap[K]) => void>;
+  } = {
     sourceMeasurement: new Set(),
     sourceCalibration: new Set(),
     emfImuFrameId: new Set(),
   };
 
-  public on<K extends keyof AmfitrackEventMap>(event: K, handler: (data: AmfitrackEventMap[K]) => void): void {
-    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).add(handler);
+  public on<K extends keyof AmfitrackEventMap>(
+    event: K,
+    handler: (data: AmfitrackEventMap[K]) => void,
+  ): void {
+    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).add(
+      handler,
+    );
   }
 
-  public off<K extends keyof AmfitrackEventMap>(event: K, handler: (data: AmfitrackEventMap[K]) => void): void {
-    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).delete(handler);
+  public off<K extends keyof AmfitrackEventMap>(
+    event: K,
+    handler: (data: AmfitrackEventMap[K]) => void,
+  ): void {
+    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).delete(
+      handler,
+    );
   }
 
-  private emit<K extends keyof AmfitrackEventMap>(event: K, data: AmfitrackEventMap[K]): void {
-    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).forEach((h) => h(data));
+  private emit<K extends keyof AmfitrackEventMap>(
+    event: K,
+    data: AmfitrackEventMap[K],
+  ): void {
+    (
+      this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>
+    ).forEach((h) => h(data));
   }
 
   private inputReportHandler: ((event: HIDInputReportEvent) => void) | null =

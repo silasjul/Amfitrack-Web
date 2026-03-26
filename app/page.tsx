@@ -8,14 +8,14 @@ import {
   PivotControls,
   Center,
 } from "@react-three/drei";
-import { useControls, folder, button } from "leva";
+import { useControls, folder, button, Leva } from "leva";
 import Lightsaber from "@/components/lightsaber/Lightsaber";
 import Light from "@/components/Light";
 import { useEffect, useState, useRef } from "react";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 
 export default function Home() {
-  const lightsaberRef = useRef(null)
+  const lightsaberRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const {
     modelRef,
@@ -89,7 +89,8 @@ export default function Home() {
   });
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-full w-full">
+      <Leva collapsed />
       <Canvas
         shadows
         camera={{ position: [0, 0.25, 2], near: 0.1, far: 1000 }}

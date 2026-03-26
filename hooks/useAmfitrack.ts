@@ -69,8 +69,15 @@ export function useAmfitrack() {
   const startReading = async (device: HIDDevice | null) => {
     if (!device) return;
     console.log("Starting reading for device:", device);
-    await amfitrackWebRef.current.startReading(device);
-    setIsReading(true);
+    try {
+      await amfitrackWebRef.current.startReading(device);
+      setIsReading(true);
+    } catch (error: any) {
+      console.error(
+        "Failed to open device — it may already be in use by another tab or application:",
+        error,
+      );
+    }
   };
 
   const stopReading = () => {
@@ -86,7 +93,6 @@ export function useAmfitrack() {
     const sdk = amfitrackWebRef.current;
 
     const handleEmfImuFrameId = (data: EmfImuFrameIdData) => {
-
       metalDistortionRef.current = data.metalDistortion / 255;
 
       if (!modelRef.current) return;
@@ -99,8 +105,12 @@ export function useAmfitrack() {
       );
       latestSensorPositionRef.current.copy(sensorPosition);
 
-      const relativePosition = sensorPosition.clone().sub(centerOffsetRef.current);
-      modelRef.current.position.copy(relativePosition.multiplyScalar(POSITION_SCALE));
+      const relativePosition = sensorPosition
+        .clone()
+        .sub(centerOffsetRef.current);
+      modelRef.current.position.copy(
+        relativePosition.multiplyScalar(POSITION_SCALE),
+      );
 
       const sensorQuaternion = new THREE.Quaternion(
         -data.quaternion.y,
