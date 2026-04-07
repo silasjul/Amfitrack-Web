@@ -27,7 +27,7 @@ function DeviceCard({ name, image, connected, onConnect }: DeviceCardProps) {
         "relative flex items-center gap-3 rounded-md p-2.5 text-left transition-all duration-200",
         connected
           ? "bg-sidebar-accent cursor-default"
-          : "cursor-pointer border-muted-foreground/25 bg-transparent active:scale-[0.98]",
+          : "cursor-pointer bg-transparent active:scale-[0.98]",
         !connected &&
           hovered &&
           "border-muted-foreground/40 bg-sidebar-accent/60",
@@ -62,7 +62,12 @@ function DeviceCard({ name, image, connected, onConnect }: DeviceCardProps) {
 
       {/* Info */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium text-sidebar-foreground">
+        <span
+          className={cn(
+            "text-sm font-medium transition-colors duration-200",
+            connected ? "text-sidebar-foreground" : "text-sidebar-foreground/60",
+          )}
+        >
           {name}
         </span>
         {connected ? (
@@ -89,22 +94,18 @@ function DeviceCard({ name, image, connected, onConnect }: DeviceCardProps) {
       {!connected && (
         <div
           className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed transition-all duration-200",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200",
             hovered
               ? "border-muted-foreground/40 bg-muted-foreground/10"
               : "border-muted-foreground/20",
           )}
         >
-          <span
+          <Plus
             className={cn(
-              "text-sm font-light leading-none transition-colors duration-200",
-              hovered
-                ? "text-sidebar-foreground/70"
-                : "text-muted-foreground/40",
+              "h-3 w-3 transition-colors duration-200",
+              hovered ? "text-sidebar-foreground/70" : "text-muted-foreground/40",
             )}
-          >
-            <Plus className="w-3 h-3" />
-          </span>
+          />
         </div>
       )}
     </button>

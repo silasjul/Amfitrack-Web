@@ -6,62 +6,46 @@ import {
   SourceCalibrationData,
   EmfImuFrameIdData,
 } from "./packets/decoders";
-
-type AmfitrackEventMap = {
-  sourceMeasurement: SourceMeasurementData;
-  sourceCalibration: SourceCalibrationData;
-  emfImuFrameId: EmfImuFrameIdData;
-};
-
 class AmfitrackWeb {
   private sensorDevice: HIDDevice | null = null;
   private sourceDevice: HIDDevice | null = null;
 
-  private listeners: {
-    [K in keyof AmfitrackEventMap]: Set<(data: AmfitrackEventMap[K]) => void>;
-  } = {
-    sourceMeasurement: new Set(),
-    sourceCalibration: new Set(),
-    emfImuFrameId: new Set(),
-  };
-
-  public on<K extends keyof AmfitrackEventMap>(
-    event: K,
-    handler: (data: AmfitrackEventMap[K]) => void,
-  ): void {
-    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).add(
-      handler,
-    );
+  private onEmfImuFrameId: ((data: EmfImuFrameIdData) => void) | null = null;
+  public setOnEmfImuFrameId(handler: (data: EmfImuFrameIdData) => void) {
+    this.onEmfImuFrameId = handler;
   }
-
-  public off<K extends keyof AmfitrackEventMap>(
-    event: K,
-    handler: (data: AmfitrackEventMap[K]) => void,
-  ): void {
-    (this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>).delete(
-      handler,
-    );
+  private onSourceMeasurement: ((data: SourceMeasurementData) => void) | null = null;
+  public setOnSourceMeasurement(handler: (data: SourceMeasurementData) => void) {
+    this.onSourceMeasurement = handler;
   }
-
-  private emit<K extends keyof AmfitrackEventMap>(
-    event: K,
-    data: AmfitrackEventMap[K],
-  ): void {
-    (
-      this.listeners[event] as Set<(data: AmfitrackEventMap[K]) => void>
-    ).forEach((h) => h(data));
+  private onSourceCalibration: ((data: SourceCalibrationData) => void) | null = null;
+  public setOnSourceCalibration(handler: (data: SourceCalibrationData) => void) {
+    this.onSourceCalibration = handler;
   }
 
   private inputReportHandler: ((event: HIDInputReportEvent) => void) | null =
     null;
+  private openingPromise: Promise<void> | null = null;
 
-  public async requestConnection(): Promise<HIDDevice | null> {
+  public async requestConnectionHub(): Promise<HIDDevice | null> {
+    return this.requestDevice(PRODUCT_ID_SENSOR, (device) => {
+      this.sensorDevice = device;
+    });
+  }
+
+  public async requestConnectionSource(): Promise<HIDDevice | null> {
+    return this.requestDevice(PRODUCT_ID_SOURCE, (device) => {
+      this.sourceDevice = device;
+    });
+  }
+
+  private async requestDevice(
+    productId: number,
+    assign: (device: HIDDevice) => void,
+  ): Promise<HIDDevice | null> {
     try {
       const devices = await navigator.hid.requestDevice({
-        filters: [
-          { vendorId: VENDOR_ID, productId: PRODUCT_ID_SENSOR },
-          { vendorId: VENDOR_ID, productId: PRODUCT_ID_SOURCE },
-        ],
+        filters: [{ vendorId: VENDOR_ID, productId }],
       });
 
       if (devices.length === 0) {
@@ -69,26 +53,12 @@ class AmfitrackWeb {
       }
 
       const device = devices[0];
-
-      if (device.productId === PRODUCT_ID_SENSOR) {
-        this.sensorDevice = device;
-        console.log("Sensor assigned.");
-      } else if (device.productId === PRODUCT_ID_SOURCE) {
-        this.sourceDevice = device;
-        console.log("Source assigned.");
-      } else {
-        throw new Error(
-          `Unrecognized Amfitrack product ID: ${device.productId}`,
-        );
-      }
-
-      console.log(device);
+      assign(device);
       return device;
     } catch (error: any) {
       if (error.name === "NotFoundError") {
         throw new Error("No device was selected.");
       }
-
       throw new Error(`Connection failed: ${error.message}`);
     }
   }
@@ -138,7 +108,16 @@ class AmfitrackWeb {
     if (!device) return;
 
     if (!device.opened) {
-      await device.open();
+      if (!this.openingPromise) {
+        this.openingPromise = device.open().finally(() => {
+          this.openingPromise = null;
+        });
+      }
+      await this.openingPromise;
+    }
+
+    if (this.inputReportHandler) {
+      device.removeEventListener("inputreport", this.inputReportHandler);
     }
 
     this.inputReportHandler = (event: HIDInputReportEvent) => {
@@ -171,13 +150,13 @@ class AmfitrackWeb {
 
     switch (payloadType) {
       case PayloadType.EMF_IMU_FRAME_ID:
-        this.emit("emfImuFrameId", payload as EmfImuFrameIdData);
+        this.onEmfImuFrameId?.(payload as EmfImuFrameIdData);
         break;
       case PayloadType.SOURCE_MEASUREMENT:
-        this.emit("sourceMeasurement", payload as SourceMeasurementData);
+        this.onSourceMeasurement?.(payload as SourceMeasurementData);
         break;
       case PayloadType.SOURCE_CALIBRATION:
-        this.emit("sourceCalibration", payload as SourceCalibrationData);
+        this.onSourceCalibration?.(payload as SourceCalibrationData);
         break;
     }
   }

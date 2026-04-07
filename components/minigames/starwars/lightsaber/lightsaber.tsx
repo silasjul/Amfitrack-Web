@@ -1,7 +1,7 @@
 "use client";
 
 import { useGLTF, Center } from "@react-three/drei";
-import LightsaberPlasma from "./LightsaberPlasma";
+import LightsaberPlasma from "./lightsaberPlasma";
 
 export default function Lightsaber({ metalDistortionRef }: { metalDistortionRef: React.RefObject<number> }) {
   const { scene } = useGLTF("/models/Lightsaber/scene.gltf");

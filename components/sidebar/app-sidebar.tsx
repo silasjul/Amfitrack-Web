@@ -2,8 +2,7 @@
 
 import * as React from "react";
 
-import { SearchForm } from "@/components/search-form";
-import { Header } from "@/components/header";
+import { Header } from "@/components/sidebar/header";
 import {
   Collapsible,
   CollapsibleContent,
@@ -109,10 +108,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarFooter className="h-full w-full">
-          <Footer />
-        </SidebarFooter>
       </SidebarContent>
+      <SidebarFooter>
+        <Footer />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

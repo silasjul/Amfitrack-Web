@@ -9,13 +9,12 @@ import {
   Center,
 } from "@react-three/drei";
 import { useControls, folder, button, Leva } from "leva";
-import Lightsaber from "@/components/lightsaber/Lightsaber";
-import Light from "@/components/Light";
-import { useEffect, useState, useRef } from "react";
+import Lightsaber from "@/components/minigames/starwars/lightsaber/lightsaber";
+import Light from "@/components/minigames/starwars/light";
+import { useEffect, useState } from "react";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 
 export default function Home() {
-  const lightsaberRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const {
     modelRef,
