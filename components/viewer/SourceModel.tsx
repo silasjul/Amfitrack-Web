@@ -10,7 +10,7 @@ export default function SourceModel() {
         object={fbx}
         scale={0.01}
         rotation-x={(Math.PI / 2) * 3}
-        rotation-z={Math.PI / 2}
+        rotation-z={-Math.PI}
       />
     </Center>
   );

@@ -11,19 +11,18 @@ import {
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "@/amfitrackWebSDK/config";
+import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 
 const POSITION_SCALE = 0.01;
 
 interface AmfitrackContextValue {
-  modelRef: React.RefObject<THREE.Group | null>;
   status: string;
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
   hubRef: React.RefObject<HIDDevice | null>;
   sourceRef: React.RefObject<HIDDevice | null>;
-  metalDistortionRef: React.RefObject<number>;
-  resetCenter: () => void;
+  sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   startReading: (device: HIDDevice | null) => Promise<void>;
   stopReading: () => void;
   requestConnectionHub: () => Promise<void>;
@@ -47,9 +46,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
    * State
    */
   const amfitrackWebRef = useRef(new AmfitrackWeb());
-  const modelRef = useRef<THREE.Group | null>(null);
-  const metalDistortionRef = useRef(0);
   const [isReading, setIsReading] = useState(false);
+  const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
 
   // Devices
   const hubRef = useRef<HIDDevice | null>(null); // uses sensor id
@@ -60,25 +58,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [status, setStatus] = useState("Disconnected");
   const initializedRef = useRef(false);
 
-  // Position
-  const latestSensorPositionRef = useRef(new THREE.Vector3());
-  const centerOffsetRef = useRef(new THREE.Vector3());
-
-  // Rotation
-  const rotationOffsetRef = useRef(
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, "XYZ")),
-  );
-
   /**
    * Methods
    */
-  const resetCenter = useCallback(() => {
-    centerOffsetRef.current.copy(latestSensorPositionRef.current);
-    if (modelRef.current) {
-      modelRef.current.position.set(0, 0, 0);
-    }
-  }, []);
-
   const requestConnectionHub = useCallback(async () => {
     try {
       const device = await amfitrackWebRef.current.requestConnectionHub();
@@ -179,50 +161,52 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   }, [hubRef.current]);
 
   amfitrackWebRef.current.setOnEmfImuFrameId((header, data) => {
-    console.log({ header, data });
+    const id = header.sourceTxId;
+    let entry = sensorsDataRef.current.get(id);
 
-    metalDistortionRef.current = data.metalDistortion / 255;
+    if (!entry) {
+      entry = {
+        ...data,
+        metalDistortion: data.metalDistortion / 255,
+        position: new THREE.Vector3(),
+        quaternion: new THREE.Quaternion(),
+      };
+      sensorsDataRef.current.set(id, entry);
+    } else {
+      entry.sensorStatus = data.sensorStatus;
+      entry.sourceCoilId = data.sourceCoilId;
+      entry.calcId = data.calcId;
+      entry.imu = data.imu;
+      entry.magneto = data.magneto;
+      entry.temperature = data.temperature;
+      entry.sensorState = data.sensorState;
+      entry.metalDistortion = data.metalDistortion / 255;
+      entry.gpioState = data.gpioState;
+      entry.rssi = data.rssi;
+      entry.frameId = data.frameId;
+    }
 
-    if (!modelRef.current) return;
-
-    // remap sensor coordinates to three.js coordinates
-    const sensorPosition = new THREE.Vector3(
-      -data.position.y,
-      data.position.z,
-      -data.position.x,
+    (entry.position as THREE.Vector3).set(
+      -data.position.y * POSITION_SCALE,
+      data.position.z * POSITION_SCALE,
+      -data.position.x * POSITION_SCALE,
     );
-    latestSensorPositionRef.current.copy(sensorPosition);
-
-    const relativePosition = sensorPosition
-      .clone()
-      .sub(centerOffsetRef.current);
-    modelRef.current.position.copy(
-      relativePosition.multiplyScalar(POSITION_SCALE),
-    );
-
-    const sensorQuaternion = new THREE.Quaternion(
-      -data.quaternion.y,
-      data.quaternion.z,
-      -data.quaternion.x,
-      data.quaternion.w,
-    ).normalize();
-    sensorQuaternion.multiply(rotationOffsetRef.current);
-    modelRef.current.quaternion.copy(sensorQuaternion);
+    (entry.quaternion as THREE.Quaternion)
+      .set(-data.quaternion.y, data.quaternion.z, -data.quaternion.x, data.quaternion.w)
+      .normalize();
   });
 
   return {
-    modelRef,
     status,
     isReading,
     hubConnected,
     sourceConnected,
     hubRef,
     sourceRef,
-    metalDistortionRef,
-    resetCenter,
     startReading,
     stopReading,
     requestConnectionHub,
     requestConnectionSource,
+    sensorsDataRef,
   };
 }
