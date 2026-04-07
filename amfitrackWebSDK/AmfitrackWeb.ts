@@ -1,26 +1,28 @@
 import { VENDOR_ID, PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "./config";
-import { PacketDecoder, PayloadType } from "./packets/PacketDecoder";
+import { PacketDecoder, PacketHeader, PayloadType, PayloadDataMap, DecodedPayload } from "./packets/PacketDecoder";
 import { Packet } from "./packets/Packet";
 import {
   SourceMeasurementData,
   SourceCalibrationData,
   EmfImuFrameIdData,
 } from "./packets/decoders";
+
 class AmfitrackWeb {
   private sensorDevice: HIDDevice | null = null;
   private sourceDevice: HIDDevice | null = null;
 
-  private onEmfImuFrameId: ((data: EmfImuFrameIdData) => void) | null = null;
-  public setOnEmfImuFrameId(handler: (data: EmfImuFrameIdData) => void) {
-    this.onEmfImuFrameId = handler;
+  private payloadHandlers: {
+    [K in PayloadType]?: (header: PacketHeader, payload: PayloadDataMap[K]) => void;
+  } = {};
+
+  public setOnEmfImuFrameId(handler: (header: PacketHeader, payload: EmfImuFrameIdData) => void) {
+    this.payloadHandlers[PayloadType.EMF_IMU_FRAME_ID] = handler;
   }
-  private onSourceMeasurement: ((data: SourceMeasurementData) => void) | null = null;
-  public setOnSourceMeasurement(handler: (data: SourceMeasurementData) => void) {
-    this.onSourceMeasurement = handler;
+  public setOnSourceMeasurement(handler: (header: PacketHeader, payload: SourceMeasurementData) => void) {
+    this.payloadHandlers[PayloadType.SOURCE_MEASUREMENT] = handler;
   }
-  private onSourceCalibration: ((data: SourceCalibrationData) => void) | null = null;
-  public setOnSourceCalibration(handler: (data: SourceCalibrationData) => void) {
-    this.onSourceCalibration = handler;
+  public setOnSourceCalibration(handler: (header: PacketHeader, payload: SourceCalibrationData) => void) {
+    this.payloadHandlers[PayloadType.SOURCE_CALIBRATION] = handler;
   }
 
   private inputReportHandler: ((event: HIDInputReportEvent) => void) | null =
@@ -146,19 +148,11 @@ class AmfitrackWeb {
     const packet = new Packet(bytes);
     const packetDecoder = new PacketDecoder(packet);
     const { value: payloadType } = packetDecoder.getPayloadType();
+    const header = packetDecoder.getDecodedHeader();
     const payload = packetDecoder.getDecodedPayload();
 
-    switch (payloadType) {
-      case PayloadType.EMF_IMU_FRAME_ID:
-        this.onEmfImuFrameId?.(payload as EmfImuFrameIdData);
-        break;
-      case PayloadType.SOURCE_MEASUREMENT:
-        this.onSourceMeasurement?.(payload as SourceMeasurementData);
-        break;
-      case PayloadType.SOURCE_CALIBRATION:
-        this.onSourceCalibration?.(payload as SourceCalibrationData);
-        break;
-    }
+    const handler = this.payloadHandlers[payloadType];
+    (handler as ((header: PacketHeader, payload: DecodedPayload) => void) | undefined)?.(header, payload);
   }
 }
 

@@ -25,16 +25,6 @@ export default function Home() {
     metalDistortionRef,
   } = useAmfitrack();
 
-  useEffect(() => {
-    if (hubRef.current) {
-      startReading(hubRef.current);
-    }
-
-    return () => {
-      stopReading();
-    };
-  }, [hubRef.current]);
-
   const { mode, exposure, enabled, pivotOffsetY, files } = useControls({
     toneMapping: folder({
       mode: {

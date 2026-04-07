@@ -5,7 +5,7 @@ import {
   SourceMeasurementPayload,
   SourceMeasurementData,
   EmfImuFrameIdPayload,
-  EmfImuFrameIdData,
+  EmfImuFrameIdData
 } from "../packets/decoders";
 
 export enum PayloadType {
@@ -18,6 +18,16 @@ export interface IPayloadDecoder<T> {
   getDecoded(payload: Uint8Array): T;
 }
 
+export interface PacketHeader {
+  payloadLength: number;
+  packetType: number;
+  packetNumber: number;
+  payloadType: PayloadType;
+  sourceTxId: number;
+  destinationTxId: number;
+  crc: number;
+}
+
 export class PacketDecoder {
   private packet: Packet;
   private payloadType: PayloadType;
@@ -27,7 +37,7 @@ export class PacketDecoder {
     this.payloadType = packet.getHeader()[3] as PayloadType;
   }
 
-  public getDecodedHeader() {
+  public getDecodedHeader(): PacketHeader {
     const headerBytes = this.packet.getHeader();
 
     // | Bits [7:6]: 0 = NoAck, 1 = Request Ack, 2 = Ack, 3 = Reply.
@@ -66,6 +76,12 @@ export type DecodedPayload =
   | SourceMeasurementData
   | SourceCalibrationData
   | EmfImuFrameIdData;
+
+export type PayloadDataMap = {
+  [PayloadType.SOURCE_CALIBRATION]: SourceCalibrationData;
+  [PayloadType.SOURCE_MEASUREMENT]: SourceMeasurementData;
+  [PayloadType.EMF_IMU_FRAME_ID]: EmfImuFrameIdData;
+};
 
 const decoderMap: Record<PayloadType, IPayloadDecoder<DecodedPayload>> = {
   [PayloadType.SOURCE_MEASUREMENT]: new SourceMeasurementPayload(),

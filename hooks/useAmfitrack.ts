@@ -11,7 +11,6 @@ import {
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "@/amfitrackWebSDK/config";
-import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 
 const POSITION_SCALE = 0.01;
 
@@ -121,18 +120,21 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     }
   };
 
-  const startReading = useCallback(async (device: HIDDevice | null) => {
-    if (!device || isReading) return;
-    try {
-      await amfitrackWebRef.current.startReading(device);
-      setIsReading(true);
-    } catch (error: any) {
-      console.error(
-        "Failed to open device — it may already be in use by another tab or application:",
-        error,
-      );
-    }
-  }, [isReading]);
+  const startReading = useCallback(
+    async (device: HIDDevice | null) => {
+      if (!device || isReading) return;
+      try {
+        await amfitrackWebRef.current.startReading(device);
+        setIsReading(true);
+      } catch (error: any) {
+        console.error(
+          "Failed to open device — it may already be in use by another tab or application:",
+          error,
+        );
+      }
+    },
+    [isReading],
+  );
 
   const stopReading = () => {
     amfitrackWebRef.current.stopReading();
@@ -151,7 +153,10 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
         hubRef.current = null;
         setHubConnected(false);
       }
-      if (device.productId === PRODUCT_ID_SOURCE && sourceRef.current === device) {
+      if (
+        device.productId === PRODUCT_ID_SOURCE &&
+        sourceRef.current === device
+      ) {
         sourceRef.current = null;
         setSourceConnected(false);
       }
@@ -163,7 +168,19 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, []);
 
-  amfitrackWebRef.current.setOnEmfImuFrameId((data: EmfImuFrameIdData) => {
+  useEffect(() => {
+    if (hubRef.current) {
+      startReading(hubRef.current);
+    }
+
+    return () => {
+      stopReading();
+    };
+  }, [hubRef.current]);
+
+  amfitrackWebRef.current.setOnEmfImuFrameId((header, data) => {
+    console.log({ header, data });
+
     metalDistortionRef.current = data.metalDistortion / 255;
 
     if (!modelRef.current) return;
