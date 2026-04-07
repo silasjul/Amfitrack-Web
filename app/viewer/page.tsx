@@ -2,6 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import CoordinateSystem from "@/components/viewer/CoordinateSystem";
 import SourceModel from "@/components/viewer/SourceModel";
 import SensorModels from "@/components/viewer/SensorModel";
