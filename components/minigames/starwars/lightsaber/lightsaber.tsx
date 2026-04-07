@@ -4,7 +4,7 @@ import { useGLTF, Center } from "@react-three/drei";
 import LightsaberPlasma from "./lightsaberPlasma";
 
 export default function Lightsaber({ metalDistortionRef }: { metalDistortionRef: React.RefObject<number> }) {
-  const { scene } = useGLTF("/models/Lightsaber/scene.gltf");
+  const { scene } = useGLTF("/models/starwars/lightsaber/scene.gltf");
 
   return (
     <>

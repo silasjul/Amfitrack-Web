@@ -79,10 +79,22 @@ function CoordinateSystem() {
       <AxisLine start={[0, 0, 0]} end={[0, AXIS_LENGTH, 0]} color={AXIS_Y} />
       <AxisLine start={[0, 0, 0]} end={[0, 0, AXIS_LENGTH]} color={AXIS_Z} />
 
-      {/* Axis labels — always face camera */}
-      <AxisLabel position={[AXIS_LENGTH + 0.5, 0, 0]} label="X" color={AXIS_X} />
-      <AxisLabel position={[0, AXIS_LENGTH + 0.5, 0]} label="Y" color={AXIS_Y} />
-      <AxisLabel position={[0, 0, AXIS_LENGTH + 0.5]} label="Z" color={AXIS_Z} />
+      {/* Axis labels */}
+      <AxisLabel
+        position={[AXIS_LENGTH + 0.5, 0, 0]}
+        label="X"
+        color={AXIS_X}
+      />
+      <AxisLabel
+        position={[0, AXIS_LENGTH + 0.5, 0]}
+        label="Y"
+        color={AXIS_Y}
+      />
+      <AxisLabel
+        position={[0, 0, AXIS_LENGTH + 0.5]}
+        label="Z"
+        color={AXIS_Z}
+      />
 
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Plus, Minus, Move3DIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Footer from "./footer";
 
 const data = {
@@ -40,8 +41,7 @@ const data = {
       items: [
         {
           title: "Star Wars",
-          url: "/minigames/star-wars",
-          isActive: true,
+          url: "/minigames/star-wars"
         },
       ],
     },
@@ -49,6 +49,8 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -75,7 +77,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {data.navMain.map((item, index) => (
               <Collapsible
                 key={item.title}
-                defaultOpen={index === 1}
+                defaultOpen={item.items.some((sub) => pathname === sub.url)}
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
@@ -93,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           <SidebarMenuSubItem key={item.title}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={item.isActive}
+                              isActive={pathname === item.url}
                             >
                               <Link href={item.url}>{item.title}</Link>
                             </SidebarMenuSubButton>
