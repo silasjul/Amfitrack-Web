@@ -36,9 +36,9 @@ function DeviceCard({ name, image, connected, onConnect }: DeviceCardProps) {
       {/* Device thumbnail */}
       <div
         className={cn(
-          "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border transition-all duration-200",
+          "relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border transition-all duration-200",
           connected
-            ? "border-emerald-500/20 bg-black/40"
+            ? "border-sidebar-primary/20 bg-black/40"
             : hovered
               ? "border-muted-foreground/30 bg-black/30"
               : "border-muted-foreground/15 bg-black/20",
@@ -71,8 +71,8 @@ function DeviceCard({ name, image, connected, onConnect }: DeviceCardProps) {
           {name}
         </span>
         {connected ? (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.4)]" />
+          <span className="flex items-center gap-1.5 text-xs text-sidebar-primary">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-sidebar-primary opacity-80" />
             Connected
           </span>
         ) : (
@@ -122,7 +122,7 @@ export default function Footer() {
 
   return (
     <div>
-      <SidebarGroupLabel>Devices</SidebarGroupLabel>
+      {/* <SidebarGroupLabel>Devices</SidebarGroupLabel> */}
       <div className="flex flex-col gap-1.5 px-1 pb-1">
         <DeviceCard
           name="Hub"
