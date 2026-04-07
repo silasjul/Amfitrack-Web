@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
   Environment,
@@ -11,19 +11,52 @@ import {
 import { useControls, folder, button, Leva } from "leva";
 import Lightsaber from "@/components/minigames/starwars/lightsaber/lightsaber";
 import Light from "@/components/minigames/starwars/light";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+
+function SensorSync({
+  modelRef,
+  metalDistortionRef,
+  centerOffsetRef,
+}: {
+  modelRef: React.RefObject<THREE.Group | null>;
+  metalDistortionRef: React.RefObject<number>;
+  centerOffsetRef: React.RefObject<THREE.Vector3>;
+}) {
+  const { sensorsDataRef } = useAmfitrack();
+
+  useFrame(() => {
+    const first = sensorsDataRef.current.values().next().value;
+    if (!first || !modelRef.current) return;
+
+    modelRef.current.position
+      .copy(first.position as THREE.Vector3)
+      .sub(centerOffsetRef.current);
+    modelRef.current.quaternion.copy(first.quaternion as THREE.Quaternion);
+    metalDistortionRef.current = first.metalDistortion;
+  });
+
+  return null;
+}
 
 export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
+  const modelRef = useRef<THREE.Group>(null);
+  const metalDistortionRef = useRef<number>(0);
+  const centerOffsetRef = useRef(new THREE.Vector3());
   const {
-    modelRef,
-    resetCenter,
     startReading,
     stopReading,
     hubRef,
-    metalDistortionRef,
+    sensorsDataRef,
   } = useAmfitrack();
+
+  const resetCenter = () => {
+    const first = sensorsDataRef.current.values().next().value;
+    if (first) {
+      centerOffsetRef.current.copy(first.position as THREE.Vector3);
+    }
+  };
 
   const { mode, exposure, enabled, pivotOffsetY, files } = useControls({
     toneMapping: folder({
@@ -85,6 +118,11 @@ export default function Home() {
         camera={{ position: [0, 0.25, 2], near: 0.1, far: 1000 }}
         gl={{ toneMapping: mode, toneMappingExposure: exposure }}
       >
+        <SensorSync
+          modelRef={modelRef}
+          metalDistortionRef={metalDistortionRef}
+          centerOffsetRef={centerOffsetRef}
+        />
         <OrbitControls enabled={!isDragging} />
         <Environment files={files} background />
         <Light />

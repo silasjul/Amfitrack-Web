@@ -6,7 +6,7 @@ import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 
-const COLOR_CLEAN = new THREE.Color("rgb(0, 255, 0)");
+const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
 const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
 
 function SensorInstance({ sensorId }: { sensorId: number }) {
