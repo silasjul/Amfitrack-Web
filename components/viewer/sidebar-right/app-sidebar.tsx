@@ -20,7 +20,7 @@ export function AppSidebar({
 
   return (
     <RightSidebar {...props} className="font-roboto-mono">
-      <SidebarContent className="gap-0 bg-black">
+      <SidebarContent className="gap-0 bg-black/30">
         <ResizablePanelGroup
           orientation="vertical"
           className="min-h-[200px] max-w-sm"
