@@ -11,15 +11,18 @@ import {
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "@/amfitrackWebSDK/config";
-import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { EmfImuFrameIdData, SourceMeasurementData, SourceCalibrationData } from "@/amfitrackWebSDK/packets/decoders";
 
 const POSITION_SCALE = 0.01;
+const SENSOR_TIMEOUT_MS = 3000;
+const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
 interface AmfitrackContextValue {
   status: string;
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
+  sensorIds: number[];
   hubRef: React.RefObject<HIDDevice | null>;
   sourceRef: React.RefObject<HIDDevice | null>;
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
@@ -48,6 +51,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const amfitrackWebRef = useRef(new AmfitrackWeb());
   const [isReading, setIsReading] = useState(false);
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
+  const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
+  const [sensorIds, setSensorIds] = useState<number[]>([]);
 
   // Devices
   const hubRef = useRef<HIDDevice | null>(null); // uses sensor id
@@ -160,8 +165,28 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, [hubRef.current]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      let changed = false;
+      for (const [id, lastSeen] of sensorLastSeenRef.current) {
+        if (now - lastSeen > SENSOR_TIMEOUT_MS) {
+          sensorLastSeenRef.current.delete(id);
+          sensorsDataRef.current.delete(id);
+          changed = true;
+        }
+      }
+      if (changed) {
+        setSensorIds(Array.from(sensorsDataRef.current.keys()));
+      }
+    }, SENSOR_CLEANUP_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, []);
+
   amfitrackWebRef.current.setOnEmfImuFrameId((header, data) => {
     const id = header.sourceTxId;
+    sensorLastSeenRef.current.set(id, Date.now());
     let entry = sensorsDataRef.current.get(id);
 
     if (!entry) {
@@ -172,6 +197,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
         quaternion: new THREE.Quaternion(),
       };
       sensorsDataRef.current.set(id, entry);
+      setSensorIds(Array.from(sensorsDataRef.current.keys()));
     } else {
       entry.sensorStatus = data.sensorStatus;
       entry.sourceCoilId = data.sourceCoilId;
@@ -201,6 +227,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     isReading,
     hubConnected,
     sourceConnected,
+    sensorIds,
     hubRef,
     sourceRef,
     startReading,

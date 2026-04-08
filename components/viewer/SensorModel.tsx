@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
@@ -68,28 +68,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
 }
 
 export default function SensorModels() {
-  const { sensorsDataRef } = useAmfitrack();
-  const [sensorIds, setSensorIds] = useState<number[]>([]);
-  const prevCountRef = useRef(0);
-  const knownIdsRef = useRef<Set<number>>(new Set());
-
-  useFrame(() => {
-    const map = sensorsDataRef.current;
-    if (map.size === prevCountRef.current) {
-      let allKnown = true;
-      for (const id of map.keys()) {
-        if (!knownIdsRef.current.has(id)) {
-          allKnown = false;
-          break;
-        }
-      }
-      if (allKnown) return;
-    }
-
-    prevCountRef.current = map.size;
-    knownIdsRef.current = new Set(map.keys());
-    setSensorIds(Array.from(map.keys()));
-  });
+  const { sensorIds } = useAmfitrack();
 
   return (
     <>

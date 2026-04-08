@@ -13,6 +13,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import SidebarUpper from "./sidebar-upper/sidebar-upper";
+import SidebarLower from "./sidebar-lower";
 
 export function AppSidebar({
   ...props
@@ -22,18 +24,14 @@ export function AppSidebar({
       <SidebarContent className="gap-0">
         <ResizablePanelGroup
           orientation="vertical"
-          className="min-h-[200px] max-w-sm rounded-lg border"
+          className="min-h-[200px] max-w-sm"
         >
           <ResizablePanel defaultSize="25%">
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Header</span>
-            </div>
+            <SidebarUpper />
           </ResizablePanel>
-          <ResizableHandle withHandle />
+          <ResizableHandle className="bg-transparent ring-0 ring-offset-0 aria-[orientation=horizontal]:bg-transparent" />
           <ResizablePanel defaultSize="75%">
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Content</span>
-            </div>
+            <SidebarLower />
           </ResizablePanel>
         </ResizablePanelGroup>
       </SidebarContent>
