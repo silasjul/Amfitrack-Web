@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Header } from "@/components/sidebar/header";
+import { Header } from "@/components/sidebar-left/header";
 import {
   Collapsible,
   CollapsibleContent,

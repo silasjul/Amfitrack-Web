@@ -34,7 +34,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     const data = sensorsDataRef.current.get(sensorId);
     if (!data || !groupRef.current) return;
 
-    groupRef.current.position.copy(data.position).y += MODEL_OFFSET_Y;
+    groupRef.current.position.copy(data.position).y += MODEL_OFFSET_Y - 0.01;
     groupRef.current.quaternion.copy(data.quaternion);
 
     if (materialRef.current) {

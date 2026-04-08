@@ -44,12 +44,7 @@ export default function Home() {
   const modelRef = useRef<THREE.Group>(null);
   const metalDistortionRef = useRef<number>(0);
   const centerOffsetRef = useRef(new THREE.Vector3());
-  const {
-    startReading,
-    stopReading,
-    hubRef,
-    sensorsDataRef,
-  } = useAmfitrack();
+  const { sensorsDataRef } = useAmfitrack();
 
   const resetCenter = () => {
     const first = sensorsDataRef.current.values().next().value;
