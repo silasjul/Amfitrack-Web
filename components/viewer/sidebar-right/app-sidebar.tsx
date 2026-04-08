@@ -1,15 +1,26 @@
 "use client";
 
-import {
-  RightSidebarPanel,
-  RightSidebarTrigger,
-} from "@/components/viewer/sidebar-right/sidebar";
-import { PanelRightCloseIcon } from "lucide-react";
+import * as React from "react";
 
-export function AppSidebar() {
+import {
+  RightSidebar,
+  RightSidebarRail,
+} from "@/components/ui/sidebar-right";
+import {
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+
+export function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof RightSidebar>) {
   return (
-    <RightSidebarPanel>
-      hello
-    </RightSidebarPanel>
+    <RightSidebar {...props}>
+      <SidebarHeader />
+      <SidebarContent className="gap-0" />
+      <SidebarFooter />
+      <RightSidebarRail />
+    </RightSidebar>
   );
 }

@@ -6,11 +6,6 @@ import CoordinateSystem from "@/components/viewer/CoordinateSystem";
 import SourceModel from "@/components/viewer/SourceModel";
 import SensorModels from "@/components/viewer/SensorModel";
 import { Leva } from "leva";
-import {
-  RightSidebarProvider,
-  RightSidebarInset,
-  RightSidebarTrigger,
-} from "@/components/viewer/sidebar-right/sidebar";
 import Sidebar from "@/components/viewer/sidebar-right/sidebar";
 
 export default function Home() {
