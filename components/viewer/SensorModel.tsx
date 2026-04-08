@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { DISTORTION_THRESHOLDS } from "@/config/distortion";
 
 const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
 const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
@@ -38,7 +39,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     groupRef.current.quaternion.copy(data.quaternion);
 
     if (materialRef.current) {
-      if (data.metalDistortion < 0.3) {
+      if (data.metalDistortion < DISTORTION_THRESHOLDS.CLEAN) {
         materialRef.current.color.set(COLOR_CLEAN);
       } else {
         materialRef.current.color.lerpColors(
