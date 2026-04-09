@@ -11,14 +11,17 @@ import {
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "@/amfitrackWebSDK/config";
-import { EmfImuFrameIdData, SourceMeasurementData, SourceCalibrationData } from "@/amfitrackWebSDK/packets/decoders";
+import {
+  EmfImuFrameIdData,
+  SourceMeasurementData,
+  SourceCalibrationData,
+} from "@/amfitrackWebSDK/packets/decoders";
 
 const POSITION_SCALE = 0.01;
 const SENSOR_TIMEOUT_MS = 3000;
 const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
 interface AmfitrackContextValue {
-  status: string;
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
@@ -60,7 +63,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [hubConnected, setHubConnected] = useState(false);
   const [sourceConnected, setSourceConnected] = useState(false);
 
-  const [status, setStatus] = useState("Disconnected");
   const initializedRef = useRef(false);
 
   /**
@@ -91,43 +93,21 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   }, []);
 
   const autoConnectAuthorizedDevices = async () => {
-    const devices =
-      await amfitrackWebRef.current.autoConnectAuthorizedDevices();
-    devices?.forEach((device) => {
-      if (device.productId === PRODUCT_ID_SENSOR) {
-        hubRef.current = device;
-        setHubConnected(true);
-      } else if (device.productId === PRODUCT_ID_SOURCE) {
-        sourceRef.current = device;
-        setSourceConnected(true);
-      }
-    });
-    if (devices && devices.length > 0) {
-      setStatus("Connected");
+    const hubDevice = await amfitrackWebRef.current.getHubDevice();
+    if (hubDevice) {
+      hubRef.current = hubDevice;
+      setHubConnected(true);
+    }
+    const sourceDevice = await amfitrackWebRef.current.getSourceDevice();
+    if (sourceDevice) {
+      sourceRef.current = sourceDevice;
+      setSourceConnected(true);
     }
   };
 
-  const startReading = useCallback(
-    async (device: HIDDevice | null) => {
-      if (!device || isReading) return;
-      try {
-        await amfitrackWebRef.current.startReading(device);
-        setIsReading(true);
-      } catch (error: any) {
-        console.error(
-          "Failed to open device — it may already be in use by another tab or application:",
-          error,
-        );
-      }
-    },
-    [isReading],
-  );
-
-  const stopReading = () => {
-    amfitrackWebRef.current.stopReading();
-    setIsReading(false);
-  };
-
+  /**
+   * On mount, auto connect and add cleanup listener
+   */
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
@@ -155,6 +135,30 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, []);
 
+  /**
+   * Automatically start reading from hub when connected
+   */
+  const startReading = useCallback(
+    async (device: HIDDevice | null) => {
+      if (!device || isReading) return;
+      try {
+        await amfitrackWebRef.current.startReadingDevice(device);
+        setIsReading(true);
+      } catch (error: any) {
+        console.error(
+          "Failed to open device — it may already be in use by another tab or application:",
+          error,
+        );
+      }
+    },
+    [isReading],
+  );
+
+  const stopReading = () => {
+    amfitrackWebRef.current.stopReading();
+    setIsReading(false);
+  };
+
   useEffect(() => {
     if (hubRef.current) {
       startReading(hubRef.current);
@@ -165,6 +169,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, [hubRef.current]);
 
+  /**
+   * Cleanup expired sensors
+   */
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -184,6 +191,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     return () => clearInterval(interval);
   }, []);
 
+  /**
+   * Handle EMF data
+   */
   amfitrackWebRef.current.setOnEmfImuFrameId((header, data) => {
     const id = header.sourceTxId;
     sensorLastSeenRef.current.set(id, Date.now());
@@ -218,12 +228,16 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       -data.position.x * POSITION_SCALE,
     );
     (entry.quaternion as THREE.Quaternion)
-      .set(-data.quaternion.y, data.quaternion.z, -data.quaternion.x, data.quaternion.w)
+      .set(
+        -data.quaternion.y,
+        data.quaternion.z,
+        -data.quaternion.x,
+        data.quaternion.w,
+      )
       .normalize();
   });
 
   return {
-    status,
     isReading,
     hubConnected,
     sourceConnected,
