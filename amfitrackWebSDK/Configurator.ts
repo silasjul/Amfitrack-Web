@@ -4,7 +4,7 @@ import { CommonPayloadId } from "./packets/decoders/CommonPayload";
 import { ReplyConfigurationValueUidPayload } from "./packets/decoders";
 import { LE } from "./config";
 
-interface Configuration {
+export interface Configuration {
   name: string;
   parameters: { name: string; uid: number; value: number | boolean | string }[];
 }

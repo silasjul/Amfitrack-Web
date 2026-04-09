@@ -11,6 +11,7 @@ import {
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { Configuration } from "@/amfitrackWebSDK/Configurator";
 
 const POSITION_SCALE = 0.01;
 const SENSOR_TIMEOUT_MS = 3000;
@@ -22,6 +23,8 @@ interface AmfitrackContextValue {
   sourceConnected: boolean;
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
+  hubConfiguration: Configuration[];
+  sourceConfiguration: Configuration[];
   requestConnectionHub: () => Promise<void>;
   requestConnectionSource: () => Promise<void>;
 }
@@ -44,6 +47,10 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [hubConnected, setHubConnected] = useState(false);
   const [sourceConnected, setSourceConnected] = useState(false);
   const [sensorIds, setSensorIds] = useState<number[]>([]);
+  const [hubConfiguration, setHubConfiguration] = useState<Configuration[]>([]);
+  const [sourceConfiguration, setSourceConfiguration] = useState<
+    Configuration[]
+  >([]);
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
@@ -54,8 +61,29 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
-    const unbindHub = sdk.on("hubConnection", setHubConnected);
-    const unbindSource = sdk.on("sourceConnection", setSourceConnected);
+    const unbindHub = sdk.on("hubConnection", (connected) => {
+      setHubConnected(connected);
+
+      if (connected) {
+        sdk.getHubConfiguration().then((config) => {
+          setHubConfiguration(config ?? []);
+        });
+      } else {
+        setHubConfiguration([]);
+      }
+    });
+
+    const unbindSource = sdk.on("sourceConnection", (connected) => {
+      setSourceConnected(connected);
+
+      if (connected) {
+        sdk.getSourceConfiguration().then((config) => {
+          setSourceConfiguration(config ?? []);
+        });
+      } else {
+        setSourceConfiguration([]);
+      }
+    });
     const unbindReading = sdk.on("reading", setIsReading);
 
     const unbindEmf = sdk.on("emfImuFrameId", (header, data) => {
@@ -102,12 +130,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     });
 
     sdk.initialize();
-
-    sdk.on("sourceConnection", () => {
-      sdk.getSensorConfiguration().then((config) => {
-        console.log("Sensor configuration:", config);
-      });
-    });
 
     return () => {
       unbindHub();
@@ -165,6 +187,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sourceConnected,
     sensorIds,
     sensorsDataRef,
+    hubConfiguration,
+    sourceConfiguration,
     requestConnectionHub,
     requestConnectionSource,
   };
