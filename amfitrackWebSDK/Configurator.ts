@@ -1,6 +1,7 @@
 import HIDManager from "./HIDManager";
 import { PacketBuilder, AmfiprotPayloadType } from "./packets/PacketBuilder";
 import { CommonPayloadId } from "./packets/decoders/CommonPayload";
+import { LE } from "./config";
 
 /**
  * High-level configuration interface for amfiprot devices.
@@ -67,39 +68,101 @@ export class Configurator {
     });
   }
 
+  /** Wrap a reply Uint8Array in a DataView for convenient typed reads. */
+  private view(reply: Uint8Array): DataView {
+    return new DataView(reply.buffer, reply.byteOffset, reply.byteLength);
+  }
+
+  /** Decode a null-terminated ASCII string starting at the given byte offset. */
+  private decodeString(data: Uint8Array, offset: number): string {
+    let end = offset;
+    while (end < data.length && data[end] !== 0) end++;
+    return new TextDecoder("ascii").decode(data.subarray(offset, end));
+  }
+
+  /** Build a request payload, using a DataView to write multi-byte values. */
+  private buildRequest(id: CommonPayloadId, size: number): { bytes: Uint8Array; view: DataView } {
+    const bytes = new Uint8Array(size);
+    bytes[0] = id;
+    return { bytes, view: new DataView(bytes.buffer) };
+  }
+
   /**
    * Mirrors Configurator._get_category_count() in configurator.py.
    *
-   * Sends REQUEST_CATEGORY_COUNT (0x1A), awaits REPLY_CATEGORY_COUNT (0x1B).
    * Reply payload: [0x1B, category_count]
    */
   private async getCategoryCount(device: HIDDevice): Promise<number> {
-    await this.hidManager.openDevice(device);
-    const reply = await this.sendCommonPayload(
-      device,
-      new Uint8Array([CommonPayloadId.REQUEST_CATEGORY_COUNT]),
-      CommonPayloadId.REPLY_CATEGORY_COUNT,
-    );
-    return reply[1];
+    const { bytes } = this.buildRequest(CommonPayloadId.REQUEST_CATEGORY_COUNT, 1);
+    const reply = await this.sendCommonPayload(device, bytes, CommonPayloadId.REPLY_CATEGORY_COUNT);
+    return this.view(reply).getUint8(1);
   }
 
+  /**
+   * Mirrors Configurator._get_category_name() in configurator.py.
+   *
+   * Request payload: [0x16, index]
+   * Reply payload:   [0x17, category_id, ...ascii_name..., 0x00]
+   */
   private async getCategoryName(device: HIDDevice, index: number): Promise<string> {
-    return "";
+    const { bytes, view } = this.buildRequest(CommonPayloadId.REQUEST_CONFIGURATION_CATEGORY, 2);
+    view.setUint8(1, index);
+    const reply = await this.sendCommonPayload(device, bytes, CommonPayloadId.REPLY_CONFIGURATION_CATEGORY);
+    return this.decodeString(reply, 2);
   }
 
+  /**
+   * Mirrors Configurator._get_parameter_count() in configurator.py.
+   *
+   * Request payload: [0x18, category_index]
+   * Reply payload:   [0x19, category_index, count (uint16 LE)]
+   */
   private async getParameterCount(device: HIDDevice, categoryIndex: number): Promise<number> {
-    return 0;
+    const { bytes, view } = this.buildRequest(CommonPayloadId.REQUEST_CONFIGURATION_VALUE_COUNT, 2);
+    view.setUint8(1, categoryIndex);
+    const reply = await this.sendCommonPayload(device, bytes, CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT);
+    return this.view(reply).getUint16(2, LE);
   }
 
-  private async getParameterNameAndUid(device: HIDDevice, categoryIndex: number, parameterIndex: number): Promise<{ name: string; uid: number }> {
-    return { name: "", uid: 0 };
+  /**
+   * Mirrors Configurator._get_parameter_name_uid() in configurator.py.
+   *
+   * Request payload: [0x11, category_index, param_index (uint16 LE)]
+   * Reply payload:   [0x12, config_index (uint16 LE), cat_index, uid (uint32 LE), ...ascii_name..., 0x00]
+   */
+  private async getParameterNameAndUid(
+    device: HIDDevice,
+    categoryIndex: number,
+    parameterIndex: number,
+  ): Promise<{ name: string; uid: number }> {
+    const { bytes, view } = this.buildRequest(CommonPayloadId.REQUEST_CONFIGURATION_NAME_AND_UID, 4);
+    view.setUint8(1, categoryIndex);
+    view.setUint16(2, parameterIndex, LE);
+    const reply = await this.sendCommonPayload(device, bytes, CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID);
+    const rv = this.view(reply);
+    return {
+      uid: rv.getUint32(4, LE),
+      name: this.decodeString(reply, 8),
+    };
   }
 
   public async getConfiguration(device: HIDDevice): Promise<{ name: string; uid: number; value: number }[]> {
-    const config = [];
+    await this.hidManager.openDevice(device);
+
+    // test
 
     const categoryCount = await this.getCategoryCount(device);
     console.log("Category count:", categoryCount);
+
+    const categoryName = await this.getCategoryName(device, 0);
+    console.log("Category name:", categoryName);
+
+    const parameterCount = await this.getParameterCount(device, 0);
+    console.log("Parameter count:", parameterCount);
+
+    const parameterNameAndUid = await this.getParameterNameAndUid(device, 0, 0);
+    console.log("Parameter name and uid:", parameterNameAndUid);
+    
     return [];
   }
 }
