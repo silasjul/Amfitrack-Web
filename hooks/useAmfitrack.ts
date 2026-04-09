@@ -105,7 +105,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
     sdk.on("sourceConnection", () => {
       sdk.getSensorConfiguration().then((config) => {
-        // console.log("Sensor configuration:", config);
+        console.log("Sensor configuration:", config);
       });
     });
 
