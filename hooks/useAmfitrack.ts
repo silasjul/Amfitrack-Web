@@ -48,7 +48,7 @@ export function useAmfitrack() {
 }
 
 export function useAmfitrackProvider(): AmfitrackContextValue {
-  /*
+  /**
    * State
    */
   const amfitrackWebRef = useRef(new AmfitrackWeb());
@@ -241,8 +241,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
    * Configurations
    */
   useEffect(() => {
-    if (sourceConnected) {
-      amfitrackWebRef.current.getCategoryCount();
+    if (sourceConnected && sourceRef.current) {
+      amfitrackWebRef.current.getSensorConfiguration();
     }
   }, [sourceConnected]);
 

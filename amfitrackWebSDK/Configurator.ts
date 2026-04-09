@@ -1,6 +1,6 @@
 import HIDManager from "./HIDManager";
 import { PacketBuilder, AmfiprotPayloadType } from "./packets/PacketBuilder";
-import { CommonPayloadId } from "./packets/CommonPayload";
+import { CommonPayloadId } from "./packets/decoders/CommonPayload";
 
 /**
  * High-level configuration interface for amfiprot devices.
@@ -73,7 +73,7 @@ export class Configurator {
    * Sends REQUEST_CATEGORY_COUNT (0x1A), awaits REPLY_CATEGORY_COUNT (0x1B).
    * Reply payload: [0x1B, category_count]
    */
-  public async getCategoryCount(device: HIDDevice): Promise<number> {
+  private async getCategoryCount(device: HIDDevice): Promise<number> {
     await this.hidManager.openDevice(device);
     const reply = await this.sendCommonPayload(
       device,
@@ -81,5 +81,25 @@ export class Configurator {
       CommonPayloadId.REPLY_CATEGORY_COUNT,
     );
     return reply[1];
+  }
+
+  private async getCategoryName(device: HIDDevice, index: number): Promise<string> {
+    return "";
+  }
+
+  private async getParameterCount(device: HIDDevice, categoryIndex: number): Promise<number> {
+    return 0;
+  }
+
+  private async getParameterNameAndUid(device: HIDDevice, categoryIndex: number, parameterIndex: number): Promise<{ name: string; uid: number }> {
+    return { name: "", uid: 0 };
+  }
+
+  public async getConfiguration(device: HIDDevice): Promise<{ name: string; uid: number; value: number }[]> {
+    const config = [];
+
+    const categoryCount = await this.getCategoryCount(device);
+    console.log("Category count:", categoryCount);
+    return [];
   }
 }

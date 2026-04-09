@@ -40,3 +40,21 @@ export enum CommonPayloadId {
   REBOOT = 0x21,
   RESET_PARAMETER = 0x24,
 }
+
+import { IPayloadDecoder } from "../PacketDecoder";
+
+export type CommonData = ReturnType<CommonPayload["getDecoded"]>;
+
+export class CommonPayload implements IPayloadDecoder<CommonData> {
+  public getDecoded(payload: Uint8Array) {
+    const view = new DataView(
+      payload.buffer,
+      payload.byteOffset,
+      payload.byteLength,
+    );
+
+    return {
+      test: "test",
+    };
+  }
+}

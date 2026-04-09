@@ -117,14 +117,9 @@ class AmfitrackWeb {
   /**
    * Configurations
    */
-  public async getCategoryCount(): Promise<number | null> {
-    if (!this.sourceDevice) {
-      console.log("No source device");
-      return null;
-    }
-    const result = await this.configurator.getCategoryCount(this.sourceDevice);
-    console.log("Category count:", result);
-    return result;
+  public async getSensorConfiguration() {
+    if (!this.sensorDevice) return null;
+    return await this.configurator.getConfiguration(this.sensorDevice);
   }
 }
 
