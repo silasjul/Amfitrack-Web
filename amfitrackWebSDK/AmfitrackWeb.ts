@@ -1,9 +1,9 @@
+import { createNanoEvents } from "nanoevents";
 import { VENDOR_ID, PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE } from "./config";
 import {
   PacketDecoder,
   PacketHeader,
   PayloadType,
-  PayloadDataMap,
   DecodedPayload,
 } from "./packets/PacketDecoder";
 import { Packet } from "./packets/Packet";
@@ -15,111 +15,201 @@ import {
 import HIDManager from "./HIDManager";
 import { Configurator } from "./Configurator";
 
+export interface AmfitrackEvents {
+  hubConnection: (connected: boolean) => void;
+  sourceConnection: (connected: boolean) => void;
+  reading: (isReading: boolean) => void;
+  emfImuFrameId: (header: PacketHeader, payload: EmfImuFrameIdData) => void;
+  sourceMeasurement: (
+    header: PacketHeader,
+    payload: SourceMeasurementData,
+  ) => void;
+  sourceCalibration: (
+    header: PacketHeader,
+    payload: SourceCalibrationData,
+  ) => void;
+}
+
 class AmfitrackWeb {
-  private sensorDevice: HIDDevice | null = null;
-  private sourceDevice: HIDDevice | null = null;
+  private _hubDevice: HIDDevice | null = null;
+  private _sourceDevice: HIDDevice | null = null;
+  private _isReading = false;
 
   private hidManager = new HIDManager();
   private configurator = new Configurator(this.hidManager);
+  private emitter = createNanoEvents<AmfitrackEvents>();
+  private disconnectHandler: ((e: HIDConnectionEvent) => void) | null = null;
+
+  get hubDevice(): HIDDevice | null {
+    return this._hubDevice;
+  }
+  get sourceDevice(): HIDDevice | null {
+    return this._sourceDevice;
+  }
+  get isReading(): boolean {
+    return this._isReading;
+  }
+
+  on<K extends keyof AmfitrackEvents>(event: K, cb: AmfitrackEvents[K]) {
+    return this.emitter.on(event, cb);
+  }
+
+  /**
+   * Call on mount — auto-connects previously authorized devices
+   * and sets up the HID disconnect listener.
+   */
+  async initialize(): Promise<void> {
+    this.setupDisconnectHandler();
+    await this.autoConnect();
+  }
+
+  /**
+   * Call on unmount — stops reading and removes listeners.
+   */
+  destroy(): void {
+    this.stopReading();
+    this.removeDisconnectHandler();
+  }
 
   /**
    * Request connection to a new device
-   *
-   * (this is required for unauthorized devices or first time connections to a device)
+   * (required for unauthorized devices or first-time connections)
    */
-  public async requestConnectionHub(): Promise<HIDDevice | null> {
-    return this.hidManager.requestDevice(PRODUCT_ID_SENSOR, (device) => {
-      this.sensorDevice = device;
-    });
+  async requestConnectionHub(): Promise<void> {
+    const device = await this.hidManager.requestDevice(
+      PRODUCT_ID_SENSOR,
+      (d) => {
+        this._hubDevice = d;
+      },
+    );
+    if (device) {
+      this.emitter.emit("hubConnection", true);
+      await this.startReading();
+    }
   }
 
-  public async requestConnectionSource(): Promise<HIDDevice | null> {
-    return this.hidManager.requestDevice(PRODUCT_ID_SOURCE, (device) => {
-      this.sourceDevice = device;
-    });
+  async requestConnectionSource(): Promise<void> {
+    const device = await this.hidManager.requestDevice(
+      PRODUCT_ID_SOURCE,
+      (d) => {
+        this._sourceDevice = d;
+      },
+    );
+    if (device) {
+      this.emitter.emit("sourceConnection", true);
+    }
   }
 
   /**
-   * Getting authorized devices (only works with previously connected devices)
-   *
-   * used for auto-connecting devices
+   * Configurations
    */
-  public async getHubDevice(): Promise<HIDDevice | null> {
-    this.sensorDevice = await this.hidManager.getDevice(
-      VENDOR_ID,
-      PRODUCT_ID_SENSOR,
-    );
-    return this.sensorDevice;
+  async getSensorConfiguration() {
+    if (!this._hubDevice) return null;
+    return await this.configurator.getConfiguration(this._hubDevice);
   }
 
-  public async getSourceDevice(): Promise<HIDDevice | null> {
-    this.sourceDevice = await this.hidManager.getDevice(
+  /**
+   * Private
+   */
+  private async autoConnect(): Promise<void> {
+    const hub = await this.hidManager.getDevice(VENDOR_ID, PRODUCT_ID_SENSOR);
+    if (hub) {
+      this._hubDevice = hub;
+      this.emitter.emit("hubConnection", true);
+      await this.startReading();
+    }
+
+    const source = await this.hidManager.getDevice(
       VENDOR_ID,
       PRODUCT_ID_SOURCE,
     );
-    return this.sourceDevice;
+    if (source) {
+      this._sourceDevice = source;
+      this.emitter.emit("sourceConnection", true);
+    }
   }
 
-  /**
-   * Start/stop reading data from devices
-   */
-  public async startReadingDevice(device: HIDDevice) {
-    this.hidManager.startReadingDevice(device, (bytes) => {
-      this.processData(bytes);
-    });
+  private setupDisconnectHandler(): void {
+    this.disconnectHandler = (e: HIDConnectionEvent) => {
+      const device = e.device;
+      if (
+        device.productId === PRODUCT_ID_SENSOR &&
+        this._hubDevice === device
+      ) {
+        this._hubDevice = null;
+        this.stopReading();
+        this.emitter.emit("hubConnection", false);
+      }
+      if (
+        device.productId === PRODUCT_ID_SOURCE &&
+        this._sourceDevice === device
+      ) {
+        this._sourceDevice = null;
+        this.emitter.emit("sourceConnection", false);
+      }
+    };
+    navigator.hid.addEventListener("disconnect", this.disconnectHandler);
   }
 
-  public stopReading() {
+  private removeDisconnectHandler(): void {
+    if (this.disconnectHandler) {
+      navigator.hid.removeEventListener("disconnect", this.disconnectHandler);
+      this.disconnectHandler = null;
+    }
+  }
+
+  private async startReading(): Promise<void> {
+    if (!this._hubDevice || this._isReading) return;
+    try {
+      await this.hidManager.startReadingDevice(this._hubDevice, (bytes) => {
+        this.processData(bytes);
+      });
+      this._isReading = true;
+      this.emitter.emit("reading", true);
+    } catch (error) {
+      console.error(
+        "Failed to open device — it may already be in use by another tab or application:",
+        error,
+      );
+    }
+  }
+
+  private stopReading(): void {
     this.hidManager.stopReadingAll();
+    this._isReading = false;
+    this.emitter.emit("reading", false);
   }
 
-  /**
-   * Process data from devices
-   */
-  private payloadHandlers: {
-    [K in PayloadType]?: (
-      header: PacketHeader,
-      payload: PayloadDataMap[K],
-    ) => void;
-  } = {};
-
-  public setOnEmfImuFrameId(
-    handler: (header: PacketHeader, payload: EmfImuFrameIdData) => void,
-  ) {
-    this.payloadHandlers[PayloadType.EMF_IMU_FRAME_ID] = handler;
-  }
-  public setOnSourceMeasurement(
-    handler: (header: PacketHeader, payload: SourceMeasurementData) => void,
-  ) {
-    this.payloadHandlers[PayloadType.SOURCE_MEASUREMENT] = handler;
-  }
-  public setOnSourceCalibration(
-    handler: (header: PacketHeader, payload: SourceCalibrationData) => void,
-  ) {
-    this.payloadHandlers[PayloadType.SOURCE_CALIBRATION] = handler;
-  }
-
-  private processData(bytes: Uint8Array) {
+  private processData(bytes: Uint8Array): void {
     const packet = new Packet(bytes);
     const packetDecoder = new PacketDecoder(packet);
     const { value: payloadType } = packetDecoder.getPayloadType();
     const header = packetDecoder.getDecodedHeader();
     const payload = packetDecoder.getDecodedPayload();
 
-    const handler = this.payloadHandlers[payloadType];
-    (
-      handler as
-        | ((header: PacketHeader, payload: DecodedPayload) => void)
-        | undefined
-    )?.(header, payload);
-  }
-
-  /**
-   * Configurations
-   */
-  public async getSensorConfiguration() {
-    if (!this.sensorDevice) return null;
-    return await this.configurator.getConfiguration(this.sensorDevice);
+    switch (payloadType) {
+      case PayloadType.EMF_IMU_FRAME_ID:
+        this.emitter.emit(
+          "emfImuFrameId",
+          header,
+          payload as EmfImuFrameIdData,
+        );
+        break;
+      case PayloadType.SOURCE_MEASUREMENT:
+        this.emitter.emit(
+          "sourceMeasurement",
+          header,
+          payload as SourceMeasurementData,
+        );
+        break;
+      case PayloadType.SOURCE_CALIBRATION:
+        this.emitter.emit(
+          "sourceCalibration",
+          header,
+          payload as SourceCalibrationData,
+        );
+        break;
+    }
   }
 }
 
