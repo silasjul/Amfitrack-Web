@@ -13,12 +13,14 @@ import {
   EmfImuFrameIdData,
 } from "./packets/decoders";
 import HIDManager from "./HIDManager";
+import { Configurator } from "./Configurator";
 
 class AmfitrackWeb {
   private sensorDevice: HIDDevice | null = null;
   private sourceDevice: HIDDevice | null = null;
 
   private hidManager = new HIDManager();
+  private configurator = new Configurator(this.hidManager);
 
   /**
    * Request connection to a new device
@@ -110,6 +112,19 @@ class AmfitrackWeb {
         | ((header: PacketHeader, payload: DecodedPayload) => void)
         | undefined
     )?.(header, payload);
+  }
+
+  /**
+   * Configurations
+   */
+  public async getCategoryCount(): Promise<number | null> {
+    if (!this.sourceDevice) {
+      console.log("No source device");
+      return null;
+    }
+    const result = await this.configurator.getCategoryCount(this.sourceDevice);
+    console.log("Category count:", result);
+    return result;
   }
 }
 

@@ -237,6 +237,15 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       .normalize();
   });
 
+  /**
+   * Configurations
+   */
+  useEffect(() => {
+    if (sourceConnected) {
+      amfitrackWebRef.current.getCategoryCount();
+    }
+  }, [sourceConnected]);
+
   return {
     isReading,
     hubConnected,
