@@ -66,6 +66,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
       if (connected) {
         sdk.getHubConfiguration().then((config) => {
+          console.log("hub configuration", config);
           setHubConfiguration(config ?? []);
         });
       } else {
@@ -78,6 +79,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
       if (connected) {
         sdk.getSourceConfiguration().then((config) => {
+          console.log("source configuration", config);
           setSourceConfiguration(config ?? []);
         });
       } else {

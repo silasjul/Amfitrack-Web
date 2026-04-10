@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDistortionLevel } from "@/config/distortion";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const POSITION_SCALE = 100;
 interface Props {
@@ -50,7 +51,7 @@ export default function SidebarLower({ selectedSensorId }: Props) {
 
   return (
     <div className="flex w-full h-full pl-1 pr-1 pt-0.5">
-      <div className="flex-1 flex flex-col bg-sidebar rounded-t-sm overflow-hidden">
+      <ScrollArea className="flex-1 flex flex-col bg-sidebar rounded-t-sm overflow-hidden">
         {selectedSensorId === null ? (
           <EmptyState />
         ) : !data ? (
@@ -132,7 +133,7 @@ export default function SidebarLower({ selectedSensorId }: Props) {
             </div>
           </>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

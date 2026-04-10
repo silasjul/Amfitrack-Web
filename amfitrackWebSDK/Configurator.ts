@@ -9,8 +9,8 @@ export interface Configuration {
   parameters: { name: string; uid: number; value: number | boolean | string }[];
 }
 
-const DEFAULT_RETRIES = 5;
-const DEFAULT_TIMEOUT_MS = 100;
+const DEFAULT_RETRIES = 3;
+const DEFAULT_TIMEOUT_MS = 500;
 
 /**
  * High-level configuration interface for amfiprot devices.
@@ -28,12 +28,18 @@ export class Configurator {
   }
 
   /**
-   * Sends a Common payload and waits for a specific reply.
+   * Sends a Common payload and waits for a specific reply, with retries.
    *
    * This is the core request/reply pattern used by all configurator methods,
    * equivalent to:
    *   self.device.node.send_payload(RequestPayload())
    *   packet = self.device._await_packet(ReplyPayload)
+   *
+   * @param validate Optional predicate applied to the extracted payload bytes.
+   *                 If it returns false the reply is ignored and we keep
+   *                 listening.  This prevents stale/duplicate replies from
+   *                 being consumed (e.g. after a retry that produced two
+   *                 device responses for the same reply-ID).
    */
   private async sendCommonPayload(
     device: HIDDevice,
@@ -41,6 +47,7 @@ export class Configurator {
     expectedReplyId: CommonPayloadId,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
+    validate?: (payload: Uint8Array) => boolean,
   ): Promise<Uint8Array> {
     let lastError: Error | undefined;
 
@@ -51,6 +58,7 @@ export class Configurator {
           payloadBytes,
           expectedReplyId,
           timeoutMs,
+          validate,
         );
       } catch (err) {
         lastError = err as Error;
@@ -70,6 +78,7 @@ export class Configurator {
     payloadBytes: Uint8Array,
     expectedReplyId: CommonPayloadId,
     timeoutMs: number,
+    validate?: (payload: Uint8Array) => boolean,
   ): Promise<Uint8Array> {
     const packet = this.packetBuilder.build(payloadBytes);
 
@@ -95,11 +104,14 @@ export class Configurator {
         const replyId = bytes[8];
         if (replyId !== expectedReplyId) return;
 
+        const payloadLength = bytes[1];
+        const payload = bytes.slice(8, 8 + payloadLength);
+
+        if (validate && !validate(payload)) return;
+
         clearTimeout(timeout);
         device.removeEventListener("inputreport", onInput);
-
-        const payloadLength = bytes[1];
-        resolve(bytes.subarray(8, 8 + payloadLength));
+        resolve(payload);
       };
 
       device.addEventListener("inputreport", onInput);
@@ -171,6 +183,9 @@ export class Configurator {
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_CATEGORY,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      (payload) => payload[1] === index,
     );
     return this.decodeString(reply, 2);
   }
@@ -194,6 +209,9 @@ export class Configurator {
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      (payload) => payload[1] === categoryIndex,
     );
     return this.view(reply).getUint16(2, LE);
   }
@@ -219,6 +237,14 @@ export class Configurator {
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      (payload) => {
+        const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        return (
+          v.getUint16(1, LE) === parameterIndex && payload[3] === categoryIndex
+        );
+      },
     );
     const rv = this.view(reply);
     return {
@@ -246,6 +272,12 @@ export class Configurator {
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      (payload) => {
+        const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        return v.getUint32(1, LE) === uid;
+      },
     );
     return this.configValueDecoder.getDecoded(reply).value;
   }

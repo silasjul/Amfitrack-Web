@@ -15,6 +15,7 @@ export enum PayloadType {
   SOURCE_MEASUREMENT = 0x24,
   EMF_IMU_FRAME_ID = 0x1a,
   COMMON = 0x00,
+  NOT_IMPLEMENTED = 0xfd,
 }
 
 export interface IPayloadDecoder<T> {
@@ -88,6 +89,7 @@ export type PayloadDataMap = {
 };
 
 const decoderMap: Record<PayloadType, IPayloadDecoder<DecodedPayload>> = {
+  [PayloadType.NOT_IMPLEMENTED]: new CommonPayload(), // TODO
   [PayloadType.COMMON]: new CommonPayload(),
   [PayloadType.SOURCE_MEASUREMENT]: new SourceMeasurementPayload(),
   [PayloadType.SOURCE_CALIBRATION]: new SourceCalibrationPayload(),
