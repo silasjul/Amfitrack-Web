@@ -26,7 +26,7 @@ import {
 import { Plus, Minus, Move3DIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Footer from "./footer";
+import Footer from "./footer/footer";
 
 const data = {
   navMain: [
