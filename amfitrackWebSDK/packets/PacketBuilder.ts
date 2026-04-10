@@ -62,9 +62,7 @@ export class PacketBuilder {
     ]);
     this.packetNumber = (this.packetNumber + 1) % 255;
 
-    const packet = new Uint8Array(
-      header.length + 1 + payloadBytes.length + 1,
-    );
+    const packet = new Uint8Array(header.length + 1 + payloadBytes.length + 1);
     packet.set(header);
     packet[header.length] = crc8(header);
     packet.set(payloadBytes, header.length + 1);

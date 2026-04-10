@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 import { getDistortionLevel } from "@/config/distortion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Props {
   selectedSensorId: number | null;
@@ -71,7 +72,7 @@ export default function SidebarUpper({
           </Badge>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-1.5 space-y-1">
+        <ScrollArea className="flex-1 p-1.5 space-y-1">
           {sensorIds.length === 0 && <SkeletonRows />}
           {sensorIds.map((id) => (
             <SensorRow
@@ -82,7 +83,7 @@ export default function SidebarUpper({
               onSelect={() => onSelectSensor(id)}
             />
           ))}
-        </div>
+        </ScrollArea>
       </div>
     </div>
   );

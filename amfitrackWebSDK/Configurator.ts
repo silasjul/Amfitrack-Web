@@ -2,15 +2,12 @@ import HIDManager from "./HIDManager";
 import { PacketBuilder, AmfiprotPayloadType } from "./packets/PacketBuilder";
 import { CommonPayloadId } from "./packets/decoders/CommonPayload";
 import { ReplyConfigurationValueUidPayload } from "./packets/decoders";
-import { LE } from "./config";
+import { LE, DEFAULT_TIMEOUT_MS, DEFAULT_RETRIES } from "./config";
 
 export interface Configuration {
   name: string;
   parameters: { name: string; uid: number; value: number | boolean | string }[];
 }
-
-const DEFAULT_RETRIES = 3;
-const DEFAULT_TIMEOUT_MS = 500;
 
 /**
  * High-level configuration interface for amfiprot devices.
@@ -240,7 +237,11 @@ export class Configurator {
       DEFAULT_TIMEOUT_MS,
       DEFAULT_RETRIES,
       (payload) => {
-        const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        const v = new DataView(
+          payload.buffer,
+          payload.byteOffset,
+          payload.byteLength,
+        );
         return (
           v.getUint16(1, LE) === parameterIndex && payload[3] === categoryIndex
         );
@@ -275,7 +276,11 @@ export class Configurator {
       DEFAULT_TIMEOUT_MS,
       DEFAULT_RETRIES,
       (payload) => {
-        const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        const v = new DataView(
+          payload.buffer,
+          payload.byteOffset,
+          payload.byteLength,
+        );
         return v.getUint32(1, LE) === uid;
       },
     );
