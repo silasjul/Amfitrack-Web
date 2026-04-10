@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   title: "Amfitrack Web",
   description: "USB device connection manager",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/logo.svg",
   },
 };
 
