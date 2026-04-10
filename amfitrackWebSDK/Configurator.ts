@@ -287,7 +287,9 @@ export class Configurator {
     return this.configValueDecoder.getDecoded(reply).value;
   }
 
-  public async getConfiguration(device: HIDDevice): Promise<Configuration[]> {
+  public async getConfigurationUSBDevice(
+    device: HIDDevice,
+  ): Promise<Configuration[]> {
     await this.hidManager.openDevice(device);
 
     const config: Configuration[] = [];
@@ -312,5 +314,9 @@ export class Configurator {
     }
 
     return config;
+  }
+
+  public async getConfigurationSensor(sensorID: number): Promise<Configuration[]> {
+    // TODO
   }
 }

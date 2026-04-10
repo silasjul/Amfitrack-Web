@@ -105,12 +105,14 @@ class AmfitrackWeb {
    */
   async getHubConfiguration() {
     if (!this._hubDevice) return null;
-    return await this.configurator.getConfiguration(this._hubDevice);
+    return await this.configurator.getConfigurationUSBDevice(this._hubDevice);
   }
 
   async getSourceConfiguration() {
     if (!this._sourceDevice) return null;
-    return await this.configurator.getConfiguration(this._sourceDevice);
+    return await this.configurator.getConfigurationUSBDevice(
+      this._sourceDevice,
+    );
   }
 
   async getSensorConfiguration() {
