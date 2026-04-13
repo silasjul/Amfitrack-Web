@@ -18,6 +18,7 @@ const SENSOR_TIMEOUT_MS = 3000;
 const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
 interface AmfitrackContextValue {
+  amfitrackWebRef: React.RefObject<AmfitrackWeb>;
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
@@ -214,6 +215,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   }, []);
 
   return {
+    amfitrackWebRef,
     isReading,
     hubConnected,
     sourceConnected,

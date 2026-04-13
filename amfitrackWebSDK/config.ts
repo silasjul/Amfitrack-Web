@@ -7,5 +7,5 @@ export const BAUD_RATE = 115200;
 export const LE = true; // Little Endian
 
 // Config fetching
-export const DEFAULT_RETRIES = 3;
+export const DEFAULT_RETRIES = 4;
 export const DEFAULT_TIMEOUT_MS = 500;

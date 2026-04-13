@@ -1,10 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { useAmfitrack } from "@/hooks/useAmfitrack";
-import { cn } from "@/lib/utils";
-import { Unplug, Plus, Settings } from "lucide-react";
+import React, { useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,11 +9,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Configuration } from "@/amfitrackWebSDK/Configurator";
+import { useConfigurations } from "@/hooks/useConfigurations";
 import ParameterCard from "./ParameterCard";
 
 export default function DeviceSettingsDialog({
@@ -25,13 +20,30 @@ export default function DeviceSettingsDialog({
   onOpenChange,
   deviceName,
   configuration,
+  loading = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deviceName: string;
   configuration: Configuration[];
+  loading?: boolean;
 }) {
   const defaultTab = configuration[0]?.name ?? "";
+  const { updateConfiguration } = useConfigurations();
+
+  const handleValueChange = useCallback(
+    (categoryName: string, uid: number, parameterName: string, currentValue: number | boolean | string, newValue: number | boolean | string) => {
+      updateConfiguration({
+        deviceName,
+        uid,
+        categoryName,
+        parameterName,
+        currentValue,
+        valueToPush: newValue,
+      });
+    },
+    [deviceName, updateConfiguration],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,7 +55,9 @@ export default function DeviceSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {configuration.length === 0 ? (
+        {loading ? (
+          <LoadingSkeleton />
+        ) : configuration.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
             No configuration available.
           </p>
@@ -69,7 +83,14 @@ export default function DeviceSettingsDialog({
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 pt-1">
                     {category.parameters.map((param, idx) => (
-                      <ParameterCard key={param.name + idx} param={param} />
+                      <ParameterCard
+                        key={param.name + idx}
+                        param={param}
+                        deviceName={deviceName}
+                        onValueChange={(uid, parameterName, currentValue, newValue) =>
+                          handleValueChange(category.name, uid, parameterName, currentValue, newValue)
+                        }
+                      />
                     ))}
                   </div>
                 </TabsContent>
@@ -79,5 +100,26 @@ export default function DeviceSettingsDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex-1 min-h-0 flex flex-col gap-4">
+      <div className="flex gap-2">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-9 w-24 rounded-md" />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="rounded-lg border p-3 space-y-2">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-2.5 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

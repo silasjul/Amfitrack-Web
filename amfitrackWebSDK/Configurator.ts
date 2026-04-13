@@ -1,7 +1,11 @@
 import HIDManager from "./HIDManager";
 import { PacketBuilder, AmfiprotPayloadType } from "./packets/PacketBuilder";
 import { CommonPayloadId } from "./packets/decoders/CommonPayload";
-import { ReplyConfigurationValueUidPayload } from "./packets/decoders";
+import {
+  ReplyConfigurationValueUidPayload,
+  ConfigValueType,
+  ValueEncoder,
+} from "./packets/decoders";
 import { LE, DEFAULT_TIMEOUT_MS, DEFAULT_RETRIES } from "./config";
 
 export interface Configuration {
@@ -19,6 +23,7 @@ export class Configurator {
   private hidManager: HIDManager;
   private packetBuilder = new PacketBuilder();
   private configValueDecoder = new ReplyConfigurationValueUidPayload();
+  private valueEncoder = new ValueEncoder();
   private _hubDevice: HIDDevice | null = null;
 
   constructor(hidManager: HIDManager) {
@@ -291,7 +296,7 @@ export class Configurator {
     device: HIDDevice,
     uid: number,
     sensorID?: number,
-  ): Promise<number | boolean | string> {
+  ): Promise<{ value: number | boolean | string; dataType: ConfigValueType }> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_VALUE_UID,
       5,
@@ -313,7 +318,8 @@ export class Configurator {
       },
       sensorID,
     );
-    return this.configValueDecoder.getDecoded(reply).value;
+    const decoded = this.configValueDecoder.getDecoded(reply);
+    return { value: decoded.value, dataType: decoded.dataType };
   }
 
   public async getConfigurationUSBDevice(
@@ -336,7 +342,7 @@ export class Configurator {
           catIdx,
           paramIdx,
         );
-        const value = await this.getParameterValue(device, uid);
+        const { value } = await this.getParameterValue(device, uid);
         categoryParameters.push({ name, uid, value });
       }
       config.push({ name: categoryName, parameters: categoryParameters });
@@ -374,12 +380,59 @@ export class Configurator {
           paramIdx,
           sensorID,
         );
-        const value = await this.getParameterValue(device, uid, sensorID);
+        const { value } = await this.getParameterValue(device, uid, sensorID);
         categoryParameters.push({ name, uid, value });
       }
       config.push({ name: categoryName, parameters: categoryParameters });
     }
 
     return config;
+  }
+
+  /**
+   * Mirrors Configurator.write() in configurator.py.
+   *
+   * Reads the parameter first to discover its data_type, then sends
+   * SET_CONFIGURATION_VALUE_UID (0x15) and awaits REPLY_CONFIGURATION_VALUE_UID (0x14).
+   *
+   * Request payload: [0x15, uid (uint32 LE), data_type, encoded_value...]
+   * Reply  payload:  [0x14, uid (uint32 LE), data_type, value...]
+   */
+  public async setParameterValue(
+    device: HIDDevice,
+    uid: number,
+    value: number | boolean | string,
+    sensorID?: number,
+  ): Promise<boolean> {
+    const { dataType } = await this.getParameterValue(device, uid, sensorID);
+
+    const encodedValue = this.valueEncoder.encode(value, dataType);
+    const payloadSize = 1 + 4 + 1 + encodedValue.length; // command byte + parameter uid + data type + encoded value
+    const { bytes, view } = this.buildRequest(
+      CommonPayloadId.SET_CONFIGURATION_VALUE_UID,
+      payloadSize,
+    );
+    view.setUint32(1, uid, LE);
+    view.setUint8(5, dataType);
+    bytes.set(encodedValue, 6);
+
+    await this.sendCommonPayload(
+      device,
+      bytes,
+      CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      (payload) => {
+        const v = new DataView(
+          payload.buffer,
+          payload.byteOffset,
+          payload.byteLength,
+        );
+        return v.getUint32(1, LE) === uid;
+      },
+      sensorID,
+    );
+
+    return true;
   }
 }

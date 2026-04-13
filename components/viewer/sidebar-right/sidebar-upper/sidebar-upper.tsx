@@ -78,19 +78,21 @@ export default function SidebarUpper({
           </Badge>
         </div>
 
-        <ScrollArea className="flex-1 p-1.5 space-y-1">
-          {sensorIds.length === 0 && <SkeletonRows />}
-          {sensorIds.map((id) => (
-            <SensorRow
-              key={id}
-              label={`SENSOR_${id}`}
-              data={snapshots.get(id)}
-              configuration={sensorConfigurations.get(id)}
-              isSelected={selectedSensorId === id}
-              onSelect={() => onSelectSensor(id)}
-              onOpenSettings={() => setConfigDialogSensorId(id)}
-            />
-          ))}
+        <ScrollArea className="flex-1 p-1.5">
+          <div className="space-y-1">
+            {sensorIds.length === 0 && <SkeletonRows />}
+            {sensorIds.map((id) => (
+              <SensorRow
+                key={id}
+                label={`SENSOR_${id}`}
+                data={snapshots.get(id)}
+                configuration={sensorConfigurations.get(id)}
+                isSelected={selectedSensorId === id}
+                onSelect={() => onSelectSensor(id)}
+                onOpenSettings={() => setConfigDialogSensorId(id)}
+              />
+            ))}
+          </div>
         </ScrollArea>
       </div>
 
@@ -108,6 +110,10 @@ export default function SidebarUpper({
           configDialogSensorId !== null
             ? (sensorConfigurations.get(configDialogSensorId) ?? [])
             : []
+        }
+        loading={
+          configDialogSensorId !== null &&
+          !sensorConfigurations.has(configDialogSensorId)
         }
       />
     </div>
@@ -201,29 +207,27 @@ function SensorRow({
         )}
       </div>
 
-      {configuration && configuration.length > 0 && (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={(e) => {
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenSettings();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
             e.stopPropagation();
             onOpenSettings();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.stopPropagation();
-              onOpenSettings();
-            }
-          }}
-          className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200",
-            "text-sidebar-foreground/20 hover:text-sidebar-foreground/60 hover:bg-white/10",
-            isSelected && "text-sidebar-foreground/40",
-          )}
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </div>
-      )}
+          }
+        }}
+        className={cn(
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+          "text-sidebar-foreground/20 hover:text-sidebar-foreground/60 hover:bg-white/10",
+          isSelected && "text-sidebar-foreground/40",
+        )}
+      >
+        <Settings className="h-3.5 w-3.5" />
+      </div>
     </button>
   );
 }
