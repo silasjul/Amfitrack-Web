@@ -1,12 +1,10 @@
 "use client";
 
-
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import DeviceCard from "./DeviceCard";
-
 
 export default function Footer() {
   const {

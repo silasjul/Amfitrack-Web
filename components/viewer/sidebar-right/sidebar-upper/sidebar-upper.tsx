@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { type Configuration } from "@/amfitrackWebSDK/Configurator";
 import { getDistortionLevel } from "@/config/distortion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Settings } from "lucide-react";
+import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSettingsDialog";
 
 interface Props {
   selectedSensorId: number | null;
@@ -18,10 +21,13 @@ export default function SidebarUpper({
   selectedSensorId,
   onSelectSensor,
 }: Props) {
-  const { sensorIds, sensorsDataRef } = useAmfitrack();
+  const { sensorIds, sensorsDataRef, sensorConfigurations } = useAmfitrack();
   const [snapshots, setSnapshots] = useState<Map<number, EmfImuFrameIdData>>(
     new Map(),
   );
+  const [configDialogSensorId, setConfigDialogSensorId] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     if (sensorIds.length === 0) return;
@@ -79,12 +85,31 @@ export default function SidebarUpper({
               key={id}
               label={`SENSOR_${id}`}
               data={snapshots.get(id)}
+              configuration={sensorConfigurations.get(id)}
               isSelected={selectedSensorId === id}
               onSelect={() => onSelectSensor(id)}
+              onOpenSettings={() => setConfigDialogSensorId(id)}
             />
           ))}
         </ScrollArea>
       </div>
+
+      <DeviceSettingsDialog
+        open={configDialogSensorId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfigDialogSensorId(null);
+        }}
+        deviceName={
+          configDialogSensorId !== null
+            ? `Sensor ${configDialogSensorId}`
+            : ""
+        }
+        configuration={
+          configDialogSensorId !== null
+            ? (sensorConfigurations.get(configDialogSensorId) ?? [])
+            : []
+        }
+      />
     </div>
   );
 }
@@ -92,13 +117,17 @@ export default function SidebarUpper({
 function SensorRow({
   label,
   data,
+  configuration,
   isSelected,
   onSelect,
+  onOpenSettings,
 }: {
   label: string;
   data?: EmfImuFrameIdData;
+  configuration?: Configuration[];
   isSelected: boolean;
   onSelect: () => void;
+  onOpenSettings: () => void;
 }) {
   const distortion = data?.metalDistortion ?? 0;
   const level = getDistortionLevel(distortion);
@@ -171,6 +200,30 @@ function SensorRow({
           </div>
         )}
       </div>
+
+      {configuration && configuration.length > 0 && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenSettings();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation();
+              onOpenSettings();
+            }
+          }}
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+            "text-sidebar-foreground/20 hover:text-sidebar-foreground/60 hover:bg-white/10",
+            isSelected && "text-sidebar-foreground/40",
+          )}
+        >
+          <Settings className="h-3.5 w-3.5" />
+        </div>
+      )}
     </button>
   );
 }

@@ -67,9 +67,10 @@ export class Configurator {
       } catch (err) {
         lastError = err as Error;
         if (attempt < retries) {
-          const target = sensorID !== undefined
-            ? `sensor ${sensorID}`
-            : `device "${device.productName ?? "unknown"}"`;
+          const target =
+            sensorID !== undefined
+              ? `sensor ${sensorID}`
+              : `device "${device.productName ?? "unknown"}"`;
           console.warn(
             `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)} on ${target}`,
           );
@@ -361,7 +362,11 @@ export class Configurator {
       const categoryName = await this.getCategoryName(device, catIdx, sensorID);
       const categoryParameters = [];
 
-      const parameterCount = await this.getParameterCount(device, catIdx, sensorID);
+      const parameterCount = await this.getParameterCount(
+        device,
+        catIdx,
+        sensorID,
+      );
       for (let paramIdx = 0; paramIdx < parameterCount; paramIdx++) {
         const { name, uid } = await this.getParameterNameAndUid(
           device,
