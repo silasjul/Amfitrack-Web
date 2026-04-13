@@ -1,15 +1,24 @@
 "use client";
 
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useFrequency } from "@/hooks/useFrequency";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
 import { type Configuration } from "@/amfitrackWebSDK/Configurator";
 import { getDistortionLevel } from "@/config/distortion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings } from "lucide-react";
+import { FrequencyHoverCard } from "@/components/frequency-breakdown";
+import {
+  Settings,
+  BatteryFull,
+  BatteryMedium,
+  BatteryLow,
+  BatteryWarning,
+} from "lucide-react";
 import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSettingsDialog";
 
 interface Props {
@@ -22,6 +31,7 @@ export default function SidebarUpper({
   onSelectSensor,
 }: Props) {
   const { sensorIds, sensorsDataRef, sensorConfigurations } = useAmfitrack();
+  const { sensors: sensorFrequencies } = useFrequency();
   const [snapshots, setSnapshots] = useState<Map<number, EmfImuFrameIdData>>(
     new Map(),
   );
@@ -86,6 +96,7 @@ export default function SidebarUpper({
                 key={id}
                 label={`SENSOR_${id}`}
                 data={snapshots.get(id)}
+                frequency={sensorFrequencies.get(id)}
                 configuration={sensorConfigurations.get(id)}
                 isSelected={selectedSensorId === id}
                 onSelect={() => onSelectSensor(id)}
@@ -102,9 +113,7 @@ export default function SidebarUpper({
           if (!open) setConfigDialogSensorId(null);
         }}
         deviceName={
-          configDialogSensorId !== null
-            ? `Sensor ${configDialogSensorId}`
-            : ""
+          configDialogSensorId !== null ? `Sensor ${configDialogSensorId}` : ""
         }
         configuration={
           configDialogSensorId !== null
@@ -123,6 +132,7 @@ export default function SidebarUpper({
 function SensorRow({
   label,
   data,
+  frequency,
   configuration,
   isSelected,
   onSelect,
@@ -130,6 +140,7 @@ function SensorRow({
 }: {
   label: string;
   data?: EmfImuFrameIdData;
+  frequency?: DeviceFrequency;
   configuration?: Configuration[];
   isSelected: boolean;
   onSelect: () => void;
@@ -150,17 +161,7 @@ function SensorRow({
     high: "ring-red-500/30",
   }[level];
 
-  const statusColor = {
-    clean: "text-emerald-600/60 dark:text-emerald-400/60",
-    moderate: "text-amber-600/60 dark:text-amber-400/60",
-    high: "text-red-600/60 dark:text-red-400/60",
-  }[level];
-
-  const statusText = {
-    clean: "Clean",
-    moderate: "Moderate",
-    high: "Distorted",
-  }[level];
+  const hz = frequency?.totalHz ?? 0;
 
   return (
     <button
@@ -194,17 +195,28 @@ function SensorRow({
             {label}
           </span>
         </div>
-        {data && (
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[10px] font-mono tabular-nums text-sidebar-foreground/35">
-              {data.temperature.toFixed(1)}°C
-            </span>
-            <span className="text-[10px] text-sidebar-foreground/15">·</span>
-            <span className={cn("text-[10px] font-medium", statusColor)}>
-              {statusText}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 mt-0.5 h-4">
+          {data ? (
+            <>
+              <FrequencyHoverCard frequency={frequency}>
+                <span
+                  className={cn(
+                    "text-[10px] font-mono tabular-nums cursor-default leading-4",
+                    hz > 0 ? "text-sidebar-foreground/35" : "text-red-400/60",
+                  )}
+                >
+                  {hz.toFixed(0)}Hz
+                </span>
+              </FrequencyHoverCard>
+              <BatteryIndicator level={data.sensorStatus.batteryLevel} />
+            </>
+          ) : (
+            <>
+              <Skeleton className="h-2.5 w-8 rounded-sm bg-sidebar-foreground/10" />
+              <Skeleton className="h-2.5 w-10 rounded-sm bg-sidebar-foreground/10" />
+            </>
+          )}
+        </div>
       </div>
 
       <div
@@ -229,6 +241,30 @@ function SensorRow({
         <Settings className="h-3.5 w-3.5" />
       </div>
     </button>
+  );
+}
+
+const BATTERY_ICONS = {
+  Full: BatteryFull,
+  OK: BatteryMedium,
+  Low: BatteryLow,
+  Critical: BatteryWarning,
+};
+
+function BatteryIndicator({
+  level,
+}: {
+  level: "Full" | "OK" | "Low" | "Critical";
+}) {
+  const Icon = BATTERY_ICONS[level] ?? BATTERY_ICONS.OK;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 text-sidebar-foreground/35",
+      )}
+    >
+      <Icon className="h-4 w-4" />
+    </span>
   );
 }
 

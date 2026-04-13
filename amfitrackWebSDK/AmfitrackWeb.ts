@@ -15,6 +15,11 @@ import {
 import HIDManager from "./HIDManager";
 import { Configurator } from "./Configurator";
 
+export type DeviceFrequency = {
+  totalHz: number;
+  byPayloadType: Partial<Record<PayloadType, number>>;
+};
+
 export interface AmfitrackEvents {
   hubConnection: (connected: boolean) => void;
   sourceConnection: (connected: boolean) => void;
@@ -28,6 +33,7 @@ export interface AmfitrackEvents {
     header: PacketHeader,
     payload: SourceCalibrationData,
   ) => void;
+  messageFrequency: (data: Map<number, DeviceFrequency>) => void;
 }
 
 class AmfitrackWeb {
@@ -39,6 +45,10 @@ class AmfitrackWeb {
   private configurator = new Configurator(this.hidManager);
   private emitter = createNanoEvents<AmfitrackEvents>();
   private disconnectHandler: ((e: HIDConnectionEvent) => void) | null = null;
+
+  private packetCounts = new Map<number, Map<PayloadType, number>>();
+  private frequencyInterval: ReturnType<typeof setInterval> | null = null;
+  private lastFrequencyTime = 0;
 
   get hubDevice(): HIDDevice | null {
     return this._hubDevice;
@@ -68,6 +78,7 @@ class AmfitrackWeb {
    */
   destroy(): void {
     this.stopReading();
+    this.stopFrequencyTracking();
     this.removeDisconnectHandler();
   }
 
@@ -219,6 +230,7 @@ class AmfitrackWeb {
       });
       this._isReading = true;
       this.emitter.emit("reading", true);
+      this.startFrequencyTracking();
     } catch (error) {
       console.error(
         "Failed to open device — it may already be in use by another tab or application:",
@@ -231,6 +243,52 @@ class AmfitrackWeb {
     this.hidManager.stopReadingAll();
     this._isReading = false;
     this.emitter.emit("reading", false);
+    this.stopFrequencyTracking();
+  }
+
+  private startFrequencyTracking(): void {
+    this.stopFrequencyTracking();
+    this.lastFrequencyTime = performance.now();
+    this.packetCounts.clear();
+
+    this.frequencyInterval = setInterval(() => {
+      const now = performance.now();
+      const elapsedSec = (now - this.lastFrequencyTime) / 1000;
+      if (elapsedSec <= 0) return;
+
+      const result = new Map<number, DeviceFrequency>();
+      for (const [txId, typeCounts] of this.packetCounts) {
+        let total = 0;
+        const byType: Partial<Record<PayloadType, number>> = {};
+        for (const [pType, count] of typeCounts) {
+          const hz = count / elapsedSec;
+          byType[pType] = hz;
+          total += hz;
+        }
+        result.set(txId, { totalHz: total, byPayloadType: byType });
+      }
+
+      this.emitter.emit("messageFrequency", result);
+      this.packetCounts.clear();
+      this.lastFrequencyTime = now;
+    }, 200);
+  }
+
+  private stopFrequencyTracking(): void {
+    if (this.frequencyInterval !== null) {
+      clearInterval(this.frequencyInterval);
+      this.frequencyInterval = null;
+    }
+    this.packetCounts.clear();
+  }
+
+  private trackPacket(sourceTxId: number, payloadType: PayloadType): void {
+    let typeCounts = this.packetCounts.get(sourceTxId);
+    if (!typeCounts) {
+      typeCounts = new Map();
+      this.packetCounts.set(sourceTxId, typeCounts);
+    }
+    typeCounts.set(payloadType, (typeCounts.get(payloadType) ?? 0) + 1);
   }
 
   private processData(bytes: Uint8Array): void {
@@ -239,6 +297,8 @@ class AmfitrackWeb {
     const { value: payloadType } = packetDecoder.getPayloadType();
     const header = packetDecoder.getDecodedHeader();
     const payload = packetDecoder.getDecodedPayload();
+
+    this.trackPacket(header.sourceTxId, payloadType);
 
     switch (payloadType) {
       case PayloadType.EMF_IMU_FRAME_ID:

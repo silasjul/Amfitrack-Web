@@ -10,6 +10,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
+import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
 import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 import { Configuration } from "@/amfitrackWebSDK/Configurator";
 
@@ -23,6 +24,7 @@ interface AmfitrackContextValue {
   sourceConnected: boolean;
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
+  messageFrequencyRef: React.RefObject<Map<number, DeviceFrequency>>;
   hubConfiguration: Configuration[];
   sourceConfiguration: Configuration[];
   sensorConfigurations: Map<number, Configuration[]>;
@@ -61,6 +63,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
+  const messageFrequencyRef = useRef<Map<number, DeviceFrequency>>(new Map());
 
   /**
    * Subscribe to SDK events and manage lifecycle
@@ -94,6 +97,10 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       }
     });
     const unbindReading = sdk.on("reading", setIsReading);
+
+    const unbindFrequency = sdk.on("messageFrequency", (data) => {
+      messageFrequencyRef.current = data;
+    });
 
     const unbindEmf = sdk.on("emfImuFrameId", (header, data) => {
       const id = header.sourceTxId;
@@ -144,6 +151,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       unbindHub();
       unbindSource();
       unbindReading();
+      unbindFrequency();
       unbindEmf();
       sdk.destroy();
     };
@@ -240,6 +248,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sourceConnected,
     sensorIds,
     sensorsDataRef,
+    messageFrequencyRef,
     hubConfiguration,
     sourceConfiguration,
     sensorConfigurations,

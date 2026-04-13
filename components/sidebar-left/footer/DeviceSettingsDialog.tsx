@@ -32,7 +32,13 @@ export default function DeviceSettingsDialog({
   const { updateConfiguration } = useConfigurations();
 
   const handleValueChange = useCallback(
-    (categoryName: string, uid: number, parameterName: string, currentValue: number | boolean | string, newValue: number | boolean | string) => {
+    (
+      categoryName: string,
+      uid: number,
+      parameterName: string,
+      currentValue: number | boolean | string,
+      newValue: number | boolean | string,
+    ) => {
       updateConfiguration({
         deviceName,
         uid,
@@ -87,8 +93,19 @@ export default function DeviceSettingsDialog({
                         key={param.name + idx}
                         param={param}
                         deviceName={deviceName}
-                        onValueChange={(uid, parameterName, currentValue, newValue) =>
-                          handleValueChange(category.name, uid, parameterName, currentValue, newValue)
+                        onValueChange={(
+                          uid,
+                          parameterName,
+                          currentValue,
+                          newValue,
+                        ) =>
+                          handleValueChange(
+                            category.name,
+                            uid,
+                            parameterName,
+                            currentValue,
+                            newValue,
+                          )
                         }
                       />
                     ))}

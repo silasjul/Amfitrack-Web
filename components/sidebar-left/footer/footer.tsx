@@ -1,9 +1,7 @@
 "use client";
 
 import { useAmfitrack } from "@/hooks/useAmfitrack";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { useFrequency } from "@/hooks/useFrequency";
 import DeviceCard from "./DeviceCard";
 
 export default function Footer() {
@@ -16,6 +14,8 @@ export default function Footer() {
     requestConnectionSource,
   } = useAmfitrack();
 
+  const { hub, source } = useFrequency();
+
   return (
     <div>
       <div className="flex flex-col gap-1.5 px-1 pb-1">
@@ -24,6 +24,7 @@ export default function Footer() {
           image="/hub.png"
           connected={hubConnected}
           configuration={hubConfiguration}
+          frequency={hub}
           onConnect={requestConnectionHub}
         />
         <DeviceCard
@@ -31,6 +32,7 @@ export default function Footer() {
           image="/source.png"
           connected={sourceConnected}
           configuration={sourceConfiguration}
+          frequency={source}
           onConnect={requestConnectionSource}
         />
       </div>

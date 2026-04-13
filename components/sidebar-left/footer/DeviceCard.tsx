@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Configuration } from "@/amfitrackWebSDK/Configurator";
-import { Unplug, Plus, Settings } from "lucide-react";
+import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
+import { Unplug, Plus, Settings, Gauge } from "lucide-react";
+import { FrequencyHoverCard } from "@/components/frequency-breakdown";
 import Image from "next/image";
 import DeviceSettingsDialog from "./DeviceSettingsDialog";
 
@@ -10,6 +12,7 @@ interface DeviceCardProps {
   image: string;
   connected: boolean;
   configuration: Configuration[];
+  frequency?: DeviceFrequency | null;
   onConnect: () => void;
 }
 
@@ -18,6 +21,7 @@ export default function DeviceCard({
   image,
   connected,
   configuration,
+  frequency,
   onConnect,
 }: DeviceCardProps) {
   const [hovered, setHovered] = useState(false);
@@ -76,16 +80,30 @@ export default function DeviceCard({
 
         {/* Info */}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span
-            className={cn(
-              "text-sm font-medium transition-colors duration-200",
-              connected
-                ? "text-sidebar-foreground"
-                : "text-sidebar-foreground/60",
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "text-sm font-medium transition-colors duration-200",
+                connected
+                  ? "text-sidebar-foreground"
+                  : "text-sidebar-foreground/60",
+              )}
+            >
+              {name}
+            </span>
+            {connected && (
+              <FrequencyHoverCard frequency={frequency ?? undefined} side="top">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center text-sidebar-foreground/25 hover:text-sidebar-foreground/50 transition-colors cursor-default"
+                >
+                  <Gauge className="h-3 w-3" />
+                </span>
+              </FrequencyHoverCard>
             )}
-          >
-            {name}
-          </span>
+          </div>
           {connected ? (
             <span className="flex items-center gap-1.5 text-xs text-sidebar-primary">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-sidebar-primary opacity-80" />
