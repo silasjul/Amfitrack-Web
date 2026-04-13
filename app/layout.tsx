@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/sidebar-left/sidebar";
 import Providers from "./providers";
+import PendingChangesBar from "@/components/PendingChangesBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
       <body className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased">
         <Providers>
           <Sidebar>{children}</Sidebar>
+          <PendingChangesBar />
         </Providers>
       </body>
     </html>

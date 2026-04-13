@@ -55,9 +55,7 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
   }, []);
 
   useEffect(() => {
-    if (configurations.length > 0) {
-      console.log("[Configurations] pending changes:", configurations);
-    }
+    console.log("[Configurations] pending changes:", configurations);
   }, [configurations]);
 
   return { configurations, updateConfiguration, clearConfigurations };

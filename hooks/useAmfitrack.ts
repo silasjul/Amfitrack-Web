@@ -18,7 +18,6 @@ const SENSOR_TIMEOUT_MS = 3000;
 const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
 interface AmfitrackContextValue {
-  amfitrackWebRef: React.RefObject<AmfitrackWeb>;
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
@@ -29,6 +28,9 @@ interface AmfitrackContextValue {
   sensorConfigurations: Map<number, Configuration[]>;
   requestConnectionHub: () => Promise<void>;
   requestConnectionSource: () => Promise<void>;
+  setHubParameterValue: (uid: number, value: number | boolean | string) => Promise<boolean>;
+  setSourceParameterValue: (uid: number, value: number | boolean | string) => Promise<boolean>;
+  setSensorParameterValue: (sensorID: number, uid: number, value: number | boolean | string) => Promise<boolean>;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -214,8 +216,25 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     }
   }, []);
 
+  const setHubParameterValue = useCallback(
+    (uid: number, value: number | boolean | string) =>
+      amfitrackWebRef.current.setHubParameterValue(uid, value),
+    [],
+  );
+
+  const setSourceParameterValue = useCallback(
+    (uid: number, value: number | boolean | string) =>
+      amfitrackWebRef.current.setSourceParameterValue(uid, value),
+    [],
+  );
+
+  const setSensorParameterValue = useCallback(
+    (sensorID: number, uid: number, value: number | boolean | string) =>
+      amfitrackWebRef.current.setSensorParameterValue(sensorID, uid, value),
+    [],
+  );
+
   return {
-    amfitrackWebRef,
     isReading,
     hubConnected,
     sourceConnected,
@@ -226,5 +245,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sensorConfigurations,
     requestConnectionHub,
     requestConnectionSource,
+    setHubParameterValue,
+    setSourceParameterValue,
+    setSensorParameterValue,
   };
 }
