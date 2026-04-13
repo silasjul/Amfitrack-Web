@@ -25,6 +25,7 @@ interface AmfitrackContextValue {
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   hubConfiguration: Configuration[];
   sourceConfiguration: Configuration[];
+  sensorConfigurations: Map<number, Configuration[]>;
   requestConnectionHub: () => Promise<void>;
   requestConnectionSource: () => Promise<void>;
 }
@@ -51,6 +52,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [sourceConfiguration, setSourceConfiguration] = useState<
     Configuration[]
   >([]);
+  const [sensorConfigurations, setSensorConfigurations] = useState<
+    Map<number, Configuration[]>
+  >(new Map());
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
@@ -165,6 +169,32 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   }, []);
 
   /**
+   * Fetch sensor configurations
+   */
+  useEffect(() => {
+    if (!hubConnected || sensorIds.length === 0) return;
+
+    const fetchConfigs = async () => {
+      for (const id of sensorIds) {
+        try {
+          const configs =
+            await amfitrackWebRef.current.getSensorConfiguration(id);
+          console.log("sensor configuration", id, configs);
+          setSensorConfigurations((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(id, configs ?? []);
+            return newMap;
+          });
+        } catch (err) {
+          console.error("Failed to get sensor config for", id, err);
+        }
+      }
+    };
+
+    fetchConfigs();
+  }, [hubConnected, sensorIds]);
+
+  /**
    * Methods
    */
   const requestConnectionHub = useCallback(async () => {
@@ -191,6 +221,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sensorsDataRef,
     hubConfiguration,
     sourceConfiguration,
+    sensorConfigurations,
     requestConnectionHub,
     requestConnectionSource,
   };

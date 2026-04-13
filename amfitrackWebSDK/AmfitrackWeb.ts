@@ -80,6 +80,7 @@ class AmfitrackWeb {
       PRODUCT_ID_SENSOR,
       (d) => {
         this._hubDevice = d;
+        this.configurator.hubDevice = d;
       },
     );
     if (device) {
@@ -115,8 +116,9 @@ class AmfitrackWeb {
     );
   }
 
-  async getSensorConfiguration() {
-    // missing
+  async getSensorConfiguration(sensorID: number) {
+    if (!this._hubDevice) return null;
+    return await this.configurator.getConfigurationSensor(sensorID);
   }
 
   /**
@@ -126,6 +128,7 @@ class AmfitrackWeb {
     const hub = await this.hidManager.getDevice(VENDOR_ID, PRODUCT_ID_SENSOR);
     if (hub) {
       this._hubDevice = hub;
+      this.configurator.hubDevice = hub;
       this.emitter.emit("hubConnection", true);
       await this.startReading();
     }
@@ -148,6 +151,7 @@ class AmfitrackWeb {
         this._hubDevice === device
       ) {
         this._hubDevice = null;
+        this.configurator.hubDevice = null;
         this.stopReading();
         this.emitter.emit("hubConnection", false);
       }

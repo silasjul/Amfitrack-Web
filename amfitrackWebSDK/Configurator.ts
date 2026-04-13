@@ -19,9 +19,14 @@ export class Configurator {
   private hidManager: HIDManager;
   private packetBuilder = new PacketBuilder();
   private configValueDecoder = new ReplyConfigurationValueUidPayload();
+  private _hubDevice: HIDDevice | null = null;
 
   constructor(hidManager: HIDManager) {
     this.hidManager = hidManager;
+  }
+
+  set hubDevice(device: HIDDevice | null) {
+    this._hubDevice = device;
   }
 
   /**
@@ -45,6 +50,7 @@ export class Configurator {
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     validate?: (payload: Uint8Array) => boolean,
+    sensorID?: number,
   ): Promise<Uint8Array> {
     let lastError: Error | undefined;
 
@@ -56,12 +62,16 @@ export class Configurator {
           expectedReplyId,
           timeoutMs,
           validate,
+          sensorID,
         );
       } catch (err) {
         lastError = err as Error;
         if (attempt < retries) {
+          const target = sensorID !== undefined
+            ? `sensor ${sensorID}`
+            : `device "${device.productName ?? "unknown"}"`;
           console.warn(
-            `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)}`,
+            `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)} on ${target}`,
           );
         }
       }
@@ -76,8 +86,9 @@ export class Configurator {
     expectedReplyId: CommonPayloadId,
     timeoutMs: number,
     validate?: (payload: Uint8Array) => boolean,
+    sensorID?: number,
   ): Promise<Uint8Array> {
-    const packet = this.packetBuilder.build(payloadBytes);
+    const packet = this.packetBuilder.build(payloadBytes, sensorID);
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -98,6 +109,8 @@ export class Configurator {
         // Incoming layout: [length_prefix, header(6), hdr_crc, payload..., payload_crc, padding]
         const payloadType = bytes[4];
         if (payloadType !== AmfiprotPayloadType.COMMON) return;
+        const sourceTxId = bytes[5];
+        if (sensorID !== undefined && sourceTxId !== sensorID) return;
         const replyId = bytes[8];
         if (replyId !== expectedReplyId) return;
 
@@ -148,7 +161,10 @@ export class Configurator {
    *
    * Reply payload: [0x1B, category_count]
    */
-  private async getCategoryCount(device: HIDDevice): Promise<number> {
+  private async getCategoryCount(
+    device: HIDDevice,
+    sensorID?: number,
+  ): Promise<number> {
     const { bytes } = this.buildRequest(
       CommonPayloadId.REQUEST_CATEGORY_COUNT,
       1,
@@ -157,6 +173,10 @@ export class Configurator {
       device,
       bytes,
       CommonPayloadId.REPLY_CATEGORY_COUNT,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      undefined,
+      sensorID,
     );
     return this.view(reply).getUint8(1);
   }
@@ -170,6 +190,7 @@ export class Configurator {
   private async getCategoryName(
     device: HIDDevice,
     index: number,
+    sensorID?: number,
   ): Promise<string> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_CATEGORY,
@@ -183,6 +204,7 @@ export class Configurator {
       DEFAULT_TIMEOUT_MS,
       DEFAULT_RETRIES,
       (payload) => payload[1] === index,
+      sensorID,
     );
     return this.decodeString(reply, 2);
   }
@@ -196,6 +218,7 @@ export class Configurator {
   private async getParameterCount(
     device: HIDDevice,
     categoryIndex: number,
+    sensorID?: number,
   ): Promise<number> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_VALUE_COUNT,
@@ -209,6 +232,7 @@ export class Configurator {
       DEFAULT_TIMEOUT_MS,
       DEFAULT_RETRIES,
       (payload) => payload[1] === categoryIndex,
+      sensorID,
     );
     return this.view(reply).getUint16(2, LE);
   }
@@ -223,6 +247,7 @@ export class Configurator {
     device: HIDDevice,
     categoryIndex: number,
     parameterIndex: number,
+    sensorID?: number,
   ): Promise<{ name: string; uid: number }> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_NAME_AND_UID,
@@ -246,6 +271,7 @@ export class Configurator {
           v.getUint16(1, LE) === parameterIndex && payload[3] === categoryIndex
         );
       },
+      sensorID,
     );
     const rv = this.view(reply);
     return {
@@ -263,6 +289,7 @@ export class Configurator {
   private async getParameterValue(
     device: HIDDevice,
     uid: number,
+    sensorID?: number,
   ): Promise<number | boolean | string> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_VALUE_UID,
@@ -283,6 +310,7 @@ export class Configurator {
         );
         return v.getUint32(1, LE) === uid;
       },
+      sensorID,
     );
     return this.configValueDecoder.getDecoded(reply).value;
   }
@@ -316,7 +344,37 @@ export class Configurator {
     return config;
   }
 
-  public async getConfigurationSensor(sensorID: number): Promise<Configuration[]> {
-    // TODO
+  public async getConfigurationSensor(
+    sensorID: number,
+  ): Promise<Configuration[]> {
+    if (!this._hubDevice) {
+      throw new Error("Hub device is not connected");
+    }
+    const device = this._hubDevice;
+    await this.hidManager.openDevice(device);
+
+    const config: Configuration[] = [];
+
+    const categoryCount = await this.getCategoryCount(device, sensorID);
+
+    for (let catIdx = 0; catIdx < categoryCount; catIdx++) {
+      const categoryName = await this.getCategoryName(device, catIdx, sensorID);
+      const categoryParameters = [];
+
+      const parameterCount = await this.getParameterCount(device, catIdx, sensorID);
+      for (let paramIdx = 0; paramIdx < parameterCount; paramIdx++) {
+        const { name, uid } = await this.getParameterNameAndUid(
+          device,
+          catIdx,
+          paramIdx,
+          sensorID,
+        );
+        const value = await this.getParameterValue(device, uid, sensorID);
+        categoryParameters.push({ name, uid, value });
+      }
+      config.push({ name: categoryName, parameters: categoryParameters });
+    }
+
+    return config;
   }
 }

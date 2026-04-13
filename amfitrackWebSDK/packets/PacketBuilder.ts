@@ -47,10 +47,10 @@ export class PacketBuilder {
 
   public build(
     payloadBytes: Uint8Array,
+    destinationId = DESTINATION_BROADCAST,
     payloadType = AmfiprotPayloadType.COMMON,
     packetType = PacketType.NO_ACK,
     sourceId = SOURCE_PC,
-    destinationId = DESTINATION_BROADCAST,
   ): Uint8Array {
     const header = new Uint8Array([
       payloadBytes.length,

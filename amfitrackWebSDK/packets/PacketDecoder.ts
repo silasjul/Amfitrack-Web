@@ -90,7 +90,7 @@ export type PayloadDataMap = {
 
 const decoderMap: Record<PayloadType, IPayloadDecoder<DecodedPayload>> = {
   [PayloadType.NOT_IMPLEMENTED]: new CommonPayload(), // TODO
-  [PayloadType.COMMON]: new CommonPayload(),
+  [PayloadType.COMMON]: new CommonPayload(), // TODO
   [PayloadType.SOURCE_MEASUREMENT]: new SourceMeasurementPayload(),
   [PayloadType.SOURCE_CALIBRATION]: new SourceCalibrationPayload(),
   [PayloadType.EMF_IMU_FRAME_ID]: new EmfImuFrameIdPayload(),
