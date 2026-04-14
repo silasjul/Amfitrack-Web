@@ -14,12 +14,7 @@ export const PENDING_BAR_ATTR = "data-pending-changes-bar";
 export default function PendingChangesBar() {
   const { configurations, removeConfiguration, clearConfigurations } =
     useConfigurations();
-  const {
-    setHubParameterValue,
-    setSourceParameterValue,
-    setSensorParameterValue,
-    updateParameterValue,
-  } = useAmfitrack();
+  const { amfitrackWebRef, updateParameterValue } = useAmfitrack();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -35,19 +30,20 @@ export default function PendingChangesBar() {
           const name = config.deviceName;
           let confirmedValue: number | boolean | string;
 
+          const sdk = amfitrackWebRef.current;
           if (name === "Hub") {
-            confirmedValue = await setHubParameterValue(
+            confirmedValue = await sdk.setHubParameterValue(
               config.uid,
               config.valueToPush,
             );
           } else if (name === "Source") {
-            confirmedValue = await setSourceParameterValue(
+            confirmedValue = await sdk.setSourceParameterValue(
               config.uid,
               config.valueToPush,
             );
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
-            confirmedValue = await setSensorParameterValue(
+            confirmedValue = await sdk.setSensorParameterValue(
               sensorID,
               config.uid,
               config.valueToPush,
@@ -77,14 +73,7 @@ export default function PendingChangesBar() {
 
       setSaving(false);
     },
-    [
-      configurations,
-      setHubParameterValue,
-      setSourceParameterValue,
-      setSensorParameterValue,
-      updateParameterValue,
-      removeConfiguration,
-    ],
+    [configurations, amfitrackWebRef, updateParameterValue, removeConfiguration],
   );
 
   useEffect(() => {

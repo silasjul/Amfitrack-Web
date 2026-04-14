@@ -118,11 +118,30 @@ export default function SidebarLower({ selectedSensorId }: Props) {
 
               <Section title="Device">
                 <div className="grid grid-cols-2 gap-1.5">
-                  <ValueCell label="Battery" value={data.sensorStatus.batteryLevel} />
-                  <ValueCell label="Charging" value={data.sensorStatus.batteryCharging ? "Yes" : "No"} />
-                  <ValueCell label="Source" value={data.sensorStatus.sourceConnected ? "Connected" : "Disconnected"} />
-                  <ValueCell label="B-Field" value={data.sensorStatus.bFieldStatus} />
-                  <ValueCell label="Sync" value={data.sensorStatus.sync ? "Yes" : "No"} />
+                  <ValueCell
+                    label="Battery"
+                    value={data.sensorStatus.batteryLevel}
+                  />
+                  <ValueCell
+                    label="Charging"
+                    value={data.sensorStatus.batteryCharging ? "Yes" : "No"}
+                  />
+                  <ValueCell
+                    label="Source"
+                    value={
+                      data.sensorStatus.sourceConnected
+                        ? "Connected"
+                        : "Disconnected"
+                    }
+                  />
+                  <ValueCell
+                    label="B-Field"
+                    value={data.sensorStatus.bFieldStatus}
+                  />
+                  <ValueCell
+                    label="Sync"
+                    value={data.sensorStatus.sync ? "Yes" : "No"}
+                  />
                   <ValueCell label="Coil" value={String(data.sourceCoilId)} />
                   <ValueCell label="Calc ID" value={String(data.calcId)} />
                   <ValueCell label="Source State" value={data.sensorState} />

@@ -11,7 +11,10 @@ import {
 import * as THREE from "three";
 import { toast } from "sonner";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
-import { type DeviceFrequency, DeviceError } from "@/amfitrackWebSDK/AmfitrackWeb";
+import {
+  type DeviceFrequency,
+  DeviceError,
+} from "@/amfitrackWebSDK/AmfitrackWeb";
 import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
@@ -28,24 +31,12 @@ interface AmfitrackContextValue {
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   messageFrequencyRef: React.RefObject<Map<number, DeviceFrequency>>;
+  amfitrackWebRef: React.RefObject<AmfitrackWeb>;
   hubConfiguration: Configuration[];
   sourceConfiguration: Configuration[];
   sensorConfigurations: Map<number, Configuration[]>;
   requestConnectionHub: () => Promise<void>;
   requestConnectionSource: () => Promise<void>;
-  setHubParameterValue: (
-    uid: number,
-    value: number | boolean | string,
-  ) => Promise<number | boolean | string>;
-  setSourceParameterValue: (
-    uid: number,
-    value: number | boolean | string,
-  ) => Promise<number | boolean | string>;
-  setSensorParameterValue: (
-    sensorID: number,
-    uid: number,
-    value: number | boolean | string,
-  ) => Promise<number | boolean | string>;
   updateParameterValue: (
     deviceName: string,
     uid: number,
@@ -79,8 +70,12 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     Map<number, Configuration[]>
   >(new Map());
 
-  const hubTxId = hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null;
-  const sourceTxId = sourceConfiguration.length > 0 ? extractDeviceId(sourceConfiguration) : null;
+  const hubTxId =
+    hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null;
+  const sourceTxId =
+    sourceConfiguration.length > 0
+      ? extractDeviceId(sourceConfiguration)
+      : null;
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
@@ -241,7 +236,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
     fetchConfigs();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [hubConnected, sensorIds]);
 
   /**
@@ -270,24 +267,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       }
     }
   }, []);
-
-  const setHubParameterValue = useCallback(
-    (uid: number, value: number | boolean | string) =>
-      amfitrackWebRef.current.setHubParameterValue(uid, value),
-    [],
-  );
-
-  const setSourceParameterValue = useCallback(
-    (uid: number, value: number | boolean | string) =>
-      amfitrackWebRef.current.setSourceParameterValue(uid, value),
-    [],
-  );
-
-  const setSensorParameterValue = useCallback(
-    (sensorID: number, uid: number, value: number | boolean | string) =>
-      amfitrackWebRef.current.setSensorParameterValue(sensorID, uid, value),
-    [],
-  );
 
   const updateParameterValue = useCallback(
     (deviceName: string, uid: number, value: number | boolean | string) => {
@@ -325,14 +304,12 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sensorIds,
     sensorsDataRef,
     messageFrequencyRef,
+    amfitrackWebRef,
     hubConfiguration,
     sourceConfiguration,
     sensorConfigurations,
     requestConnectionHub,
     requestConnectionSource,
-    setHubParameterValue,
-    setSourceParameterValue,
-    setSensorParameterValue,
     updateParameterValue,
   };
 }
