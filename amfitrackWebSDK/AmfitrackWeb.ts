@@ -172,7 +172,7 @@ class AmfitrackWeb {
   async setHubParameterValue(
     uid: number,
     value: number | boolean | string,
-  ): Promise<boolean> {
+  ): Promise<number | boolean | string> {
     if (!this._hubDevice) throw new Error("Hub device is not connected");
     return await this.configurator.setParameterValue(
       this._hubDevice,
@@ -184,7 +184,7 @@ class AmfitrackWeb {
   async setSourceParameterValue(
     uid: number,
     value: number | boolean | string,
-  ): Promise<boolean> {
+  ): Promise<number | boolean | string> {
     if (!this._sourceDevice) throw new Error("Source device is not connected");
     return await this.configurator.setParameterValue(
       this._sourceDevice,
@@ -197,7 +197,7 @@ class AmfitrackWeb {
     sensorID: number,
     uid: number,
     value: number | boolean | string,
-  ): Promise<boolean> {
+  ): Promise<number | boolean | string> {
     if (!this._hubDevice) throw new Error("Hub device is not connected");
     return await this.configurator.setParameterValue(
       this._hubDevice,

@@ -1,55 +1,102 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { useConfigurations } from "@/hooks/useConfigurations";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 export const PENDING_BAR_ATTR = "data-pending-changes-bar";
 
 export default function PendingChangesBar() {
-  const { configurations, clearConfigurations } = useConfigurations();
+  const { configurations, removeConfiguration, clearConfigurations } =
+    useConfigurations();
   const {
     setHubParameterValue,
     setSourceParameterValue,
     setSensorParameterValue,
+    updateParameterValue,
   } = useAmfitrack();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  const count = configurations.length;
-  if (count === 0 || !mounted) return null;
-
-  async function handleSave() {
+  const handleSave = useCallback(async function handleSave() {
     setSaving(true);
-    try {
-      for (const config of configurations) {
+    let failed = 0;
+
+    for (const config of configurations) {
+      try {
         const name = config.deviceName;
+        let confirmedValue: number | boolean | string;
+
         if (name === "Hub") {
-          await setHubParameterValue(config.uid, config.valueToPush);
+          confirmedValue = await setHubParameterValue(
+            config.uid,
+            config.valueToPush,
+          );
         } else if (name === "Source") {
-          await setSourceParameterValue(config.uid, config.valueToPush);
+          confirmedValue = await setSourceParameterValue(
+            config.uid,
+            config.valueToPush,
+          );
         } else if (name.startsWith("Sensor ")) {
           const sensorID = parseInt(name.replace("Sensor ", ""), 10);
-          await setSensorParameterValue(
+          confirmedValue = await setSensorParameterValue(
             sensorID,
             config.uid,
             config.valueToPush,
           );
+        } else {
+          continue;
         }
+
+        updateParameterValue(config.deviceName, config.uid, confirmedValue);
+        removeConfiguration(config.deviceName, config.uid);
+      } catch (error) {
+        console.error(
+          `Failed to save ${config.parameterName} on ${config.deviceName}:`,
+          error,
+        );
+        failed++;
       }
-      clearConfigurations();
-    } catch (error) {
-      console.error("Failed to save configurations:", error);
-    } finally {
-      setSaving(false);
     }
-  }
+
+    if (failed === 0) {
+      toast.success("Settings saved successfully");
+    } else {
+      toast.error(`Failed to save ${failed} setting(s)`, {
+        description: "Successfully saved settings have been applied.",
+      });
+    }
+
+    setSaving(false);
+  }, [
+    configurations,
+    setHubParameterValue,
+    setSourceParameterValue,
+    setSensorParameterValue,
+    updateParameterValue,
+    removeConfiguration,
+  ]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Enter" && !saving) {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSave, saving]);
+
+  const count = configurations.length;
+  if (count === 0 || !mounted) return null;
 
   return createPortal(
     <div
@@ -73,10 +120,10 @@ export default function PendingChangesBar() {
             Discard
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
-            {/* {saving && (
+            {saving && (
               <Loader2 data-icon="inline-start" className="animate-spin" />
-            )} */}
-            Save
+            )}
+            {saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>

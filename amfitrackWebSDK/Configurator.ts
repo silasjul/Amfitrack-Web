@@ -416,7 +416,7 @@ export class Configurator {
     uid: number,
     value: number | boolean | string,
     sensorID?: number,
-  ): Promise<boolean> {
+  ): Promise<number | boolean | string> {
     const { dataType } = await this.getParameterValue(device, uid, sensorID);
 
     const encodedValue = this.valueEncoder.encode(value, dataType);
@@ -429,7 +429,7 @@ export class Configurator {
     view.setUint8(5, dataType);
     bytes.set(encodedValue, 6);
 
-    await this.sendCommonPayload(
+    const reply = await this.sendCommonPayload(
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
@@ -446,6 +446,6 @@ export class Configurator {
       sensorID,
     );
 
-    return true;
+    return this.configValueDecoder.getDecoded(reply).value;
   }
 }

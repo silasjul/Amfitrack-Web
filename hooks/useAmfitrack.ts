@@ -36,16 +36,21 @@ interface AmfitrackContextValue {
   setHubParameterValue: (
     uid: number,
     value: number | boolean | string,
-  ) => Promise<boolean>;
+  ) => Promise<number | boolean | string>;
   setSourceParameterValue: (
     uid: number,
     value: number | boolean | string,
-  ) => Promise<boolean>;
+  ) => Promise<number | boolean | string>;
   setSensorParameterValue: (
     sensorID: number,
     uid: number,
     value: number | boolean | string,
-  ) => Promise<boolean>;
+  ) => Promise<number | boolean | string>;
+  updateParameterValue: (
+    deviceName: string,
+    uid: number,
+    value: number | boolean | string,
+  ) => void;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -271,6 +276,33 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     [],
   );
 
+  const updateParameterValue = useCallback(
+    (deviceName: string, uid: number, value: number | boolean | string) => {
+      const patchConfig = (configs: Configuration[]) =>
+        configs.map((cat) => ({
+          ...cat,
+          parameters: cat.parameters.map((p) =>
+            p.uid === uid ? { ...p, value } : p,
+          ),
+        }));
+
+      if (deviceName === "Hub") {
+        setHubConfiguration((prev) => patchConfig(prev));
+      } else if (deviceName === "Source") {
+        setSourceConfiguration((prev) => patchConfig(prev));
+      } else if (deviceName.startsWith("Sensor ")) {
+        const sensorID = parseInt(deviceName.replace("Sensor ", ""), 10);
+        setSensorConfigurations((prev) => {
+          const next = new Map(prev);
+          const existing = next.get(sensorID);
+          if (existing) next.set(sensorID, patchConfig(existing));
+          return next;
+        });
+      }
+    },
+    [],
+  );
+
   return {
     isReading,
     hubConnected,
@@ -288,5 +320,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     setHubParameterValue,
     setSourceParameterValue,
     setSensorParameterValue,
+    updateParameterValue,
   };
 }

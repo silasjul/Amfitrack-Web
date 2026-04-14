@@ -12,6 +12,7 @@ export interface PendingConfiguration {
 interface ConfigurationsContextValue {
   configurations: PendingConfiguration[];
   updateConfiguration: (entry: PendingConfiguration) => void;
+  removeConfiguration: (deviceName: string, uid: number) => void;
   clearConfigurations: () => void;
 }
 
@@ -50,6 +51,12 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     });
   }, []);
 
+  const removeConfiguration = useCallback((deviceName: string, uid: number) => {
+    setConfigurations((prev) =>
+      prev.filter((c) => !(c.deviceName === deviceName && c.uid === uid)),
+    );
+  }, []);
+
   const clearConfigurations = useCallback(() => {
     setConfigurations([]);
   }, []);
@@ -58,5 +65,5 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     console.log("[Configurations] pending changes:", configurations);
   }, [configurations]);
 
-  return { configurations, updateConfiguration, clearConfigurations };
+  return { configurations, updateConfiguration, removeConfiguration, clearConfigurations };
 }
