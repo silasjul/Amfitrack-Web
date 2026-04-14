@@ -25,68 +25,71 @@ export default function PendingChangesBar() {
 
   useEffect(() => setMounted(true), []);
 
-  const handleSave = useCallback(async function handleSave() {
-    setSaving(true);
-    let failed = 0;
+  const handleSave = useCallback(
+    async function handleSave() {
+      setSaving(true);
+      let failed = 0;
 
-    for (const config of configurations) {
-      try {
-        const name = config.deviceName;
-        let confirmedValue: number | boolean | string;
+      for (const config of configurations) {
+        try {
+          const name = config.deviceName;
+          let confirmedValue: number | boolean | string;
 
-        if (name === "Hub") {
-          confirmedValue = await setHubParameterValue(
-            config.uid,
-            config.valueToPush,
+          if (name === "Hub") {
+            confirmedValue = await setHubParameterValue(
+              config.uid,
+              config.valueToPush,
+            );
+          } else if (name === "Source") {
+            confirmedValue = await setSourceParameterValue(
+              config.uid,
+              config.valueToPush,
+            );
+          } else if (name.startsWith("Sensor ")) {
+            const sensorID = parseInt(name.replace("Sensor ", ""), 10);
+            confirmedValue = await setSensorParameterValue(
+              sensorID,
+              config.uid,
+              config.valueToPush,
+            );
+          } else {
+            continue;
+          }
+
+          updateParameterValue(config.deviceName, config.uid, confirmedValue);
+          removeConfiguration(config.deviceName, config.uid);
+        } catch (error) {
+          console.error(
+            `Failed to save ${config.parameterName} on ${config.deviceName}:`,
+            error,
           );
-        } else if (name === "Source") {
-          confirmedValue = await setSourceParameterValue(
-            config.uid,
-            config.valueToPush,
-          );
-        } else if (name.startsWith("Sensor ")) {
-          const sensorID = parseInt(name.replace("Sensor ", ""), 10);
-          confirmedValue = await setSensorParameterValue(
-            sensorID,
-            config.uid,
-            config.valueToPush,
-          );
-        } else {
-          continue;
+          failed++;
         }
-
-        updateParameterValue(config.deviceName, config.uid, confirmedValue);
-        removeConfiguration(config.deviceName, config.uid);
-      } catch (error) {
-        console.error(
-          `Failed to save ${config.parameterName} on ${config.deviceName}:`,
-          error,
-        );
-        failed++;
       }
-    }
 
-    if (failed === 0) {
-      toast.success("Settings saved successfully");
-    } else {
-      toast.error(`Failed to save ${failed} setting(s)`, {
-        description: "Successfully saved settings have been applied.",
-      });
-    }
+      if (failed === 0) {
+        toast.success("Settings saved successfully");
+      } else {
+        toast.error(`Failed to save ${failed} setting(s)`, {
+          description: "Successfully saved settings have been applied.",
+        });
+      }
 
-    setSaving(false);
-  }, [
-    configurations,
-    setHubParameterValue,
-    setSourceParameterValue,
-    setSensorParameterValue,
-    updateParameterValue,
-    removeConfiguration,
-  ]);
+      setSaving(false);
+    },
+    [
+      configurations,
+      setHubParameterValue,
+      setSourceParameterValue,
+      setSensorParameterValue,
+      updateParameterValue,
+      removeConfiguration,
+    ],
+  );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Enter" && !saving) {
+      if (e.key === "Enter" && !saving && configurations.length > 0) {
         e.preventDefault();
         handleSave();
       }

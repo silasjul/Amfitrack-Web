@@ -85,6 +85,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
   const messageFrequencyRef = useRef<Map<number, DeviceFrequency>>(new Map());
+  const configFetchedRef = useRef<Set<number>>(new Set());
 
   /**
    * Subscribe to SDK events and manage lifecycle
@@ -206,16 +207,24 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   }, []);
 
   /**
-   * Fetch sensor configurations
+   * Fetch sensor configurations (only for sensors not yet fetched)
    */
   useEffect(() => {
     if (!hubConnected || sensorIds.length === 0) return;
 
+    const newIds = sensorIds.filter((id) => !configFetchedRef.current.has(id));
+    if (newIds.length === 0) return;
+
+    let cancelled = false;
+
     const fetchConfigs = async () => {
-      for (const id of sensorIds) {
+      for (const id of newIds) {
+        if (cancelled) break;
+        configFetchedRef.current.add(id);
         try {
           const configs =
             await amfitrackWebRef.current.getSensorConfiguration(id);
+          if (cancelled) break;
           console.log("sensor configuration", id, configs);
           setSensorConfigurations((prev) => {
             const newMap = new Map(prev);
@@ -223,12 +232,16 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
             return newMap;
           });
         } catch (err) {
+          configFetchedRef.current.delete(id);
+          if (cancelled) break;
           console.error("Failed to get sensor config for", id, err);
         }
       }
     };
 
     fetchConfigs();
+
+    return () => { cancelled = true; };
   }, [hubConnected, sensorIds]);
 
   /**
