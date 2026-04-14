@@ -30,7 +30,8 @@ export default function SidebarUpper({
   selectedSensorId,
   onSelectSensor,
 }: Props) {
-  const { sensorIds, sensorsDataRef, sensorConfigurations } = useSensor();
+  const { sensorIds, sensorsDataRef, sensorConfigurations, lastSensorIdRemap } =
+    useSensor();
   const { sensors: sensorFrequencies } = useFrequency();
   const [snapshots, setSnapshots] = useState<Map<number, EmfImuFrameIdData>>(
     new Map(),
@@ -61,6 +62,15 @@ export default function SidebarUpper({
     }, 100);
     return () => clearInterval(interval);
   }, [sensorIds, sensorsDataRef]);
+
+  useEffect(() => {
+    if (
+      lastSensorIdRemap &&
+      configDialogSensorId === lastSensorIdRemap.oldId
+    ) {
+      setConfigDialogSensorId(lastSensorIdRemap.newId);
+    }
+  }, [lastSensorIdRemap, configDialogSensorId]);
 
   useEffect(() => {
     if (selectedSensorId === null && sensorIds.length > 0) {

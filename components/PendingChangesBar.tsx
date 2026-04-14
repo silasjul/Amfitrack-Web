@@ -16,7 +16,7 @@ export default function PendingChangesBar() {
   const { configurations, removeConfiguration, clearConfigurations } =
     useConfigurations();
   const { amfitrackWebRef, updateParameterValue } = useAmfitrack();
-  const { updateSensorParameterValue } = useSensor();
+  const { updateSensorParameterValue, remapSensorId } = useSensor();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -47,12 +47,17 @@ export default function PendingChangesBar() {
             updateParameterValue(name, config.uid, confirmedValue);
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
+            const isDeviceIdChange = config.parameterName === "Device ID";
             confirmedValue = await sdk.setSensorParameterValue(
               sensorID,
               config.uid,
               config.valueToPush,
+              isDeviceIdChange,
             );
             updateSensorParameterValue(sensorID, config.uid, confirmedValue);
+            if (isDeviceIdChange) {
+              remapSensorId(sensorID, confirmedValue as number);
+            }
           } else {
             continue;
           }
@@ -77,7 +82,7 @@ export default function PendingChangesBar() {
 
       setSaving(false);
     },
-    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, removeConfiguration],
+    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, remapSensorId, removeConfiguration],
   );
 
   useEffect(() => {

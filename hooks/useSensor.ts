@@ -17,15 +17,22 @@ const POSITION_SCALE = 0.01;
 const SENSOR_TIMEOUT_MS = 3000;
 const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
+export interface SensorIdRemap {
+  oldId: number;
+  newId: number;
+}
+
 export interface SensorContextValue {
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   sensorConfigurations: Map<number, Configuration[]>;
+  lastSensorIdRemap: SensorIdRemap | null;
   updateSensorParameterValue: (
     sensorId: number,
     uid: number,
     value: number | boolean | string,
   ) => void;
+  remapSensorId: (oldId: number, newId: number) => void;
 }
 
 const SensorContext = createContext<SensorContextValue | null>(null);
@@ -48,6 +55,9 @@ export function useSensorProvider(
   const [sensorConfigurations, setSensorConfigurations] = useState<
     Map<number, Configuration[]>
   >(new Map());
+
+  const [lastSensorIdRemap, setLastSensorIdRemap] =
+    useState<SensorIdRemap | null>(null);
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
@@ -104,6 +114,7 @@ export function useSensorProvider(
     };
   }, [amfitrackWebRef]);
 
+  // Cleanup expired sensors
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -123,6 +134,7 @@ export function useSensorProvider(
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch config for new sensors
   useEffect(() => {
     if (!hubConnected || sensorIds.length === 0) return;
 
@@ -182,10 +194,42 @@ export function useSensorProvider(
     [],
   );
 
+  // Used when changing Device ID in sensor configuration
+  const remapSensorId = useCallback((oldId: number, newId: number) => {
+    const oldData = sensorsDataRef.current.get(oldId);
+    if (oldData && !sensorsDataRef.current.has(newId)) {
+      sensorsDataRef.current.set(newId, oldData);
+    }
+    sensorsDataRef.current.delete(oldId);
+
+    sensorLastSeenRef.current.set(newId, Date.now());
+    sensorLastSeenRef.current.delete(oldId);
+
+    if (configFetchedRef.current.has(oldId)) {
+      configFetchedRef.current.delete(oldId);
+      configFetchedRef.current.add(newId);
+    }
+
+    setSensorConfigurations((prev) => {
+      const next = new Map(prev);
+      const configs = next.get(oldId);
+      if (configs) {
+        next.delete(oldId);
+        next.set(newId, configs);
+      }
+      return next;
+    });
+
+    setSensorIds(Array.from(sensorsDataRef.current.keys()));
+    setLastSensorIdRemap({ oldId, newId });
+  }, []);
+
   return {
     sensorIds,
     sensorsDataRef,
     sensorConfigurations,
+    lastSensorIdRemap,
     updateSensorParameterValue,
+    remapSensorId,
   };
 }

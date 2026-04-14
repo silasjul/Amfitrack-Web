@@ -70,6 +70,7 @@ export class Configurator {
     retries = DEFAULT_RETRIES,
     validate?: (payload: Uint8Array) => boolean,
     sensorID?: number,
+    alternateSensorID?: number,
   ): Promise<Uint8Array> {
     let lastError: Error | undefined;
 
@@ -82,6 +83,7 @@ export class Configurator {
           timeoutMs,
           validate,
           sensorID,
+          alternateSensorID,
         );
       } catch (err) {
         lastError = err as Error;
@@ -107,6 +109,7 @@ export class Configurator {
     timeoutMs: number,
     validate?: (payload: Uint8Array) => boolean,
     sensorID?: number,
+    alternateSensorID?: number,
   ): Promise<Uint8Array> {
     const packet = this.packetBuilder.build(payloadBytes, sensorID);
 
@@ -130,7 +133,11 @@ export class Configurator {
         const payloadType = bytes[4];
         if (payloadType !== AmfiprotPayloadType.COMMON) return;
         const sourceTxId = bytes[5];
-        if (sensorID !== undefined && sourceTxId !== sensorID) return;
+        if (
+          sensorID !== undefined &&
+          sourceTxId !== sensorID &&
+          (alternateSensorID === undefined || sourceTxId !== alternateSensorID)
+        ) return;
         const replyId = bytes[8];
         if (replyId !== expectedReplyId) return;
 
@@ -416,6 +423,7 @@ export class Configurator {
     uid: number,
     value: number | boolean | string,
     sensorID?: number,
+    expectSourceIdChange?: boolean,
   ): Promise<number | boolean | string> {
     const { dataType } = await this.getParameterValue(device, uid, sensorID);
 
@@ -428,6 +436,9 @@ export class Configurator {
     view.setUint32(1, uid, LE);
     view.setUint8(5, dataType);
     bytes.set(encodedValue, 6);
+
+    const alternateSensorID =
+      expectSourceIdChange && typeof value === "number" ? value : undefined;
 
     const reply = await this.sendCommonPayload(
       device,
@@ -444,6 +455,7 @@ export class Configurator {
         return v.getUint32(1, LE) === uid;
       },
       sensorID,
+      alternateSensorID,
     );
 
     return this.configValueDecoder.getDecoded(reply).value;

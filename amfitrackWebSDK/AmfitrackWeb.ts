@@ -197,6 +197,7 @@ class AmfitrackWeb {
     sensorID: number,
     uid: number,
     value: number | boolean | string,
+    expectSourceIdChange?: boolean,
   ): Promise<number | boolean | string> {
     if (!this._hubDevice) throw new Error("Hub device is not connected");
     return await this.configurator.setParameterValue(
@@ -204,6 +205,7 @@ class AmfitrackWeb {
       uid,
       value,
       sensorID,
+      expectSourceIdChange,
     );
   }
 
@@ -223,7 +225,8 @@ class AmfitrackWeb {
         this.configurator.hubDevice = null;
         this.emitter.emit("error", {
           title: "Failed to open hub device",
-          description: "Make sure it is not in use by another program or browser tab.",
+          description:
+            "Make sure it is not in use by another program or browser tab.",
         });
       }
     }
@@ -240,7 +243,8 @@ class AmfitrackWeb {
       } catch (error) {
         this.emitter.emit("error", {
           title: "Failed to open source device",
-          description: "Make sure it is not in use by another program or browser tab.",
+          description:
+            "Make sure it is not in use by another program or browser tab.",
         });
       }
     }
