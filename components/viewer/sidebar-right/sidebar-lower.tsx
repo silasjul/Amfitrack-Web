@@ -1,6 +1,6 @@
 "use client";
 
-import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 import { useEffect, useState } from "react";
 import { Radio } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function SidebarLower({ selectedSensorId }: Props) {
-  const { sensorsDataRef } = useAmfitrack();
+  const { sensorsDataRef } = useSensor();
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
 
   useEffect(() => {

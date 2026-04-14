@@ -1,6 +1,6 @@
 "use client";
 
-import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 import { useFrequency } from "@/hooks/useFrequency";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ export default function SidebarUpper({
   selectedSensorId,
   onSelectSensor,
 }: Props) {
-  const { sensorIds, sensorsDataRef, sensorConfigurations } = useAmfitrack();
+  const { sensorIds, sensorsDataRef, sensorConfigurations } = useSensor();
   const { sensors: sensorFrequencies } = useFrequency();
   const [snapshots, setSnapshots] = useState<Map<number, EmfImuFrameIdData>>(
     new Map(),

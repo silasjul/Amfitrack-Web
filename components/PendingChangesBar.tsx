@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useConfigurations } from "@/hooks/useConfigurations";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X } from "lucide-react";
@@ -15,6 +16,7 @@ export default function PendingChangesBar() {
   const { configurations, removeConfiguration, clearConfigurations } =
     useConfigurations();
   const { amfitrackWebRef, updateParameterValue } = useAmfitrack();
+  const { updateSensorParameterValue } = useSensor();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -36,11 +38,13 @@ export default function PendingChangesBar() {
               config.uid,
               config.valueToPush,
             );
+            updateParameterValue(name, config.uid, confirmedValue);
           } else if (name === "Source") {
             confirmedValue = await sdk.setSourceParameterValue(
               config.uid,
               config.valueToPush,
             );
+            updateParameterValue(name, config.uid, confirmedValue);
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
             confirmedValue = await sdk.setSensorParameterValue(
@@ -48,11 +52,11 @@ export default function PendingChangesBar() {
               config.uid,
               config.valueToPush,
             );
+            updateSensorParameterValue(sensorID, config.uid, confirmedValue);
           } else {
             continue;
           }
 
-          updateParameterValue(config.deviceName, config.uid, confirmedValue);
           removeConfiguration(config.deviceName, config.uid);
         } catch (error) {
           console.error(
@@ -73,7 +77,7 @@ export default function PendingChangesBar() {
 
       setSaving(false);
     },
-    [configurations, amfitrackWebRef, updateParameterValue, removeConfiguration],
+    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, removeConfiguration],
   );
 
   useEffect(() => {

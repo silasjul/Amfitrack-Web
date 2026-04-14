@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
 
 export interface FrequencySnapshot {
@@ -11,8 +12,8 @@ export interface FrequencySnapshot {
 }
 
 export function useFrequency(): FrequencySnapshot {
-  const { sensorIds, hubTxId, sourceTxId, messageFrequencyRef } =
-    useAmfitrack();
+  const { hubTxId, sourceTxId, messageFrequencyRef } = useAmfitrack();
+  const { sensorIds } = useSensor();
   const [snapshot, setSnapshot] = useState<FrequencySnapshot>({
     sensors: new Map(),
     hub: null,

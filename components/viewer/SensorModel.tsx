@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
-import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 import { DISTORTION_THRESHOLDS } from "@/config/distortion";
 
 const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
@@ -20,7 +20,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   const lightMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const bodyMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const originalBodyColorRef = useRef<THREE.Color | null>(null);
-  const { sensorsDataRef } = useAmfitrack();
+  const { sensorsDataRef } = useSensor();
   const fbx = useFBX("/models/viewer/sensor.fbx");
   const clone = useMemo(() => fbx.clone(), [fbx]);
 
@@ -98,7 +98,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
 }
 
 export default function SensorModels() {
-  const { sensorIds } = useAmfitrack();
+  const { sensorIds } = useSensor();
 
   return (
     <>

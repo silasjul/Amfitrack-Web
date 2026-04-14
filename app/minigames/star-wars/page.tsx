@@ -12,7 +12,7 @@ import { useControls, folder, button, Leva } from "leva";
 import Lightsaber from "@/components/minigames/starwars/lightsaber/lightsaber";
 import Light from "@/components/minigames/starwars/light";
 import { useEffect, useRef, useState } from "react";
-import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useSensor } from "@/hooks/useSensor";
 
 function SensorSync({
   modelRef,
@@ -23,7 +23,7 @@ function SensorSync({
   metalDistortionRef: React.RefObject<number>;
   centerOffsetRef: React.RefObject<THREE.Vector3>;
 }) {
-  const { sensorsDataRef } = useAmfitrack();
+  const { sensorsDataRef } = useSensor();
 
   useFrame(() => {
     const first = sensorsDataRef.current.values().next().value;
@@ -44,7 +44,7 @@ export default function Home() {
   const modelRef = useRef<THREE.Group>(null);
   const metalDistortionRef = useRef<number>(0);
   const centerOffsetRef = useRef(new THREE.Vector3());
-  const { sensorsDataRef } = useAmfitrack();
+  const { sensorsDataRef } = useSensor();
 
   const resetCenter = () => {
     const first = sensorsDataRef.current.values().next().value;
