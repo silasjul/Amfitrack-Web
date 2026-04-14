@@ -9,10 +9,11 @@ import {
   useState,
 } from "react";
 import * as THREE from "three";
+import { toast } from "sonner";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
-import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
+import { type DeviceFrequency, DeviceError } from "@/amfitrackWebSDK/AmfitrackWeb";
 import { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import { Configuration } from "@/amfitrackWebSDK/Configurator";
+import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
 const POSITION_SCALE = 0.01;
 const SENSOR_TIMEOUT_MS = 3000;
@@ -22,6 +23,8 @@ interface AmfitrackContextValue {
   isReading: boolean;
   hubConnected: boolean;
   sourceConnected: boolean;
+  hubTxId: number | null;
+  sourceTxId: number | null;
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   messageFrequencyRef: React.RefObject<Map<number, DeviceFrequency>>;
@@ -30,9 +33,19 @@ interface AmfitrackContextValue {
   sensorConfigurations: Map<number, Configuration[]>;
   requestConnectionHub: () => Promise<void>;
   requestConnectionSource: () => Promise<void>;
-  setHubParameterValue: (uid: number, value: number | boolean | string) => Promise<boolean>;
-  setSourceParameterValue: (uid: number, value: number | boolean | string) => Promise<boolean>;
-  setSensorParameterValue: (sensorID: number, uid: number, value: number | boolean | string) => Promise<boolean>;
+  setHubParameterValue: (
+    uid: number,
+    value: number | boolean | string,
+  ) => Promise<boolean>;
+  setSourceParameterValue: (
+    uid: number,
+    value: number | boolean | string,
+  ) => Promise<boolean>;
+  setSensorParameterValue: (
+    sensorID: number,
+    uid: number,
+    value: number | boolean | string,
+  ) => Promise<boolean>;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -60,6 +73,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [sensorConfigurations, setSensorConfigurations] = useState<
     Map<number, Configuration[]>
   >(new Map());
+
+  const hubTxId = hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null;
+  const sourceTxId = sourceConfiguration.length > 0 ? extractDeviceId(sourceConfiguration) : null;
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
   const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
@@ -100,6 +116,10 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
 
     const unbindFrequency = sdk.on("messageFrequency", (data) => {
       messageFrequencyRef.current = data;
+    });
+
+    const unbindError = sdk.on("error", ({ title, description }) => {
+      toast.error(title, { description });
     });
 
     const unbindEmf = sdk.on("emfImuFrameId", (header, data) => {
@@ -152,6 +172,7 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
       unbindSource();
       unbindReading();
       unbindFrequency();
+      unbindError();
       unbindEmf();
       sdk.destroy();
     };
@@ -212,7 +233,11 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     try {
       await amfitrackWebRef.current.requestConnectionHub();
     } catch (error) {
-      console.log("Failed to connect hub:", error);
+      if (error instanceof DeviceError) {
+        toast.error(error.title, { description: error.description });
+      } else {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
     }
   }, []);
 
@@ -220,7 +245,11 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     try {
       await amfitrackWebRef.current.requestConnectionSource();
     } catch (error) {
-      console.log("Failed to connect source:", error);
+      if (error instanceof DeviceError) {
+        toast.error(error.title, { description: error.description });
+      } else {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
     }
   }, []);
 
@@ -246,6 +275,8 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     isReading,
     hubConnected,
     sourceConnected,
+    hubTxId,
+    sourceTxId,
     sensorIds,
     sensorsDataRef,
     messageFrequencyRef,

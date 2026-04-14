@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "@/components/sidebar-left/sidebar";
 import Providers from "./providers";
 import PendingChangesBar from "@/components/PendingChangesBar";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,7 @@ export default function RootLayout({
         <Providers>
           <Sidebar>{children}</Sidebar>
           <PendingChangesBar />
+          <Toaster />
         </Providers>
       </body>
     </html>

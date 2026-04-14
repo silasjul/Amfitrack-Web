@@ -13,6 +13,20 @@ export interface Configuration {
   parameters: { name: string; uid: number; value: number | boolean | string }[];
 }
 
+const DEVICE_ID_UID = 1574855615;
+
+export function extractDeviceId(config: Configuration[]): number | null {
+  for (const category of config) {
+    for (const param of category.parameters) {
+      if (param.uid === DEVICE_ID_UID && typeof param.value === "number") {
+        return param.value;
+      }
+    }
+  }
+  console.warn("Device ID not found in configuration");
+  return null;
+}
+
 /**
  * High-level configuration interface for amfiprot devices.
  *
@@ -347,7 +361,6 @@ export class Configurator {
       }
       config.push({ name: categoryName, parameters: categoryParameters });
     }
-
     return config;
   }
 

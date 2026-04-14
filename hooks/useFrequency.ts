@@ -3,12 +3,6 @@
 import { useEffect, useState } from "react";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
 import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
-import { PayloadType } from "@/amfitrackWebSDK/packets/PacketDecoder";
-
-const SOURCE_PAYLOAD_TYPES = new Set([
-  PayloadType.SOURCE_MEASUREMENT,
-  PayloadType.SOURCE_CALIBRATION,
-]);
 
 export interface FrequencySnapshot {
   sensors: Map<number, DeviceFrequency>;
@@ -17,7 +11,8 @@ export interface FrequencySnapshot {
 }
 
 export function useFrequency(): FrequencySnapshot {
-  const { sensorIds, messageFrequencyRef } = useAmfitrack();
+  const { sensorIds, hubTxId, sourceTxId, messageFrequencyRef } =
+    useAmfitrack();
   const [snapshot, setSnapshot] = useState<FrequencySnapshot>({
     sensors: new Map(),
     hub: null,
@@ -34,39 +29,24 @@ export function useFrequency(): FrequencySnapshot {
 
       const sensorIdSet = new Set(sensorIds);
       const sensors = new Map<number, DeviceFrequency>();
-      const hubByType: Partial<Record<PayloadType, number>> = {};
-      const sourceByType: Partial<Record<PayloadType, number>> = {};
-      let hubTotal = 0;
-      let sourceTotal = 0;
+      let hub: DeviceFrequency | null = null;
+      let source: DeviceFrequency | null = null;
 
       for (const [txId, freq] of freqMap) {
-        if (sensorIdSet.has(txId)) {
+        if (txId === hubTxId) {
+          hub = freq;
+        } else if (txId === sourceTxId) {
+          source = freq;
+        } else if (sensorIdSet.has(txId)) {
           sensors.set(txId, freq);
-          continue;
-        }
-
-        for (const [typeKey, hz] of Object.entries(freq.byPayloadType)) {
-          const pType = Number(typeKey) as PayloadType;
-          const val = hz ?? 0;
-          if (SOURCE_PAYLOAD_TYPES.has(pType)) {
-            sourceByType[pType] = (sourceByType[pType] ?? 0) + val;
-            sourceTotal += val;
-          } else {
-            hubByType[pType] = (hubByType[pType] ?? 0) + val;
-            hubTotal += val;
-          }
         }
       }
 
-      setSnapshot({
-        sensors,
-        hub: hubTotal > 0 ? { totalHz: hubTotal, byPayloadType: hubByType } : null,
-        source: sourceTotal > 0 ? { totalHz: sourceTotal, byPayloadType: sourceByType } : null,
-      });
+      setSnapshot({ sensors, hub, source });
     }, 200);
 
     return () => clearInterval(interval);
-  }, [sensorIds, messageFrequencyRef]);
+  }, [sensorIds, hubTxId, sourceTxId, messageFrequencyRef]);
 
   return snapshot;
 }

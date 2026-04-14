@@ -15,6 +15,18 @@ import {
 import HIDManager from "./HIDManager";
 import { Configurator } from "./Configurator";
 
+export class DeviceError extends Error {
+  title: string;
+  description: string;
+
+  constructor(title: string, description: string) {
+    super(`${title}: ${description}`);
+    this.name = "DeviceError";
+    this.title = title;
+    this.description = description;
+  }
+}
+
 export type DeviceFrequency = {
   totalHz: number;
   byPayloadType: Partial<Record<PayloadType, number>>;
@@ -24,6 +36,13 @@ export interface AmfitrackEvents {
   hubConnection: (connected: boolean) => void;
   sourceConnection: (connected: boolean) => void;
   reading: (isReading: boolean) => void;
+  error: ({
+    title,
+    description,
+  }: {
+    title: string;
+    description: string;
+  }) => void;
   emfImuFrameId: (header: PacketHeader, payload: EmfImuFrameIdData) => void;
   sourceMeasurement: (
     header: PacketHeader,
@@ -95,8 +114,17 @@ class AmfitrackWeb {
       },
     );
     if (device) {
-      this.emitter.emit("hubConnection", true);
-      await this.startReading();
+      try {
+        await this.startReading();
+        this.emitter.emit("hubConnection", true);
+      } catch (error) {
+        this._hubDevice = null;
+        this.configurator.hubDevice = null;
+        throw new DeviceError(
+          "Failed to open hub device",
+          "Make sure it is not in use by another program or browser tab.",
+        );
+      }
     }
   }
 
@@ -108,7 +136,16 @@ class AmfitrackWeb {
       },
     );
     if (device) {
-      this.emitter.emit("sourceConnection", true);
+      try {
+        await this.hidManager.openDevice(device);
+        this.emitter.emit("sourceConnection", true);
+      } catch (error) {
+        this._sourceDevice = null;
+        throw new DeviceError(
+          "Failed to open source device",
+          "Make sure it is not in use by another program or browser tab.",
+        );
+      }
     }
   }
 
@@ -178,8 +215,17 @@ class AmfitrackWeb {
     if (hub) {
       this._hubDevice = hub;
       this.configurator.hubDevice = hub;
-      this.emitter.emit("hubConnection", true);
-      await this.startReading();
+      try {
+        await this.startReading();
+        this.emitter.emit("hubConnection", true);
+      } catch (error) {
+        this._hubDevice = null;
+        this.configurator.hubDevice = null;
+        this.emitter.emit("error", {
+          title: "Failed to open hub device",
+          description: "Make sure it is not in use by another program or browser tab.",
+        });
+      }
     }
 
     const source = await this.hidManager.getDevice(
@@ -187,8 +233,16 @@ class AmfitrackWeb {
       PRODUCT_ID_SOURCE,
     );
     if (source) {
-      this._sourceDevice = source;
-      this.emitter.emit("sourceConnection", true);
+      try {
+        await this.hidManager.openDevice(source);
+        this._sourceDevice = source;
+        this.emitter.emit("sourceConnection", true);
+      } catch (error) {
+        this.emitter.emit("error", {
+          title: "Failed to open source device",
+          description: "Make sure it is not in use by another program or browser tab.",
+        });
+      }
     }
   }
 
@@ -224,19 +278,12 @@ class AmfitrackWeb {
 
   private async startReading(): Promise<void> {
     if (!this._hubDevice || this._isReading) return;
-    try {
-      await this.hidManager.startReadingDevice(this._hubDevice, (bytes) => {
-        this.processData(bytes);
-      });
-      this._isReading = true;
-      this.emitter.emit("reading", true);
-      this.startFrequencyTracking();
-    } catch (error) {
-      console.error(
-        "Failed to open device — it may already be in use by another tab or application:",
-        error,
-      );
-    }
+    await this.hidManager.startReadingDevice(this._hubDevice, (bytes) => {
+      this.processData(bytes);
+    });
+    this._isReading = true;
+    this.emitter.emit("reading", true);
+    this.startFrequencyTracking();
   }
 
   private stopReading(): void {
@@ -280,6 +327,7 @@ class AmfitrackWeb {
       this.frequencyInterval = null;
     }
     this.packetCounts.clear();
+    this.emitter.emit("messageFrequency", new Map());
   }
 
   private trackPacket(sourceTxId: number, payloadType: PayloadType): void {
