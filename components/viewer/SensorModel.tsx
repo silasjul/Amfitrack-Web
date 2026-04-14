@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { useSensor } from "@/hooks/useSensor";
 import { DISTORTION_THRESHOLDS } from "@/config/distortion";
 
-const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
+export const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
 const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
 
 const COLOR_HOVERED = new THREE.Color("rgb(255, 255, 255)");
