@@ -150,7 +150,6 @@ export function useSensorProvider(
         try {
           const configs =
             await amfitrackWebRef.current.getSensorConfiguration(id);
-          if (cancelled) break;
           console.log("sensor configuration", id, configs);
           setSensorConfigurations((prev) => {
             const newMap = new Map(prev);
@@ -159,8 +158,9 @@ export function useSensorProvider(
           });
         } catch (err) {
           configFetchedRef.current.delete(id);
-          if (cancelled) break;
-          console.error("Failed to get sensor config for", id, err);
+          if (!cancelled) {
+            console.error("Failed to get sensor config for", id, err);
+          }
         }
       }
     };
