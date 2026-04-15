@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -58,12 +59,14 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     Configuration[]
   >([]);
 
-  const hubTxId =
-    hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null;
-  const sourceTxId =
-    sourceConfiguration.length > 0
-      ? extractDeviceId(sourceConfiguration)
-      : null;
+  const hubTxId = useMemo(
+    () => (hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null),
+    [hubConfiguration],
+  );
+  const sourceTxId = useMemo(
+    () => (sourceConfiguration.length > 0 ? extractDeviceId(sourceConfiguration) : null),
+    [sourceConfiguration],
+  );
 
   const messageFrequencyRef = useRef<Map<number, DeviceFrequency>>(new Map());
 

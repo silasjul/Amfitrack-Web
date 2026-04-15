@@ -23,7 +23,6 @@ export function extractDeviceId(config: Configuration[]): number | null {
       }
     }
   }
-  console.warn("Device ID not found in configuration");
   return null;
 }
 
