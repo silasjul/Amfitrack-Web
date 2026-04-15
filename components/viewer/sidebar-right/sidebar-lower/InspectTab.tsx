@@ -158,7 +158,7 @@ function DetailHeader({
   distortion: number;
 }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/30 shrink-0">
+    <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border/30 shrink-0">
       <span className="text-xs font-semibold text-sidebar-foreground">
         {label}
       </span>
