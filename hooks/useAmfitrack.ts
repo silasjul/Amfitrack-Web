@@ -33,6 +33,7 @@ interface AmfitrackContextValue {
     uid: number,
     value: number | boolean | string,
   ) => void;
+  refetchConfiguration: (deviceName: string) => Promise<void>;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -159,6 +160,24 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     [],
   );
 
+  const refetchConfiguration = useCallback(
+    async (deviceName: string) => {
+      const sdk = amfitrackWebRef.current;
+      try {
+        if (deviceName === "Hub") {
+          const config = await sdk.getHubConfiguration();
+          setHubConfiguration(config ?? []);
+        } else if (deviceName === "Source") {
+          const config = await sdk.getSourceConfiguration();
+          setSourceConfiguration(config ?? []);
+        }
+      } catch (err) {
+        console.error("Failed to refetch config for", deviceName, err);
+      }
+    },
+    [],
+  );
+
   return {
     isReading,
     hubConnected,
@@ -172,5 +191,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     requestConnectionHub,
     requestConnectionSource,
     updateParameterValue,
+    refetchConfiguration,
   };
 }
