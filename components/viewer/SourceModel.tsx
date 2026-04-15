@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { COLOR_CLEAN } from "./SensorModel";
 
+useFBX.preload("/models/viewer/source.fbx");
+
 export default function SourceModel() {
   const fbx = useFBX("/models/viewer/source.fbx");
   const clone = useMemo(() => fbx.clone(), [fbx]);

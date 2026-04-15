@@ -8,13 +8,12 @@ import { cn } from "@/lib/utils";
 import { getDistortionLevel } from "@/config/distortion";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useViewer } from "@/hooks/useViewer";
 
 const POSITION_SCALE = 100;
-interface Props {
-  selectedSensorId: number | null;
-}
 
-export default function SidebarLower({ selectedSensorId }: Props) {
+export default function SidebarLower() {
+  const { selectedSensorId } = useViewer();
   const { sensorsDataRef } = useSensor();
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
 
@@ -281,12 +280,12 @@ function DistortionBadge({ distortion }: { distortion: number }) {
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="text-center space-y-3">
+      <div className="text-center space-y-2">
         <div className="mx-auto size-12 rounded-full bg-sidebar/60 flex items-center justify-center">
           <Radio className="size-5 text-sidebar-foreground/20" />
         </div>
         <p className="text-xs text-sidebar-foreground/30">
-          Select a sensor to view details
+          <span className="text-[10.5px]">Select a sensor to view details</span>
         </p>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useSensor } from "@/hooks/useSensor";
 import { useFrequency } from "@/hooks/useFrequency";
+import { useViewer } from "@/hooks/useViewer";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,15 +22,9 @@ import {
 } from "lucide-react";
 import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSettingsDialog";
 
-interface Props {
-  selectedSensorId: number | null;
-  onSelectSensor: (id: number | null) => void;
-}
-
-export default function SidebarUpper({
-  selectedSensorId,
-  onSelectSensor,
-}: Props) {
+export default function SidebarUpper() {
+  const { selectedSensorId, setSelectedSensorId, hoveredSensorId } =
+    useViewer();
   const { sensorIds, sensorsDataRef, sensorConfigurations, lastSensorIdRemap } =
     useSensor();
   const { sensors: sensorFrequencies } = useFrequency();
@@ -64,24 +59,21 @@ export default function SidebarUpper({
   }, [sensorIds, sensorsDataRef]);
 
   useEffect(() => {
-    if (
-      lastSensorIdRemap &&
-      configDialogSensorId === lastSensorIdRemap.oldId
-    ) {
+    if (lastSensorIdRemap && configDialogSensorId === lastSensorIdRemap.oldId) {
       setConfigDialogSensorId(lastSensorIdRemap.newId);
     }
   }, [lastSensorIdRemap, configDialogSensorId]);
 
   useEffect(() => {
     if (selectedSensorId === null && sensorIds.length > 0) {
-      onSelectSensor(sensorIds[0]);
+      setSelectedSensorId(sensorIds[0]);
     } else if (
       selectedSensorId !== null &&
       !sensorIds.includes(selectedSensorId)
     ) {
-      onSelectSensor(sensorIds[0] ?? null);
+      setSelectedSensorId(sensorIds[0] ?? null);
     }
-  }, [sensorIds, selectedSensorId, onSelectSensor]);
+  }, [sensorIds, selectedSensorId, setSelectedSensorId]);
 
   return (
     <div className="flex h-full w-full flex-col pl-1 pr-1 pb-0.5">
@@ -104,12 +96,14 @@ export default function SidebarUpper({
             {sensorIds.map((id) => (
               <SensorRow
                 key={id}
+                id={id}
                 label={`SENSOR_${id}`}
                 data={snapshots.get(id)}
                 frequency={sensorFrequencies.get(id)}
                 configuration={sensorConfigurations.get(id)}
                 isSelected={selectedSensorId === id}
-                onSelect={() => onSelectSensor(id)}
+                isHovered={hoveredSensorId === id}
+                onSelect={() => setSelectedSensorId(id)}
                 onOpenSettings={() => setConfigDialogSensorId(id)}
               />
             ))}
@@ -140,22 +134,27 @@ export default function SidebarUpper({
 }
 
 function SensorRow({
+  id,
   label,
   data,
   frequency,
   configuration,
   isSelected,
+  isHovered,
   onSelect,
   onOpenSettings,
 }: {
+  id: number;
   label: string;
   data?: EmfImuFrameIdData;
   frequency?: DeviceFrequency;
   configuration?: Configuration[];
   isSelected: boolean;
+  isHovered: boolean;
   onSelect: () => void;
   onOpenSettings: () => void;
 }) {
+  const { setHoveredSensorId } = useViewer();
   const distortion = data?.metalDistortion ?? 0;
   const level = getDistortionLevel(distortion);
 
@@ -175,13 +174,16 @@ function SensorRow({
 
   return (
     <button
+      onPointerOver={() => setHoveredSensorId(id)}
+      onPointerOut={() => setHoveredSensorId(null)}
       onClick={onSelect}
       className={cn(
         "group w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-all duration-150",
-        "hover:bg-white/13",
         isSelected
           ? "bg-sidebar-foreground/8 ring-1 ring-sidebar-foreground/10"
           : "ring-1 ring-transparent",
+        "hover:bg-white/13",
+        isHovered && "bg-white/13",
       )}
     >
       <div

@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 export interface PendingConfiguration {
   deviceName: string;
@@ -16,20 +22,26 @@ interface ConfigurationsContextValue {
   clearConfigurations: () => void;
 }
 
-const ConfigurationsContext = createContext<ConfigurationsContextValue | null>(null);
+const ConfigurationsContext = createContext<ConfigurationsContextValue | null>(
+  null,
+);
 
 export { ConfigurationsContext };
 
 export function useConfigurations() {
   const ctx = useContext(ConfigurationsContext);
   if (!ctx) {
-    throw new Error("useConfigurations must be used within a ConfigurationsProvider");
+    throw new Error(
+      "useConfigurations must be used within a ConfigurationsProvider",
+    );
   }
   return ctx;
 }
 
 export function useConfigurationsProvider(): ConfigurationsContextValue {
-  const [configurations, setConfigurations] = useState<PendingConfiguration[]>([]);
+  const [configurations, setConfigurations] = useState<PendingConfiguration[]>(
+    [],
+  );
 
   const updateConfiguration = useCallback((entry: PendingConfiguration) => {
     setConfigurations((prev) => {
@@ -65,5 +77,10 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     console.log("[Configurations] pending changes:", configurations);
   }, [configurations]);
 
-  return { configurations, updateConfiguration, removeConfiguration, clearConfigurations };
+  return {
+    configurations,
+    updateConfiguration,
+    removeConfiguration,
+    clearConfigurations,
+  };
 }
