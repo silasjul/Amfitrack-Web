@@ -12,7 +12,7 @@ import { useViewer } from "@/hooks/useViewer";
 
 const POSITION_SCALE = 100;
 
-export default function SidebarLower() {
+export default function InspectTab() {
   const { selectedSensorId } = useViewer();
   const { sensorsDataRef } = useSensor();
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
@@ -47,109 +47,106 @@ export default function SidebarLower() {
 
     return () => clearInterval(interval);
   }, [selectedSensorId, sensorsDataRef]);
-
   return (
-    <div className="flex w-full h-full pl-1 pr-1 pt-0.5">
-      <ScrollArea className="flex-1 flex flex-col bg-sidebar rounded-t-sm overflow-hidden">
-        {selectedSensorId === null ? (
-          <EmptyState />
-        ) : !data ? (
-          <DetailSkeleton />
-        ) : (
-          <>
-            <DetailHeader
-              label={`SENSOR_ID: ${selectedSensorId}`}
-              distortion={data.metalDistortion}
-            />
-            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-              <Section title="Position">
-                <div className="grid grid-cols-3 gap-1.5">
-                  <ValueCell label="X" value={data.position.x.toFixed(2)} />
-                  <ValueCell label="Y" value={data.position.y.toFixed(2)} />
-                  <ValueCell label="Z" value={data.position.z.toFixed(2)} />
-                </div>
-              </Section>
+    <div className="flex-1 flex flex-col bg-sidebar rounded-tr-sm overflow-hidden">
+      {selectedSensorId === null ? (
+        <EmptyState />
+      ) : !data ? (
+        <DetailSkeleton />
+      ) : (
+        <>
+          <DetailHeader
+            label={`SENSOR_ID: ${selectedSensorId}`}
+            distortion={data.metalDistortion}
+          />
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+            <Section title="Position">
+              <div className="grid grid-cols-3 gap-1.5">
+                <ValueCell label="X" value={data.position.x.toFixed(2)} />
+                <ValueCell label="Y" value={data.position.y.toFixed(2)} />
+                <ValueCell label="Z" value={data.position.z.toFixed(2)} />
+              </div>
+            </Section>
 
-              <Section title="Orientation">
-                <div className="grid grid-cols-4 gap-1.5">
-                  <ValueCell label="X" value={data.quaternion.x.toFixed(3)} />
-                  <ValueCell label="Y" value={data.quaternion.y.toFixed(3)} />
-                  <ValueCell label="Z" value={data.quaternion.z.toFixed(3)} />
-                  <ValueCell label="W" value={data.quaternion.w.toFixed(3)} />
-                </div>
-              </Section>
+            <Section title="Orientation">
+              <div className="grid grid-cols-4 gap-1.5">
+                <ValueCell label="X" value={data.quaternion.x.toFixed(3)} />
+                <ValueCell label="Y" value={data.quaternion.y.toFixed(3)} />
+                <ValueCell label="Z" value={data.quaternion.z.toFixed(3)} />
+                <ValueCell label="W" value={data.quaternion.w.toFixed(3)} />
+              </div>
+            </Section>
 
-              <Section title="Accelerometer" unit="g">
-                <div className="grid grid-cols-3 gap-1.5">
-                  <ValueCell label="X" value={data.imu.acc_x.toFixed(2)} />
-                  <ValueCell label="Y" value={data.imu.acc_y.toFixed(2)} />
-                  <ValueCell label="Z" value={data.imu.acc_z.toFixed(2)} />
-                </div>
-              </Section>
+            <Section title="Accelerometer" unit="g">
+              <div className="grid grid-cols-3 gap-1.5">
+                <ValueCell label="X" value={data.imu.acc_x.toFixed(2)} />
+                <ValueCell label="Y" value={data.imu.acc_y.toFixed(2)} />
+                <ValueCell label="Z" value={data.imu.acc_z.toFixed(2)} />
+              </div>
+            </Section>
 
-              <Section title="Gyroscope" unit="°/s">
-                <div className="grid grid-cols-3 gap-1.5">
-                  <ValueCell label="X" value={data.imu.gyro_x.toFixed(1)} />
-                  <ValueCell label="Y" value={data.imu.gyro_y.toFixed(1)} />
-                  <ValueCell label="Z" value={data.imu.gyro_z.toFixed(1)} />
-                </div>
-              </Section>
+            <Section title="Gyroscope" unit="°/s">
+              <div className="grid grid-cols-3 gap-1.5">
+                <ValueCell label="X" value={data.imu.gyro_x.toFixed(1)} />
+                <ValueCell label="Y" value={data.imu.gyro_y.toFixed(1)} />
+                <ValueCell label="Z" value={data.imu.gyro_z.toFixed(1)} />
+              </div>
+            </Section>
 
-              <Section title="Magnetometer">
-                <div className="grid grid-cols-3 gap-1.5">
-                  <ValueCell label="X" value={data.magneto.mag_x.toFixed(1)} />
-                  <ValueCell label="Y" value={data.magneto.mag_y.toFixed(1)} />
-                  <ValueCell label="Z" value={data.magneto.mag_z.toFixed(1)} />
-                </div>
-              </Section>
+            <Section title="Magnetometer">
+              <div className="grid grid-cols-3 gap-1.5">
+                <ValueCell label="X" value={data.magneto.mag_x.toFixed(1)} />
+                <ValueCell label="Y" value={data.magneto.mag_y.toFixed(1)} />
+                <ValueCell label="Z" value={data.magneto.mag_z.toFixed(1)} />
+              </div>
+            </Section>
 
-              <Section title="Environment">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <ValueCell
-                    label="Temp"
-                    value={`${data.temperature.toFixed(1)}°C`}
-                  />
-                  <DistortionCell distortion={data.metalDistortion} />
-                  <ValueCell label="RSSI" value={String(data.rssi)} />
-                  <ValueCell label="Frame" value={String(data.frameId)} />
-                </div>
-              </Section>
+            <Section title="Environment">
+              <div className="grid grid-cols-2 gap-1.5">
+                <ValueCell
+                  label="Temp"
+                  value={`${data.temperature.toFixed(1)}°C`}
+                />
+                <DistortionCell distortion={data.metalDistortion} />
+                <ValueCell label="RSSI" value={String(data.rssi)} />
+                <ValueCell label="Frame" value={String(data.frameId)} />
+              </div>
+            </Section>
 
-              <Section title="Device">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <ValueCell
-                    label="Battery"
-                    value={data.sensorStatus.batteryLevel}
-                  />
-                  <ValueCell
-                    label="Charging"
-                    value={data.sensorStatus.batteryCharging ? "Yes" : "No"}
-                  />
-                  <ValueCell
-                    label="Source"
-                    value={
-                      data.sensorStatus.sourceConnected
-                        ? "Connected"
-                        : "Disconnected"
-                    }
-                  />
-                  <ValueCell
-                    label="B-Field"
-                    value={data.sensorStatus.bFieldStatus}
-                  />
-                  <ValueCell
-                    label="Sync"
-                    value={data.sensorStatus.sync ? "Yes" : "No"}
-                  />
-                  <ValueCell label="Coil" value={String(data.sourceCoilId)} />
-                  <ValueCell label="Calc ID" value={String(data.calcId)} />
-                  <ValueCell label="Source State" value={data.sensorState} />
-                </div>
-              </Section>
-            </div>
-          </>
-        )}
-      </ScrollArea>
+            <Section title="Device">
+              <div className="grid grid-cols-2 gap-1.5">
+                <ValueCell
+                  label="Battery"
+                  value={data.sensorStatus.batteryLevel}
+                />
+                <ValueCell
+                  label="Charging"
+                  value={data.sensorStatus.batteryCharging ? "Yes" : "No"}
+                />
+                <ValueCell
+                  label="Source"
+                  value={
+                    data.sensorStatus.sourceConnected
+                      ? "Connected"
+                      : "Disconnected"
+                  }
+                />
+                <ValueCell
+                  label="B-Field"
+                  value={data.sensorStatus.bFieldStatus}
+                />
+                <ValueCell
+                  label="Sync"
+                  value={data.sensorStatus.sync ? "Yes" : "No"}
+                />
+                <ValueCell label="Coil" value={String(data.sourceCoilId)} />
+                <ValueCell label="Calc ID" value={String(data.calcId)} />
+                <ValueCell label="Source State" value={data.sensorState} />
+              </div>
+            </Section>
+          </div>
+        </>
+      )}
     </div>
   );
 }
