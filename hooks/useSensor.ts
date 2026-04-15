@@ -33,6 +33,7 @@ export interface SensorContextValue {
     value: number | boolean | string,
   ) => void;
   remapSensorId: (oldId: number, newId: number) => void;
+  refetchSensorConfiguration: (sensorId: number) => Promise<void>;
 }
 
 const SensorContext = createContext<SensorContextValue | null>(null);
@@ -194,6 +195,23 @@ export function useSensorProvider(
     [],
   );
 
+  const refetchSensorConfiguration = useCallback(
+    async (sensorId: number) => {
+      try {
+        const configs =
+          await amfitrackWebRef.current.getSensorConfiguration(sensorId);
+        setSensorConfigurations((prev) => {
+          const next = new Map(prev);
+          next.set(sensorId, configs ?? []);
+          return next;
+        });
+      } catch (err) {
+        console.error("Failed to refetch sensor config for", sensorId, err);
+      }
+    },
+    [amfitrackWebRef],
+  );
+
   // Used when changing Device ID in sensor configuration
   const remapSensorId = useCallback((oldId: number, newId: number) => {
     const oldData = sensorsDataRef.current.get(oldId);
@@ -231,5 +249,6 @@ export function useSensorProvider(
     lastSensorIdRemap,
     updateSensorParameterValue,
     remapSensorId,
+    refetchSensorConfiguration,
   };
 }

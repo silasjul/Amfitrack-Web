@@ -13,10 +13,15 @@ import { Loader2, X } from "lucide-react";
 export const PENDING_BAR_ATTR = "data-pending-changes-bar";
 
 export default function PendingChangesBar() {
-  const { configurations, removeConfiguration, clearConfigurations } =
-    useConfigurations();
+  const {
+    configurations,
+    removeConfiguration,
+    removeConfigurationsForDevice,
+    clearConfigurations,
+  } = useConfigurations();
   const { amfitrackWebRef, updateParameterValue } = useAmfitrack();
-  const { updateSensorParameterValue, remapSensorId } = useSensor();
+  const { updateSensorParameterValue, remapSensorId, refetchSensorConfiguration } =
+    useSensor();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -26,8 +31,11 @@ export default function PendingChangesBar() {
     async function handleSave() {
       setSaving(true);
       let failed = 0;
+      const sensorsToRefetch = new Map<string, number>();
 
       for (const config of configurations) {
+        if (sensorsToRefetch.has(config.deviceName)) continue;
+
         try {
           const name = config.deviceName;
           let confirmedValue: number | boolean | string;
@@ -48,6 +56,8 @@ export default function PendingChangesBar() {
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
             const isDeviceIdChange = config.parameterName === "Device ID";
+            const isConfigModeChange =
+              config.parameterName.startsWith("Config mode");
             confirmedValue = await sdk.setSensorParameterValue(
               sensorID,
               config.uid,
@@ -57,6 +67,11 @@ export default function PendingChangesBar() {
             updateSensorParameterValue(sensorID, config.uid, confirmedValue);
             if (isDeviceIdChange) {
               remapSensorId(sensorID, confirmedValue as number);
+            }
+            if (isConfigModeChange) {
+              sensorsToRefetch.set(name, sensorID);
+              removeConfigurationsForDevice(name);
+              continue;
             }
           } else {
             continue;
@@ -72,6 +87,10 @@ export default function PendingChangesBar() {
         }
       }
 
+      for (const [, sensorId] of sensorsToRefetch) {
+        await refetchSensorConfiguration(sensorId);
+      }
+
       if (failed === 0) {
         toast.success("Settings saved successfully");
       } else {
@@ -82,7 +101,7 @@ export default function PendingChangesBar() {
 
       setSaving(false);
     },
-    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, remapSensorId, removeConfiguration],
+    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, remapSensorId, removeConfiguration, removeConfigurationsForDevice, refetchSensorConfiguration],
   );
 
   useEffect(() => {
