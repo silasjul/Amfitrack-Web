@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDistortionLevel } from "@/config/distortion";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useViewer } from "@/hooks/useViewer";
 
 const POSITION_SCALE = 100;
@@ -48,7 +47,7 @@ export default function InspectTab() {
     return () => clearInterval(interval);
   }, [selectedSensorId, sensorsDataRef]);
   return (
-    <div className="flex-1 flex flex-col bg-sidebar rounded-tr-sm overflow-hidden">
+    <div className="flex flex-col">
       {selectedSensorId === null ? (
         <EmptyState />
       ) : !data ? (
@@ -59,7 +58,7 @@ export default function InspectTab() {
             label={`SENSOR_ID: ${selectedSensorId}`}
             distortion={data.metalDistortion}
           />
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+          <div className="px-3 py-3 space-y-4">
             <Section title="Position">
               <div className="grid grid-cols-3 gap-1.5">
                 <ValueCell label="X" value={data.position.x.toFixed(2)} />
@@ -276,7 +275,7 @@ function DistortionBadge({ distortion }: { distortion: number }) {
 
 function EmptyState() {
   return (
-    <div className="flex-1 flex items-center justify-center p-6">
+    <div className="flex min-h-full items-center justify-center p-6">
       <div className="text-center space-y-2">
         <div className="mx-auto size-12 rounded-full bg-sidebar/60 flex items-center justify-center">
           <Radio className="size-5 text-sidebar-foreground/20" />
@@ -296,7 +295,7 @@ function DetailSkeleton() {
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-5 w-16 rounded-full" />
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+      <div className="px-3 py-3 space-y-4">
         <SkeletonSection cols={3} />
         <SkeletonSection cols={4} />
         <SkeletonSection cols={3} />
