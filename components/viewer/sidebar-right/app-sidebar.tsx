@@ -10,7 +10,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import SidebarUpper from "./sidebar-upper/sidebar-upper";
-import SidebarLower from "./sidebar-lower";
+import SidebarLower from "./sidebar-lower/sidebar-lower";
 
 export function AppSidebar({
   ...props

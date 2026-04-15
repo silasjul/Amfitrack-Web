@@ -1,47 +1,47 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
-import { PanelRightIcon } from "lucide-react"
+} from "@/components/ui/sheet";
+import { PanelRightIcon } from "lucide-react";
 
-const SIDEBAR_COOKIE_NAME = "sidebar_right_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "18rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_COOKIE_NAME = "sidebar_right_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_WIDTH = "18rem";
+const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_WIDTH_ICON = "3rem";
 
 type RightSidebarContextProps = {
-  state: "expanded" | "collapsed"
-  open: boolean
-  setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
-  toggleSidebar: () => void
-}
+  state: "expanded" | "collapsed";
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  openMobile: boolean;
+  setOpenMobile: (open: boolean) => void;
+  isMobile: boolean;
+  toggleSidebar: () => void;
+};
 
 const RightSidebarContext =
-  React.createContext<RightSidebarContextProps | null>(null)
+  React.createContext<RightSidebarContextProps | null>(null);
 
 function useRightSidebar() {
-  const context = React.useContext(RightSidebarContext)
+  const context = React.useContext(RightSidebarContext);
   if (!context) {
     throw new Error(
-      "useRightSidebar must be used within a RightSidebarProvider."
-    )
+      "useRightSidebar must be used within a RightSidebarProvider.",
+    );
   }
 
-  return context
+  return context;
 }
 
 function RightSidebarProvider({
@@ -53,36 +53,34 @@ function RightSidebarProvider({
   children,
   ...props
 }: React.ComponentProps<"div"> & {
-  defaultOpen?: boolean
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const isMobile = useIsMobile()
-  const [openMobile, setOpenMobile] = React.useState(false)
+  const isMobile = useIsMobile();
+  const [openMobile, setOpenMobile] = React.useState(false);
 
-  const [_open, _setOpen] = React.useState(defaultOpen)
-  const open = openProp ?? _open
+  const [_open, _setOpen] = React.useState(defaultOpen);
+  const open = openProp ?? _open;
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
-      const openState = typeof value === "function" ? value(open) : value
+      const openState = typeof value === "function" ? value(open) : value;
       if (setOpenProp) {
-        setOpenProp(openState)
+        setOpenProp(openState);
       } else {
-        _setOpen(openState)
+        _setOpen(openState);
       }
 
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [setOpenProp, open]
-  )
+    [setOpenProp, open],
+  );
 
   const toggleSidebar = React.useCallback(() => {
-    return isMobile
-      ? setOpenMobile((open) => !open)
-      : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
+  }, [isMobile, setOpen, setOpenMobile]);
 
-  const state = open ? "expanded" : "collapsed"
+  const state = open ? "expanded" : "collapsed";
 
   const contextValue = React.useMemo<RightSidebarContextProps>(
     () => ({
@@ -94,8 +92,8 @@ function RightSidebarProvider({
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-  )
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+  );
 
   return (
     <RightSidebarContext.Provider value={contextValue}>
@@ -110,14 +108,14 @@ function RightSidebarProvider({
         }
         className={cn(
           "group/sidebar-wrapper flex h-full w-full has-data-[variant=inset]:bg-sidebar",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </div>
     </RightSidebarContext.Provider>
-  )
+  );
 }
 
 function RightSidebar({
@@ -128,10 +126,10 @@ function RightSidebar({
   dir,
   ...props
 }: React.ComponentProps<"div"> & {
-  variant?: "sidebar" | "floating" | "inset"
-  collapsible?: "offcanvas" | "icon" | "none"
+  variant?: "sidebar" | "floating" | "inset";
+  collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useRightSidebar()
+  const { isMobile, state, openMobile, setOpenMobile } = useRightSidebar();
 
   if (collapsible === "none") {
     return (
@@ -139,13 +137,13 @@ function RightSidebar({
         data-slot="sidebar"
         className={cn(
           "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </div>
-    )
+    );
   }
 
   if (isMobile) {
@@ -171,7 +169,7 @@ function RightSidebar({
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
-    )
+    );
   }
 
   return (
@@ -191,7 +189,7 @@ function RightSidebar({
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
         )}
       />
       <div
@@ -202,7 +200,7 @@ function RightSidebar({
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) border-l border-l-border/50",
-          className
+          className,
         )}
         {...props}
       >
@@ -215,7 +213,7 @@ function RightSidebar({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function RightSidebarTrigger({
@@ -223,7 +221,7 @@ function RightSidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useRightSidebar()
+  const { toggleSidebar } = useRightSidebar();
 
   return (
     <Button
@@ -232,22 +230,22 @@ function RightSidebarTrigger({
       size="icon-sm"
       className={cn(className)}
       onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
+        onClick?.(event);
+        toggleSidebar();
       }}
       {...props}
     >
       <PanelRightIcon />
       <span className="sr-only">Toggle Right Sidebar</span>
     </Button>
-  )
+  );
 }
 
 function RightSidebarRail({
   className,
   ...props
 }: React.ComponentProps<"button">) {
-  const { toggleSidebar } = useRightSidebar()
+  const { toggleSidebar } = useRightSidebar();
 
   return (
     <button
@@ -263,11 +261,11 @@ function RightSidebarRail({
         "[[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function RightSidebarInset({
@@ -279,11 +277,11 @@ function RightSidebarInset({
       data-slot="sidebar-inset"
       className={cn(
         "relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:mr-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:mr-2",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -293,4 +291,4 @@ export {
   RightSidebarRail,
   RightSidebarInset,
   useRightSidebar,
-}
+};
