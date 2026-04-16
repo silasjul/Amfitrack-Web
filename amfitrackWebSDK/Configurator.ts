@@ -57,10 +57,13 @@ export class Configurator {
 
   /**
    * Send a Common payload to a USB-connected device (hub or source) and await
-   * a reply, with retries.  Does NOT filter replies by sourceTxId.
+   * a reply, with retries.
    *
-   * @param destinationId  Packet destination. Omit for broadcast reads,
-   *                       pass DESTINATION_USB_DEVICE for targeted writes.
+   * @param destinationId      Packet destination. Omit for broadcast reads,
+   *                           pass the device TX ID for targeted writes.
+   * @param filterSourceTxId   If set, only accept replies whose sourceTxId matches.
+   * @param alternateSourceTxId Secondary sourceTxId to accept (for ID-change writes
+   *                            where the device replies with its new TX ID).
    */
   private async sendCommonPayloadDevice(
     device: HIDDevice,
@@ -70,6 +73,8 @@ export class Configurator {
     retries = DEFAULT_RETRIES,
     validate?: (payload: Uint8Array) => boolean,
     destinationId?: number,
+    filterSourceTxId?: number,
+    alternateSourceTxId?: number,
   ): Promise<Uint8Array> {
     let lastError: Error | undefined;
 
@@ -82,6 +87,8 @@ export class Configurator {
           timeoutMs,
           validate,
           destinationId,
+          filterSourceTxId,
+          alternateSourceTxId,
         );
       } catch (err) {
         lastError = err as Error;
@@ -400,6 +407,7 @@ export class Configurator {
     device: HIDDevice,
     uid: number,
     sensorID?: number,
+    filterDeviceTxId?: number,
   ): Promise<{ value: number | boolean | string; dataType: ConfigValueType }> {
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.REQUEST_CONFIGURATION_VALUE_UID,
@@ -432,6 +440,8 @@ export class Configurator {
             DEFAULT_TIMEOUT_MS,
             DEFAULT_RETRIES,
             validateUid,
+            undefined,
+            filterDeviceTxId,
           );
     const decoded = this.configValueDecoder.getDecoded(reply);
     return { value: decoded.value, dataType: decoded.dataType };
@@ -510,14 +520,25 @@ export class Configurator {
    * library's `node.send_payload` which sends to `self.tx_id`).  This ensures
    * the target device processes the command without forwarding it to wireless
    * sensors.  Falls back to broadcast when `deviceTxId` is not provided.
+   *
+   * When `deviceTxId` is provided, replies are filtered by sourceTxId so
+   * forwarded sensor packets are not mistaken for the device's own reply.
+   * For Device ID changes the device will reply with its new TX ID, so
+   * pass `expectDeviceIdChange` to accept replies from the new ID as well.
    */
   public async setDeviceParameterValue(
     device: HIDDevice,
     uid: number,
     value: number | boolean | string,
     deviceTxId?: number,
+    expectDeviceIdChange?: boolean,
   ): Promise<number | boolean | string> {
-    const { dataType } = await this.getParameterValue(device, uid);
+    const { dataType } = await this.getParameterValue(
+      device,
+      uid,
+      undefined,
+      deviceTxId,
+    );
 
     const encodedValue = this.valueEncoder.encode(value, dataType);
     const payloadSize = 1 + 4 + 1 + encodedValue.length;
@@ -538,6 +559,9 @@ export class Configurator {
       return v.getUint32(1, LE) === uid;
     };
 
+    const alternateSourceTxId =
+      expectDeviceIdChange && typeof value === "number" ? value : undefined;
+
     const reply = await this.sendCommonPayloadDevice(
       device,
       bytes,
@@ -546,6 +570,8 @@ export class Configurator {
       DEFAULT_RETRIES,
       validateUid,
       deviceTxId,
+      deviceTxId,
+      alternateSourceTxId,
     );
 
     return this.configValueDecoder.getDecoded(reply).value;

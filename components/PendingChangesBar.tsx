@@ -99,6 +99,7 @@ export default function PendingChangesBar() {
             config.parameterName.startsWith("Config mode");
           const isDeviceIdChange = config.parameterName === "Device ID";
           let confirmedValue: number | boolean | string;
+          let effectiveDeviceName = name;
 
           const sdk = amfitrackWebRef.current;
 
@@ -111,11 +112,13 @@ export default function PendingChangesBar() {
               config.uid,
               config.valueToPush,
               txId,
+              isDeviceIdChange,
             );
             updateHubParameterValue(device, config.uid, confirmedValue);
             if (isDeviceIdChange) {
               const newName = `Hub ${confirmedValue}`;
               renameDevice(name, newName);
+              effectiveDeviceName = newName;
             }
           } else if (name.startsWith("Source")) {
             const device = resolvedDevices.get(name);
@@ -126,11 +129,13 @@ export default function PendingChangesBar() {
               config.uid,
               config.valueToPush,
               txId,
+              isDeviceIdChange,
             );
             updateSourceParameterValue(device, config.uid, confirmedValue);
             if (isDeviceIdChange) {
               const newName = `Source ${confirmedValue}`;
               renameDevice(name, newName);
+              effectiveDeviceName = newName;
             }
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
@@ -154,7 +159,7 @@ export default function PendingChangesBar() {
             continue;
           }
 
-          removeConfiguration(config.deviceName, config.uid);
+          removeConfiguration(effectiveDeviceName, config.uid);
         } catch (error) {
           console.error(
             `Failed to save ${config.parameterName} on ${config.deviceName}:`,

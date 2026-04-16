@@ -150,12 +150,14 @@ class AmfitrackWeb {
     uid: number,
     value: number | boolean | string,
     deviceTxId?: number,
+    expectDeviceIdChange?: boolean,
   ): Promise<number | boolean | string> {
     return await this.configurator.setDeviceParameterValue(
       device,
       uid,
       value,
       deviceTxId,
+      expectDeviceIdChange,
     );
   }
 
@@ -164,12 +166,14 @@ class AmfitrackWeb {
     uid: number,
     value: number | boolean | string,
     deviceTxId?: number,
+    expectDeviceIdChange?: boolean,
   ): Promise<number | boolean | string> {
     return await this.configurator.setDeviceParameterValue(
       device,
       uid,
       value,
       deviceTxId,
+      expectDeviceIdChange,
     );
   }
 
