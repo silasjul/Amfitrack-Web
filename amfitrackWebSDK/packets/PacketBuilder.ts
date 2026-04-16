@@ -23,7 +23,8 @@ export enum AmfiprotPayloadType {
   INVALID_REQUEST = 0xff,
 }
 
-const DESTINATION_BROADCAST = 0xff;
+export const DESTINATION_BROADCAST = 0xff;
+export const DESTINATION_USB_DEVICE = 0x00;
 const SOURCE_PC = 0x00;
 
 /**

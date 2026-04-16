@@ -1,5 +1,9 @@
 import HIDManager from "./HIDManager";
-import { PacketBuilder, AmfiprotPayloadType } from "./packets/PacketBuilder";
+import {
+  PacketBuilder,
+  AmfiprotPayloadType,
+  DESTINATION_USB_DEVICE,
+} from "./packets/PacketBuilder";
 import { CommonPayloadId } from "./packets/decoders/CommonPayload";
 import {
   ReplyConfigurationValueUidPayload,
@@ -18,8 +22,12 @@ const DEVICE_ID_UID = 1574855615;
 export function extractDeviceId(config: Configuration[]): number | null {
   for (const category of config) {
     for (const param of category.parameters) {
-      if (param.uid === DEVICE_ID_UID && typeof param.value === "number") {
-        return param.value;
+      if (param.uid === DEVICE_ID_UID || param.name === "Device ID") {
+        if (typeof param.value === "number") return param.value;
+        if (typeof param.value === "string") {
+          const n = Number(param.value);
+          if (!isNaN(n)) return n;
+        }
       }
     }
   }
@@ -48,27 +56,59 @@ export class Configurator {
   }
 
   /**
-   * Sends a Common payload and waits for a specific reply, with retries.
+   * Send a Common payload to a USB-connected device (hub or source) and await
+   * a reply, with retries.  Does NOT filter replies by sourceTxId.
    *
-   * This is the core request/reply pattern used by all configurator methods,
-   * equivalent to:
-   *   self.device.node.send_payload(RequestPayload())
-   *   packet = self.device._await_packet(ReplyPayload)
-   *
-   * @param validate Optional predicate applied to the extracted payload bytes.
-   *                 If it returns false the reply is ignored and we keep
-   *                 listening.  This prevents stale/duplicate replies from
-   *                 being consumed (e.g. after a retry that produced two
-   *                 device responses for the same reply-ID).
+   * @param destinationId  Packet destination. Omit for broadcast reads,
+   *                       pass DESTINATION_USB_DEVICE for targeted writes.
    */
-  private async sendCommonPayload(
+  private async sendCommonPayloadDevice(
     device: HIDDevice,
     payloadBytes: Uint8Array,
     expectedReplyId: CommonPayloadId,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     validate?: (payload: Uint8Array) => boolean,
-    sensorID?: number,
+    destinationId?: number,
+  ): Promise<Uint8Array> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await this.sendCommonPayloadOnce(
+          device,
+          payloadBytes,
+          expectedReplyId,
+          timeoutMs,
+          validate,
+          destinationId,
+        );
+      } catch (err) {
+        lastError = err as Error;
+        if (attempt < retries) {
+          console.warn(
+            `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)} on device "${device.productName ?? "unknown"}"`,
+          );
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * Send a Common payload to a wireless sensor (routed through the hub) and
+   * await a reply, with retries.  Filters replies by sourceTxId so only
+   * packets from the addressed sensor are accepted.
+   */
+  private async sendCommonPayloadSensor(
+    device: HIDDevice,
+    payloadBytes: Uint8Array,
+    expectedReplyId: CommonPayloadId,
+    sensorID: number,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retries = DEFAULT_RETRIES,
+    validate?: (payload: Uint8Array) => boolean,
     alternateSensorID?: number,
   ): Promise<Uint8Array> {
     let lastError: Error | undefined;
@@ -82,17 +122,14 @@ export class Configurator {
           timeoutMs,
           validate,
           sensorID,
+          sensorID,
           alternateSensorID,
         );
       } catch (err) {
         lastError = err as Error;
         if (attempt < retries) {
-          const target =
-            sensorID !== undefined
-              ? `sensor ${sensorID}`
-              : `device "${device.productName ?? "unknown"}"`;
           console.warn(
-            `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)} on ${target}`,
+            `Retry ${attempt + 1}/${retries} for reply 0x${expectedReplyId.toString(16)} on sensor ${sensorID}`,
           );
         }
       }
@@ -101,16 +138,24 @@ export class Configurator {
     throw lastError;
   }
 
+  /**
+   * Single-attempt send + await used by both Device and Sensor wrappers.
+   *
+   * @param destinationId    Packet destination (broadcast when undefined).
+   * @param filterSensorID   If set, only accept replies whose sourceTxId matches.
+   * @param alternateFilterID Secondary sourceTxId to accept (for ID-change writes).
+   */
   private sendCommonPayloadOnce(
     device: HIDDevice,
     payloadBytes: Uint8Array,
     expectedReplyId: CommonPayloadId,
     timeoutMs: number,
     validate?: (payload: Uint8Array) => boolean,
-    sensorID?: number,
-    alternateSensorID?: number,
+    destinationId?: number,
+    filterSensorID?: number,
+    alternateFilterID?: number,
   ): Promise<Uint8Array> {
-    const packet = this.packetBuilder.build(payloadBytes, sensorID);
+    const packet = this.packetBuilder.build(payloadBytes, destinationId);
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -128,15 +173,17 @@ export class Configurator {
           event.data.byteOffset,
           event.data.byteLength,
         );
-        // Incoming layout: [length_prefix, header(6), hdr_crc, payload..., payload_crc, padding]
         const payloadType = bytes[4];
         if (payloadType !== AmfiprotPayloadType.COMMON) return;
-        const sourceTxId = bytes[5];
-        if (
-          sensorID !== undefined &&
-          sourceTxId !== sensorID &&
-          (alternateSensorID === undefined || sourceTxId !== alternateSensorID)
-        ) return;
+        if (filterSensorID !== undefined) {
+          const sourceTxId = bytes[5];
+          if (
+            sourceTxId !== filterSensorID &&
+            (alternateFilterID === undefined ||
+              sourceTxId !== alternateFilterID)
+          )
+            return;
+        }
         const replyId = bytes[8];
         if (replyId !== expectedReplyId) return;
 
@@ -195,15 +242,19 @@ export class Configurator {
       CommonPayloadId.REQUEST_CATEGORY_COUNT,
       1,
     );
-    const reply = await this.sendCommonPayload(
-      device,
-      bytes,
-      CommonPayloadId.REPLY_CATEGORY_COUNT,
-      DEFAULT_TIMEOUT_MS,
-      DEFAULT_RETRIES,
-      undefined,
-      sensorID,
-    );
+    const reply =
+      sensorID !== undefined
+        ? await this.sendCommonPayloadSensor(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CATEGORY_COUNT,
+            sensorID,
+          )
+        : await this.sendCommonPayloadDevice(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CATEGORY_COUNT,
+          );
     return this.view(reply).getUint8(1);
   }
 
@@ -223,15 +274,26 @@ export class Configurator {
       2,
     );
     view.setUint8(1, index);
-    const reply = await this.sendCommonPayload(
-      device,
-      bytes,
-      CommonPayloadId.REPLY_CONFIGURATION_CATEGORY,
-      DEFAULT_TIMEOUT_MS,
-      DEFAULT_RETRIES,
-      (payload) => payload[1] === index,
-      sensorID,
-    );
+    const validateIndex = (payload: Uint8Array) => payload[1] === index;
+    const reply =
+      sensorID !== undefined
+        ? await this.sendCommonPayloadSensor(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_CATEGORY,
+            sensorID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateIndex,
+          )
+        : await this.sendCommonPayloadDevice(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_CATEGORY,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateIndex,
+          );
     return this.decodeString(reply, 2);
   }
 
@@ -251,15 +313,26 @@ export class Configurator {
       2,
     );
     view.setUint8(1, categoryIndex);
-    const reply = await this.sendCommonPayload(
-      device,
-      bytes,
-      CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT,
-      DEFAULT_TIMEOUT_MS,
-      DEFAULT_RETRIES,
-      (payload) => payload[1] === categoryIndex,
-      sensorID,
-    );
+    const validateCat = (payload: Uint8Array) => payload[1] === categoryIndex;
+    const reply =
+      sensorID !== undefined
+        ? await this.sendCommonPayloadSensor(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT,
+            sensorID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateCat,
+          )
+        : await this.sendCommonPayloadDevice(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateCat,
+          );
     return this.view(reply).getUint16(2, LE);
   }
 
@@ -281,24 +354,35 @@ export class Configurator {
     );
     view.setUint8(1, categoryIndex);
     view.setUint16(2, parameterIndex, LE);
-    const reply = await this.sendCommonPayload(
-      device,
-      bytes,
-      CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID,
-      DEFAULT_TIMEOUT_MS,
-      DEFAULT_RETRIES,
-      (payload) => {
-        const v = new DataView(
-          payload.buffer,
-          payload.byteOffset,
-          payload.byteLength,
-        );
-        return (
-          v.getUint16(1, LE) === parameterIndex && payload[3] === categoryIndex
-        );
-      },
-      sensorID,
-    );
+    const validateParam = (payload: Uint8Array) => {
+      const v = new DataView(
+        payload.buffer,
+        payload.byteOffset,
+        payload.byteLength,
+      );
+      return (
+        v.getUint16(1, LE) === parameterIndex && payload[3] === categoryIndex
+      );
+    };
+    const reply =
+      sensorID !== undefined
+        ? await this.sendCommonPayloadSensor(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID,
+            sensorID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateParam,
+          )
+        : await this.sendCommonPayloadDevice(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateParam,
+          );
     const rv = this.view(reply);
     return {
       uid: rv.getUint32(4, LE),
@@ -322,22 +406,33 @@ export class Configurator {
       5,
     );
     view.setUint32(1, uid, LE);
-    const reply = await this.sendCommonPayload(
-      device,
-      bytes,
-      CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
-      DEFAULT_TIMEOUT_MS,
-      DEFAULT_RETRIES,
-      (payload) => {
-        const v = new DataView(
-          payload.buffer,
-          payload.byteOffset,
-          payload.byteLength,
-        );
-        return v.getUint32(1, LE) === uid;
-      },
-      sensorID,
-    );
+    const validateUid = (payload: Uint8Array) => {
+      const v = new DataView(
+        payload.buffer,
+        payload.byteOffset,
+        payload.byteLength,
+      );
+      return v.getUint32(1, LE) === uid;
+    };
+    const reply =
+      sensorID !== undefined
+        ? await this.sendCommonPayloadSensor(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
+            sensorID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateUid,
+          )
+        : await this.sendCommonPayloadDevice(
+            device,
+            bytes,
+            CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
+            DEFAULT_TIMEOUT_MS,
+            DEFAULT_RETRIES,
+            validateUid,
+          );
     const decoded = this.configValueDecoder.getDecoded(reply);
     return { value: decoded.value, dataType: decoded.dataType };
   }
@@ -409,25 +504,23 @@ export class Configurator {
   }
 
   /**
-   * Mirrors Configurator.write() in configurator.py.
+   * Write a parameter on a USB-connected device (hub or source).
    *
-   * Reads the parameter first to discover its data_type, then sends
-   * SET_CONFIGURATION_VALUE_UID (0x15) and awaits REPLY_CONFIGURATION_VALUE_UID (0x14).
-   *
-   * Request payload: [0x15, uid (uint32 LE), data_type, encoded_value...]
-   * Reply  payload:  [0x14, uid (uint32 LE), data_type, value...]
+   * Uses the device's own TX ID as the packet destination (matching the Python
+   * library's `node.send_payload` which sends to `self.tx_id`).  This ensures
+   * the target device processes the command without forwarding it to wireless
+   * sensors.  Falls back to broadcast when `deviceTxId` is not provided.
    */
-  public async setParameterValue(
+  public async setDeviceParameterValue(
     device: HIDDevice,
     uid: number,
     value: number | boolean | string,
-    sensorID?: number,
-    expectSourceIdChange?: boolean,
+    deviceTxId?: number,
   ): Promise<number | boolean | string> {
-    const { dataType } = await this.getParameterValue(device, uid, sensorID);
+    const { dataType } = await this.getParameterValue(device, uid);
 
     const encodedValue = this.valueEncoder.encode(value, dataType);
-    const payloadSize = 1 + 4 + 1 + encodedValue.length; // command byte + parameter uid + data type + encoded value
+    const payloadSize = 1 + 4 + 1 + encodedValue.length;
     const { bytes, view } = this.buildRequest(
       CommonPayloadId.SET_CONFIGURATION_VALUE_UID,
       payloadSize,
@@ -436,24 +529,71 @@ export class Configurator {
     view.setUint8(5, dataType);
     bytes.set(encodedValue, 6);
 
-    const alternateSensorID =
-      expectSourceIdChange && typeof value === "number" ? value : undefined;
+    const validateUid = (payload: Uint8Array) => {
+      const v = new DataView(
+        payload.buffer,
+        payload.byteOffset,
+        payload.byteLength,
+      );
+      return v.getUint32(1, LE) === uid;
+    };
 
-    const reply = await this.sendCommonPayload(
+    const reply = await this.sendCommonPayloadDevice(
       device,
       bytes,
       CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
       DEFAULT_TIMEOUT_MS,
       DEFAULT_RETRIES,
-      (payload) => {
-        const v = new DataView(
-          payload.buffer,
-          payload.byteOffset,
-          payload.byteLength,
-        );
-        return v.getUint32(1, LE) === uid;
-      },
+      validateUid,
+      deviceTxId,
+    );
+
+    return this.configValueDecoder.getDecoded(reply).value;
+  }
+
+  /**
+   * Write a parameter on a wireless sensor, routed through the hub.
+   * Uses the sensorID as the packet destination so only that sensor is affected.
+   */
+  public async setSensorParameterValue(
+    device: HIDDevice,
+    sensorID: number,
+    uid: number,
+    value: number | boolean | string,
+    expectSourceIdChange?: boolean,
+  ): Promise<number | boolean | string> {
+    const { dataType } = await this.getParameterValue(device, uid, sensorID);
+
+    const encodedValue = this.valueEncoder.encode(value, dataType);
+    const payloadSize = 1 + 4 + 1 + encodedValue.length;
+    const { bytes, view } = this.buildRequest(
+      CommonPayloadId.SET_CONFIGURATION_VALUE_UID,
+      payloadSize,
+    );
+    view.setUint32(1, uid, LE);
+    view.setUint8(5, dataType);
+    bytes.set(encodedValue, 6);
+
+    const validateUid = (payload: Uint8Array) => {
+      const v = new DataView(
+        payload.buffer,
+        payload.byteOffset,
+        payload.byteLength,
+      );
+      return v.getUint32(1, LE) === uid;
+    };
+
+    const alternateSensorID =
+      expectSourceIdChange && typeof value === "number" ? value : undefined;
+
+    const reply = await this.sendCommonPayloadSensor(
+      device,
+      bytes,
+      CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
       sensorID,
+      DEFAULT_TIMEOUT_MS,
+      DEFAULT_RETRIES,
+      validateUid,
       alternateSensorID,
     );
 

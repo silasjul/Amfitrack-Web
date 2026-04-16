@@ -11,18 +11,17 @@ const HID_REPORT_DATA_SIZE = 63; // 64-byte USB report minus 1-byte report ID
  * Protocol-level logic (amfiprot packets) lives in PacketBuilder and Configurator.
  */
 export default class HIDManager {
-  private inputReportHandler: ((event: HIDInputReportEvent) => void) | null =
-    null;
+  private inputReportHandlers = new Map<
+    HIDDevice,
+    (event: HIDInputReportEvent) => void
+  >();
   private openingPromises = new WeakMap<HIDDevice, Promise<void>>();
-
-  private readingDevices: HIDDevice[] = [];
 
   /**
    * Prompt the user to select and authorize a device.
    */
   public async requestDevice(
     productId: number,
-    assign: (device: HIDDevice) => void,
   ): Promise<HIDDevice | null> {
     try {
       const devices = await navigator.hid.requestDevice({
@@ -33,9 +32,7 @@ export default class HIDManager {
         throw new Error("No device was selected.");
       }
 
-      const device = devices[0];
-      assign(device);
-      return device;
+      return devices[0];
     } catch (error: any) {
       if (error.name === "NotFoundError") {
         throw new Error("No device was selected.");
@@ -45,19 +42,16 @@ export default class HIDManager {
   }
 
   /**
-   * Get an already-authorized device by vendor/product ID.
+   * Get all already-authorized devices by vendor/product ID.
    */
-  public async getDevice(
+  public async getDevices(
     vendorId: number,
     productId: number,
-  ): Promise<HIDDevice | null> {
+  ): Promise<HIDDevice[]> {
     const devices = await navigator.hid.getDevices();
-
-    const authorizedDevices = devices.filter(
+    return devices.filter(
       (d) => d.vendorId === vendorId && d.productId === productId,
     );
-
-    return authorizedDevices[0] ?? null;
   }
 
   /**
@@ -80,7 +74,7 @@ export default class HIDManager {
 
   /**
    * Start continuous reading from a device.
-   * Every incoming HID report is passed to the callback as raw bytes.
+   * Each device gets its own listener so multiple devices can read concurrently.
    */
   public async startReadingDevice(
     device: HIDDevice,
@@ -90,31 +84,33 @@ export default class HIDManager {
 
     await this.openDevice(device);
 
-    if (this.inputReportHandler) {
-      device.removeEventListener("inputreport", this.inputReportHandler);
-    }
+    this.stopReadingDevice(device);
 
-    this.inputReportHandler = (event: HIDInputReportEvent) => {
+    const handler = (event: HIDInputReportEvent) => {
       const bytes = new Uint8Array(event.data.buffer);
       callback(bytes);
     };
 
-    device.addEventListener("inputreport", this.inputReportHandler);
+    this.inputReportHandlers.set(device, handler);
+    device.addEventListener("inputreport", handler);
+  }
 
-    this.readingDevices.push(device);
+  /**
+   * Stop reading from a single device.
+   */
+  public stopReadingDevice(device: HIDDevice) {
+    const handler = this.inputReportHandlers.get(device);
+    if (handler) {
+      device.removeEventListener("inputreport", handler);
+      this.inputReportHandlers.delete(device);
+    }
   }
 
   public stopReadingAll() {
-    if (this.inputReportHandler) {
-      this.readingDevices.forEach((device) => {
-        device.removeEventListener(
-          "inputreport",
-          this.inputReportHandler as (event: HIDInputReportEvent) => void,
-        );
-      });
-      this.inputReportHandler = null;
-      this.readingDevices = [];
+    for (const [device, handler] of this.inputReportHandlers) {
+      device.removeEventListener("inputreport", handler);
     }
+    this.inputReportHandlers.clear();
   }
 
   /**

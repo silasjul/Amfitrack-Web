@@ -23,6 +23,7 @@ interface ConfigurationsContextValue {
   updateConfiguration: (entry: PendingConfiguration) => void;
   removeConfiguration: (deviceName: string, uid: number) => void;
   removeConfigurationsForDevice: (deviceName: string) => void;
+  renameDevice: (oldName: string, newName: string) => void;
   clearConfigurations: () => void;
 }
 
@@ -80,6 +81,17 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     );
   }, []);
 
+  const renameDevice = useCallback(
+    (oldName: string, newName: string) => {
+      setConfigurations((prev) =>
+        prev.map((c) =>
+          c.deviceName === oldName ? { ...c, deviceName: newName } : c,
+        ),
+      );
+    },
+    [],
+  );
+
   const clearConfigurations = useCallback(() => {
     setConfigurations([]);
   }, []);
@@ -116,6 +128,7 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     updateConfiguration,
     removeConfiguration,
     removeConfigurationsForDevice,
+    renameDevice,
     clearConfigurations,
   };
 }

@@ -2,39 +2,19 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
-import {
-  type DeviceFrequency,
-  DeviceError,
-} from "@/amfitrackWebSDK/AmfitrackWeb";
-import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
+import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
 
 interface AmfitrackContextValue {
   isReading: boolean;
-  hubConnected: boolean;
-  sourceConnected: boolean;
-  hubTxId: number | null;
-  sourceTxId: number | null;
   messageFrequencyRef: React.RefObject<Map<number, DeviceFrequency>>;
   amfitrackWebRef: React.RefObject<AmfitrackWeb>;
-  hubConfiguration: Configuration[];
-  sourceConfiguration: Configuration[];
-  requestConnectionHub: () => Promise<void>;
-  requestConnectionSource: () => Promise<void>;
-  updateParameterValue: (
-    deviceName: string,
-    uid: number,
-    value: number | boolean | string,
-  ) => void;
-  refetchConfiguration: (deviceName: string) => Promise<void>;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -52,52 +32,11 @@ export function useAmfitrack() {
 export function useAmfitrackProvider(): AmfitrackContextValue {
   const amfitrackWebRef = useRef(new AmfitrackWeb());
   const [isReading, setIsReading] = useState(false);
-  const [hubConnected, setHubConnected] = useState(false);
-  const [sourceConnected, setSourceConnected] = useState(false);
-  const [hubConfiguration, setHubConfiguration] = useState<Configuration[]>([]);
-  const [sourceConfiguration, setSourceConfiguration] = useState<
-    Configuration[]
-  >([]);
-
-  const hubTxId = useMemo(
-    () => (hubConfiguration.length > 0 ? extractDeviceId(hubConfiguration) : null),
-    [hubConfiguration],
-  );
-  const sourceTxId = useMemo(
-    () => (sourceConfiguration.length > 0 ? extractDeviceId(sourceConfiguration) : null),
-    [sourceConfiguration],
-  );
-
   const messageFrequencyRef = useRef<Map<number, DeviceFrequency>>(new Map());
 
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
-    const unbindHub = sdk.on("hubConnection", (connected) => {
-      setHubConnected(connected);
-
-      if (connected) {
-        sdk.getHubConfiguration().then((config) => {
-          console.log("hub configuration", config);
-          setHubConfiguration(config ?? []);
-        });
-      } else {
-        setHubConfiguration([]);
-      }
-    });
-
-    const unbindSource = sdk.on("sourceConnection", (connected) => {
-      setSourceConnected(connected);
-
-      if (connected) {
-        sdk.getSourceConfiguration().then((config) => {
-          console.log("source configuration", config);
-          setSourceConfiguration(config ?? []);
-        });
-      } else {
-        setSourceConfiguration([]);
-      }
-    });
     const unbindReading = sdk.on("reading", setIsReading);
 
     const unbindFrequency = sdk.on("messageFrequency", (data) => {
@@ -111,8 +50,6 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     sdk.initialize();
 
     return () => {
-      unbindHub();
-      unbindSource();
       unbindReading();
       unbindFrequency();
       unbindError();
@@ -120,80 +57,9 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, []);
 
-  const requestConnectionHub = useCallback(async () => {
-    try {
-      await amfitrackWebRef.current.requestConnectionHub();
-    } catch (error) {
-      if (error instanceof DeviceError) {
-        toast.error(error.title, { description: error.description });
-      } else {
-        toast.error(error instanceof Error ? error.message : String(error));
-      }
-    }
-  }, []);
-
-  const requestConnectionSource = useCallback(async () => {
-    try {
-      await amfitrackWebRef.current.requestConnectionSource();
-    } catch (error) {
-      if (error instanceof DeviceError) {
-        toast.error(error.title, { description: error.description });
-      } else {
-        toast.error(error instanceof Error ? error.message : String(error));
-      }
-    }
-  }, []);
-
-  const updateParameterValue = useCallback(
-    (deviceName: string, uid: number, value: number | boolean | string) => {
-      const patchConfig = (configs: Configuration[]) =>
-        configs.map((cat) => ({
-          ...cat,
-          parameters: cat.parameters.map((p) =>
-            p.uid === uid ? { ...p, value } : p,
-          ),
-        }));
-
-      if (deviceName === "Hub") {
-        setHubConfiguration((prev) => patchConfig(prev));
-      } else if (deviceName === "Source") {
-        setSourceConfiguration((prev) => patchConfig(prev));
-      }
-    },
-    [],
-  );
-
-  const refetchConfiguration = useCallback(
-    async (deviceName: string) => {
-      const sdk = amfitrackWebRef.current;
-      try {
-        if (deviceName === "Hub") {
-          const config = await sdk.getHubConfiguration();
-          setHubConfiguration(config ?? []);
-        } else if (deviceName === "Source") {
-          const config = await sdk.getSourceConfiguration();
-          setSourceConfiguration(config ?? []);
-        }
-      } catch (err) {
-        console.error("Failed to refetch config for", deviceName, err);
-      }
-    },
-    [],
-  );
-
   return {
     isReading,
-    hubConnected,
-    sourceConnected,
-    hubTxId,
-    sourceTxId,
     messageFrequencyRef,
     amfitrackWebRef,
-    hubConfiguration,
-    sourceConfiguration,
-    requestConnectionHub,
-    requestConnectionSource,
-    updateParameterValue,
-    refetchConfiguration,
   };
 }

@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useConfigurations } from "@/hooks/useConfigurations";
 import { useAmfitrack } from "@/hooks/useAmfitrack";
+import { useHub } from "@/hooks/useHub";
+import { useSource } from "@/hooks/useSource";
 import { useSensor } from "@/hooks/useSensor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,22 +19,76 @@ export default function PendingChangesBar() {
     configurations,
     removeConfiguration,
     removeConfigurationsForDevice,
+    renameDevice,
     clearConfigurations,
   } = useConfigurations();
-  const { amfitrackWebRef, updateParameterValue, refetchConfiguration } =
-    useAmfitrack();
-  const { updateSensorParameterValue, remapSensorId, refetchSensorConfiguration } =
-    useSensor();
+  const { amfitrackWebRef } = useAmfitrack();
+  const {
+    hubDevices,
+    hubTxIds,
+    updateHubParameterValue,
+    refetchHubConfiguration,
+  } = useHub();
+  const {
+    sourceDevices,
+    sourceTxIds,
+    updateSourceParameterValue,
+    refetchSourceConfiguration,
+  } = useSource();
+  const {
+    updateSensorParameterValue,
+    remapSensorId,
+    refetchSensorConfiguration,
+  } = useSensor();
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const findHubDevice = useCallback(
+    (deviceName: string): HIDDevice | null => {
+      const txIdStr = deviceName.replace("Hub ", "");
+      const txId = parseInt(txIdStr, 10);
+      if (isNaN(txId)) return hubDevices[0] ?? null;
+      for (const [device, id] of hubTxIds) {
+        if (id === txId) return device;
+      }
+      return null;
+    },
+    [hubDevices, hubTxIds],
+  );
+
+  const findSourceDevice = useCallback(
+    (deviceName: string): HIDDevice | null => {
+      const txIdStr = deviceName.replace("Source ", "");
+      const txId = parseInt(txIdStr, 10);
+      if (isNaN(txId)) return sourceDevices[0] ?? null;
+      for (const [device, id] of sourceTxIds) {
+        if (id === txId) return device;
+      }
+      return null;
+    },
+    [sourceDevices, sourceTxIds],
+  );
 
   const handleSave = useCallback(
     async function handleSave() {
       setSaving(true);
       let failed = 0;
       const devicesToRefetch = new Set<string>();
+
+      // Pre-resolve HID device references before the loop so that a Device ID
+      // change mid-save doesn't break lookups for remaining pending changes.
+      const resolvedDevices = new Map<string, HIDDevice | null>();
+      for (const config of configurations) {
+        const name = config.deviceName;
+        if (resolvedDevices.has(name)) continue;
+        if (name.startsWith("Hub")) {
+          resolvedDevices.set(name, findHubDevice(name));
+        } else if (name.startsWith("Source")) {
+          resolvedDevices.set(name, findSourceDevice(name));
+        }
+      }
 
       for (const config of configurations) {
         if (devicesToRefetch.has(config.deviceName)) continue;
@@ -41,24 +97,43 @@ export default function PendingChangesBar() {
           const name = config.deviceName;
           const isConfigModeChange =
             config.parameterName.startsWith("Config mode");
+          const isDeviceIdChange = config.parameterName === "Device ID";
           let confirmedValue: number | boolean | string;
 
           const sdk = amfitrackWebRef.current;
-          if (name === "Hub") {
+
+          if (name.startsWith("Hub")) {
+            const device = resolvedDevices.get(name);
+            if (!device) throw new Error("Hub device not found");
+            const txId = hubTxIds.get(device) ?? undefined;
             confirmedValue = await sdk.setHubParameterValue(
+              device,
               config.uid,
               config.valueToPush,
+              txId,
             );
-            updateParameterValue(name, config.uid, confirmedValue);
-          } else if (name === "Source") {
+            updateHubParameterValue(device, config.uid, confirmedValue);
+            if (isDeviceIdChange) {
+              const newName = `Hub ${confirmedValue}`;
+              renameDevice(name, newName);
+            }
+          } else if (name.startsWith("Source")) {
+            const device = resolvedDevices.get(name);
+            if (!device) throw new Error("Source device not found");
+            const txId = sourceTxIds.get(device) ?? undefined;
             confirmedValue = await sdk.setSourceParameterValue(
+              device,
               config.uid,
               config.valueToPush,
+              txId,
             );
-            updateParameterValue(name, config.uid, confirmedValue);
+            updateSourceParameterValue(device, config.uid, confirmedValue);
+            if (isDeviceIdChange) {
+              const newName = `Source ${confirmedValue}`;
+              renameDevice(name, newName);
+            }
           } else if (name.startsWith("Sensor ")) {
             const sensorID = parseInt(name.replace("Sensor ", ""), 10);
-            const isDeviceIdChange = config.parameterName === "Device ID";
             confirmedValue = await sdk.setSensorParameterValue(
               sensorID,
               config.uid,
@@ -93,8 +168,14 @@ export default function PendingChangesBar() {
         if (deviceName.startsWith("Sensor ")) {
           const sensorID = parseInt(deviceName.replace("Sensor ", ""), 10);
           await refetchSensorConfiguration(sensorID);
-        } else {
-          await refetchConfiguration(deviceName);
+        } else if (deviceName.startsWith("Hub")) {
+          const device =
+            resolvedDevices.get(deviceName) ?? findHubDevice(deviceName);
+          if (device) await refetchHubConfiguration(device);
+        } else if (deviceName.startsWith("Source")) {
+          const device =
+            resolvedDevices.get(deviceName) ?? findSourceDevice(deviceName);
+          if (device) await refetchSourceConfiguration(device);
         }
       }
 
@@ -108,7 +189,24 @@ export default function PendingChangesBar() {
 
       setSaving(false);
     },
-    [configurations, amfitrackWebRef, updateParameterValue, updateSensorParameterValue, remapSensorId, removeConfiguration, removeConfigurationsForDevice, refetchSensorConfiguration, refetchConfiguration],
+    [
+      configurations,
+      amfitrackWebRef,
+      findHubDevice,
+      findSourceDevice,
+      hubTxIds,
+      sourceTxIds,
+      updateHubParameterValue,
+      updateSourceParameterValue,
+      updateSensorParameterValue,
+      remapSensorId,
+      renameDevice,
+      removeConfiguration,
+      removeConfigurationsForDevice,
+      refetchSensorConfiguration,
+      refetchHubConfiguration,
+      refetchSourceConfiguration,
+    ],
   );
 
   useEffect(() => {
