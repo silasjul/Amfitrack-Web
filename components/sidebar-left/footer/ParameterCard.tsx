@@ -5,14 +5,18 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useConfigurations } from "@/hooks/useConfigurations";
+import { ConfigItem } from "@/lib/configTooltipParser";
+import { ParameterConfigHoverCard } from "./ParameterConfigHoverCard";
 
 export default function ParameterCard({
   param,
   deviceName,
   onValueChange,
+  configurationTooltip = undefined,
 }: {
   param: { name: string; uid: number; value: number | boolean | string };
   deviceName: string;
+  configurationTooltip?: ConfigItem;
   onValueChange?: (
     uid: number,
     parameterName: string,
@@ -63,9 +67,19 @@ export default function ParameterCard({
   return (
     <Card size="sm" className="gap-1 py-2 bg-sidebar-accent">
       <CardHeader className="px-3 pb-0">
-        <CardTitle className="font-roboto-mono">{param.name}</CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="font-roboto-mono min-w-0 flex-1 leading-tight">
+            {param.name}
+          </CardTitle>
+          {configurationTooltip ? (
+            <ParameterConfigHoverCard
+              parameterName={param.name}
+              config={configurationTooltip}
+            />
+          ) : null}
+        </div>
       </CardHeader>
-      <CardContent className="px-3">
+      <CardContent className="px-3 pb-2">
         {typeof value === "boolean" ? (
           <div className="flex items-center">
             <Switch
@@ -82,9 +96,9 @@ export default function ParameterCard({
             className="font-mono text-sm font-medium h-8 px-2 opacity-80"
           />
         )}
-        <span className="text-[10px] text-muted-foreground/60">
+        {/* <span className="text-[10px] text-muted-foreground/60">
           {param.uid.toString(16).toUpperCase().padStart(8, "0")}
-        </span>
+        </span> */}
       </CardContent>
     </Card>
   );

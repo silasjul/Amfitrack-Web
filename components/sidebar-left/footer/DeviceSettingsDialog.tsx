@@ -29,7 +29,7 @@ export default function DeviceSettingsDialog({
   loading?: boolean;
 }) {
   const defaultTab = configuration[0]?.name ?? "";
-  const { updateConfiguration } = useConfigurations();
+  const { updateConfiguration, configurationTooltips } = useConfigurations();
 
   const handleValueChange = useCallback(
     (
@@ -93,6 +93,10 @@ export default function DeviceSettingsDialog({
                         key={`${param.uid}-${param.value}`}
                         param={param}
                         deviceName={deviceName}
+                        configurationTooltip={
+                          configurationTooltips[category.name]?.[param.name] ??
+                          undefined
+                        }
                         onValueChange={(
                           uid,
                           parameterName,

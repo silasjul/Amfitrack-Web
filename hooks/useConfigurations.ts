@@ -5,6 +5,8 @@ import {
   useEffect,
   useState,
 } from "react";
+import axios from "axios";
+import { parseConfigToObject, ParsedConfig } from "@/lib/configTooltipParser";
 
 export interface PendingConfiguration {
   deviceName: string;
@@ -17,6 +19,7 @@ export interface PendingConfiguration {
 
 interface ConfigurationsContextValue {
   configurations: PendingConfiguration[];
+  configurationTooltips: ParsedConfig;
   updateConfiguration: (entry: PendingConfiguration) => void;
   removeConfiguration: (deviceName: string, uid: number) => void;
   removeConfigurationsForDevice: (deviceName: string) => void;
@@ -43,7 +46,8 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
   const [configurations, setConfigurations] = useState<PendingConfiguration[]>(
     [],
   );
-
+  const [configurationTooltips, setConfigurationTooltips] =
+    useState<ParsedConfig>({});
   const updateConfiguration = useCallback((entry: PendingConfiguration) => {
     setConfigurations((prev) => {
       const idx = prev.findIndex(
@@ -84,8 +88,31 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     console.log("[Configurations] pending changes:", configurations);
   }, [configurations]);
 
+  /**
+   * Fetch configuration tooltips once
+   */
+  useEffect(() => {
+    const fetchConfigurationTooltips = async () => {
+      try {
+        const tooltips = await axios.get("/api/configuration-tooltips");
+        const parsedTooltips = parseConfigToObject(tooltips.data, {
+          includeRstOnlyBlocks: true,
+        });
+        console.log("[Configurations] parsed tooltips:", parsedTooltips);
+        setConfigurationTooltips(parsedTooltips);
+      } catch (err) {
+        console.error(
+          "[Configurations] Failed to load configuration tooltips:",
+          err,
+        );
+      }
+    };
+    fetchConfigurationTooltips();
+  }, []);
+
   return {
     configurations,
+    configurationTooltips,
     updateConfiguration,
     removeConfiguration,
     removeConfigurationsForDevice,
