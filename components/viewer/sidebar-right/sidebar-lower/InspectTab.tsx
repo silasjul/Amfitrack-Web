@@ -226,7 +226,7 @@ function DistortionCell({ distortion }: { distortion: number }) {
       <div className="mt-1 h-1 rounded-full bg-sidebar-foreground/10 overflow-hidden">
         <div
           className={cn(
-            "h-full rounded-full transition-all duration-300",
+            "h-full rounded-full transition-[width,height,padding]",
             barColor,
           )}
           style={{ width: `${distortion * 100}%` }}

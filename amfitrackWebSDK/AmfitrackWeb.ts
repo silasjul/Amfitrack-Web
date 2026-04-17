@@ -94,39 +94,49 @@ class AmfitrackWeb {
     this.removeDisconnectHandler();
   }
 
-  async requestConnectionHub(): Promise<HIDDevice | null> {
-    const device = await this.hidManager.requestDevice(PRODUCT_ID_SENSOR);
+  /**
+   * Prompt the user to pick a hub or source device and connect it.
+   * Already-connected devices are ignored so the chooser only acts on new ones.
+   */
+  async requestConnectionDevice(): Promise<HIDDevice | null> {
+    const device = await this.hidManager.requestDevice([
+      PRODUCT_ID_SENSOR,
+      PRODUCT_ID_SOURCE,
+    ]);
     if (!device) return null;
 
-    try {
-      await this.startReadingDevice(device);
-      this._hubDevices.add(device);
-      this.syncConfiguratorHub();
-      this.emitter.emit("hubConnection", device, true);
-      return device;
-    } catch {
-      throw new DeviceError(
-        "Failed to open hub device",
-        "Make sure it is not in use by another program or browser tab.",
-      );
+    if (device.productId === PRODUCT_ID_SENSOR) {
+      if (this._hubDevices.has(device)) return device;
+      try {
+        await this.startReadingDevice(device);
+        this._hubDevices.add(device);
+        this.syncConfiguratorHub();
+        this.emitter.emit("hubConnection", device, true);
+        return device;
+      } catch {
+        throw new DeviceError(
+          "Failed to open hub device",
+          "Make sure it is not in use by another program or browser tab.",
+        );
+      }
     }
-  }
 
-  async requestConnectionSource(): Promise<HIDDevice | null> {
-    const device = await this.hidManager.requestDevice(PRODUCT_ID_SOURCE);
-    if (!device) return null;
-
-    try {
-      await this.hidManager.openDevice(device);
-      this._sourceDevices.add(device);
-      this.emitter.emit("sourceConnection", device, true);
-      return device;
-    } catch {
-      throw new DeviceError(
-        "Failed to open source device",
-        "Make sure it is not in use by another program or browser tab.",
-      );
+    if (device.productId === PRODUCT_ID_SOURCE) {
+      if (this._sourceDevices.has(device)) return device;
+      try {
+        await this.hidManager.openDevice(device);
+        this._sourceDevices.add(device);
+        this.emitter.emit("sourceConnection", device, true);
+        return device;
+      } catch {
+        throw new DeviceError(
+          "Failed to open source device",
+          "Make sure it is not in use by another program or browser tab.",
+        );
+      }
     }
+
+    return null;
   }
 
   /**

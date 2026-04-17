@@ -8,16 +8,13 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
-import { DeviceError } from "@/amfitrackWebSDK/AmfitrackWeb";
 import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
 export interface HubContextValue {
   hubDevices: HIDDevice[];
   hubConfigurations: Map<HIDDevice, Configuration[]>;
   hubTxIds: Map<HIDDevice, number | null>;
-  requestConnectionHub: () => Promise<void>;
   updateHubParameterValue: (
     device: HIDDevice,
     uid: number,
@@ -90,18 +87,6 @@ export function useHubProvider(
     };
   }, [amfitrackWebRef]);
 
-  const requestConnectionHub = useCallback(async () => {
-    try {
-      await amfitrackWebRef.current.requestConnectionHub();
-    } catch (error) {
-      if (error instanceof DeviceError) {
-        toast.error(error.title, { description: error.description });
-      } else {
-        toast.error(error instanceof Error ? error.message : String(error));
-      }
-    }
-  }, [amfitrackWebRef]);
-
   const updateHubParameterValue = useCallback(
     (device: HIDDevice, uid: number, value: number | boolean | string) => {
       setHubConfigurations((prev) => {
@@ -145,7 +130,6 @@ export function useHubProvider(
     hubDevices,
     hubConfigurations,
     hubTxIds,
-    requestConnectionHub,
     updateHubParameterValue,
     refetchHubConfiguration,
   };

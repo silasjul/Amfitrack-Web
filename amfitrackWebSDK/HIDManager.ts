@@ -19,23 +19,27 @@ export default class HIDManager {
 
   /**
    * Prompt the user to select and authorize a device.
+   * Accepts one or more product IDs to include in the chooser filters.
    */
   public async requestDevice(
-    productId: number,
+    productIds: number | number[],
   ): Promise<HIDDevice | null> {
+    const ids = Array.isArray(productIds) ? productIds : [productIds];
     try {
       const devices = await navigator.hid.requestDevice({
-        filters: [{ vendorId: VENDOR_ID, productId }],
+        filters: ids.map((productId) => ({ vendorId: VENDOR_ID, productId })),
       });
 
       if (devices.length === 0) {
-        throw new Error("No device was selected.");
+        console.warn("No device was selected.");
+        return null;
       }
 
       return devices[0];
     } catch (error: any) {
       if (error.name === "NotFoundError") {
-        throw new Error("No device was selected.");
+        console.warn("No device was selected.");
+        return null;
       }
       throw new Error(`Connection failed: ${error.message}`);
     }
@@ -116,10 +120,7 @@ export default class HIDManager {
   /**
    * Send raw packet data as a HID output report.
    */
-  public async sendReport(
-    device: HIDDevice,
-    data: Uint8Array,
-  ): Promise<void> {
+  public async sendReport(device: HIDDevice, data: Uint8Array): Promise<void> {
     const reportData = new Uint8Array(HID_REPORT_DATA_SIZE);
     reportData.set(data);
     await device.sendReport(HID_REPORT_ID, reportData);

@@ -138,14 +138,14 @@ export default function SidebarUpper() {
 
   return (
     <div className="flex h-full w-full flex-col pl-1 pr-1 pb-0.5">
-      <div className="flex-1 flex flex-col bg-sidebar rounded-b-sm overflow-hidden">
+      <div className="flex-1 flex min-h-0 flex-col bg-sidebar rounded-b-sm overflow-hidden">
         <div className="flex items-center gap-1 px-3 py-2 border-b border-sidebar-border/30">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
             Devices
           </span>
           <Badge
             variant="secondary"
-            className="h-4 px-1.5 text-[10px] font-mono"
+            className="h-4 px-1.5 text-[10px] font-mono text-sidebar-foreground/80"
           >
             {totalDeviceCount}
           </Badge>
@@ -160,17 +160,17 @@ export default function SidebarUpper() {
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="hubs">Hubs</SelectItem>
-                <SelectItem value="sources">Sources</SelectItem>
-                <SelectItem value="sensors">Sensors</SelectItem>
+              <SelectContent className="min-w-12" position="popper" align="end">
+                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="all">All</SelectItem>
+                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="hubs">Hubs</SelectItem>
+                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="sources">Sources</SelectItem>
+                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="sensors">Sensors</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-1.5">
+        <ScrollArea className="min-h-0 flex-1 p-1.5">
           <div className="space-y-1">
             {totalDeviceCount === 0 && <SkeletonRows />}
 

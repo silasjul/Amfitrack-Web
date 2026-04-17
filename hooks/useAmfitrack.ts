@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -9,12 +10,16 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { AmfitrackWeb } from "@/amfitrackWebSDK";
-import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
+import {
+  DeviceError,
+  type DeviceFrequency,
+} from "@/amfitrackWebSDK/AmfitrackWeb";
 
 interface AmfitrackContextValue {
   isReading: boolean;
   messageFrequencyRef: React.RefObject<Map<number, DeviceFrequency>>;
   amfitrackWebRef: React.RefObject<AmfitrackWeb>;
+  requestConnectionDevice: () => Promise<void>;
 }
 
 const AmfitrackContext = createContext<AmfitrackContextValue | null>(null);
@@ -57,9 +62,22 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
     };
   }, []);
 
+  const requestConnectionDevice = useCallback(async () => {
+    try {
+      await amfitrackWebRef.current.requestConnectionDevice();
+    } catch (error) {
+      if (error instanceof DeviceError) {
+        toast.error(error.title, { description: error.description });
+      } else {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
+    }
+  }, []);
+
   return {
     isReading,
     messageFrequencyRef,
     amfitrackWebRef,
+    requestConnectionDevice,
   };
 }

@@ -28,7 +28,7 @@ export function SourceRow({
     <button
       onClick={onSelect}
       className={cn(
-        "group w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-all duration-150",
+        "group w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-[width,height,padding]",
         isSelected
           ? "bg-sidebar-foreground/8 ring-1 ring-sidebar-foreground/10"
           : "ring-1 ring-transparent",
@@ -45,7 +45,7 @@ export function SourceRow({
         <div className="flex items-center justify-between gap-2">
           <span
             className={cn(
-              "text-xs font-medium truncate transition-colors",
+              "text-xs font-medium truncate",
               isSelected
                 ? "text-sidebar-foreground"
                 : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground/90",
@@ -82,7 +82,7 @@ export function SourceRow({
           }
         }}
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-[width,height,padding]",
           "text-sidebar-foreground/20 hover:text-sidebar-foreground/60 hover:bg-white/10",
           isSelected && "text-sidebar-foreground/40",
         )}

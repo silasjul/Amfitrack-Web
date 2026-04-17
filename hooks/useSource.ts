@@ -8,16 +8,13 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
-import { DeviceError } from "@/amfitrackWebSDK/AmfitrackWeb";
 import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
 export interface SourceContextValue {
   sourceDevices: HIDDevice[];
   sourceConfigurations: Map<HIDDevice, Configuration[]>;
   sourceTxIds: Map<HIDDevice, number | null>;
-  requestConnectionSource: () => Promise<void>;
   updateSourceParameterValue: (
     device: HIDDevice,
     uid: number,
@@ -93,18 +90,6 @@ export function useSourceProvider(
     };
   }, [amfitrackWebRef]);
 
-  const requestConnectionSource = useCallback(async () => {
-    try {
-      await amfitrackWebRef.current.requestConnectionSource();
-    } catch (error) {
-      if (error instanceof DeviceError) {
-        toast.error(error.title, { description: error.description });
-      } else {
-        toast.error(error instanceof Error ? error.message : String(error));
-      }
-    }
-  }, [amfitrackWebRef]);
-
   const updateSourceParameterValue = useCallback(
     (device: HIDDevice, uid: number, value: number | boolean | string) => {
       setSourceConfigurations((prev) => {
@@ -148,7 +133,6 @@ export function useSourceProvider(
     sourceDevices,
     sourceConfigurations,
     sourceTxIds,
-    requestConnectionSource,
     updateSourceParameterValue,
     refetchSourceConfiguration,
   };
