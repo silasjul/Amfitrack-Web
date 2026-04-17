@@ -12,7 +12,10 @@ import * as THREE from "three";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
 import { Sensor } from "@/amfitrackWebSDK";
 import type { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import type { Configuration } from "@/amfitrackWebSDK/Configurator";
+import {
+  extractDeviceId,
+  type Configuration,
+} from "@/amfitrackWebSDK/Configurator";
 
 const POSITION_SCALE = 0.01;
 
@@ -22,6 +25,7 @@ export interface SensorIdRemap {
 }
 
 export interface SensorContextValue {
+  sensors: Sensor[];
   sensorIds: number[];
   sensorsDataRef: React.RefObject<Map<number, EmfImuFrameIdData>>;
   sensorConfigurations: Map<number, Configuration[]>;
@@ -51,6 +55,7 @@ export function useSensorProvider(
   amfitrackWebRef: React.RefObject<AmfitrackWeb>,
   hubConnected: boolean,
 ): SensorContextValue {
+  const [sensors, setSensors] = useState<Sensor[]>([]);
   const [sensorIds, setSensorIds] = useState<number[]>([]);
   const [sensorConfigurations, setSensorConfigurations] = useState<
     Map<number, Configuration[]>
@@ -67,17 +72,80 @@ export function useSensorProvider(
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
+    // Track USB sensors for which we have already issued (or completed) a
+    // direct USB config fetch, so `deviceUpdated` retries don't re-enter.
+    const usbFetched = new WeakSet<Sensor>();
+
+    const fetchUsbSensorConfig = async (sensor: Sensor) => {
+      if (!sensor.hidDevice) return;
+      if (usbFetched.has(sensor)) return;
+      usbFetched.add(sensor);
+      try {
+        const config =
+          (await sdk.getSensorConfigurationFromUsb(sensor)) ?? [];
+        console.log("sensor configuration (usb)", config);
+        const txId = extractDeviceId(config);
+        if (txId !== null) {
+          // Prevent the hub-routed config effect below from re-fetching the
+          // same sensor once its txId is published into `sensorIds`.
+          configFetchedRef.current.add(txId);
+          sdk.setDeviceTxId(sensor, txId);
+          setSensorConfigurations((prev) => {
+            const next = new Map(prev);
+            next.set(txId, config);
+            return next;
+          });
+          setSensorIds((prev) =>
+            prev.includes(txId) ? prev : [...prev, txId],
+          );
+        }
+        setSensors((prev) => [...prev]);
+      } catch (err) {
+        usbFetched.delete(sensor);
+        console.error("Failed to get USB sensor config", err);
+      }
+    };
+
     const unbindAdded = sdk.on("deviceAdded", (device) => {
       if (device.kind !== "sensor") return;
       const sensor = device as Sensor;
+      setSensors((prev) =>
+        prev.includes(sensor) ? prev : [...prev, sensor],
+      );
+
+      if (sensor.hidDevice) {
+        fetchUsbSensorConfig(sensor);
+        return;
+      }
+
       const id = sensor.txId;
       if (id === null) return;
       setSensorIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     });
 
+    const unbindUpdated = sdk.on("deviceUpdated", (device) => {
+      if (device.kind !== "sensor") return;
+      const sensor = device as Sensor;
+      setSensors((prev) => (prev.includes(sensor) ? [...prev] : prev));
+
+      // A USB sensor's txId may land after `deviceAdded` (for instance if
+      // the initial USB config fetch failed and is being retried). Keep
+      // `sensorIds` in sync when that happens.
+      const id = sensor.txId;
+      if (id !== null) {
+        setSensorIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      }
+
+      // Retry the USB config fetch if it hasn't succeeded yet.
+      if (sensor.hidDevice) {
+        fetchUsbSensorConfig(sensor);
+      }
+    });
+
     const unbindRemoved = sdk.on("deviceRemoved", (device) => {
       if (device.kind !== "sensor") return;
       const sensor = device as Sensor;
+      setSensors((prev) => prev.filter((s) => s !== sensor));
       const id = sensor.txId;
       if (id === null) return;
       sensorsDataRef.current.delete(id);
@@ -86,6 +154,7 @@ export function useSensorProvider(
 
     return () => {
       unbindAdded();
+      unbindUpdated();
       unbindRemoved();
     };
   }, [amfitrackWebRef]);
@@ -248,6 +317,7 @@ export function useSensorProvider(
   }, []);
 
   return {
+    sensors,
     sensorIds,
     sensorsDataRef,
     sensorConfigurations,

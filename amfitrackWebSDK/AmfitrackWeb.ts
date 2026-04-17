@@ -208,6 +208,17 @@ class AmfitrackWeb {
     return await this.configurator.getConfigurationSensor(hub, sensorID);
   }
 
+  /**
+   * Read a USB-plugged sensor's full configuration directly over its HID
+   * transport, bypassing the hub-routed path. Returns null if the sensor
+   * has no USB transport (hub-forwarded sensors must use
+   * `getSensorConfiguration(sensorID)` instead).
+   */
+  async getSensorConfigurationFromUsb(sensor: Sensor) {
+    if (!sensor.hidDevice) return null;
+    return await this.configurator.getConfigurationUSBDevice(sensor.hidDevice);
+  }
+
   async setHubParameterValue(
     device: HIDDevice,
     uid: number,
@@ -324,12 +335,15 @@ class AmfitrackWeb {
 
     const device = this.registry.upsertFromUsb(hidDevice, role);
 
-    if (device.kind === "hub") {
+    if (device.kind === "hub" || device.kind === "sensor") {
       try {
         await this.startReadingDevice(hidDevice);
       } catch {
         this.emitter.emit("error", {
-          title: "Failed to start hub reader",
+          title:
+            device.kind === "hub"
+              ? "Failed to start hub reader"
+              : "Failed to start sensor reader",
           description:
             "Make sure the device is not in use by another program or browser tab.",
         });
@@ -342,7 +356,10 @@ class AmfitrackWeb {
   }
 
   private handleDeviceRemoved(device: Device): void {
-    if (device.kind === "hub" && device.hidDevice) {
+    if (
+      (device.kind === "hub" || device.kind === "sensor") &&
+      device.hidDevice
+    ) {
       this.hidManager.stopReadingDevice(device.hidDevice);
       this.updateReadingState();
     }
@@ -385,7 +402,11 @@ class AmfitrackWeb {
   }
 
   private updateReadingState(): void {
-    if (this.registry.allHubs().length === 0 && this._isReading) {
+    const hasHub = this.registry.allHubs().length > 0;
+    const hasUsbSensor = this.registry
+      .allSensors()
+      .some((s) => s.hidDevice !== null);
+    if (!hasHub && !hasUsbSensor && this._isReading) {
       this._isReading = false;
       this.emitter.emit("reading", false);
       this.stopFrequencyTracking();

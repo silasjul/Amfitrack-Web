@@ -21,6 +21,7 @@ export default function Footer() {
   const { requestConnectionDevice } = useAmfitrack();
   const { hubs } = useHub();
   const { sources } = useSource();
+  const { sensors } = useSensor();
 
   const connectedDevices: ConnectedDevice[] = [
     ...hubs
@@ -43,6 +44,17 @@ export default function Footer() {
           label: "Source",
           id,
           image: "/source.png",
+        };
+      }),
+    ...sensors
+      .filter((sensor) => sensor.hidDevice !== null)
+      .map<ConnectedDevice>((sensor, idx) => {
+        const id = sensor.txId;
+        return {
+          key: id !== null ? `sensor-${id}` : `sensor-idx-${idx}`,
+          label: "Sensor",
+          id,
+          image: "/sensor.png",
         };
       }),
   ];
