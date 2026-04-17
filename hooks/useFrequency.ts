@@ -15,8 +15,8 @@ export interface FrequencySnapshot {
 
 export function useFrequency(): FrequencySnapshot {
   const { messageFrequencyRef } = useAmfitrack();
-  const { hubTxIds } = useHub();
-  const { sourceTxIds } = useSource();
+  const { hubs } = useHub();
+  const { sources } = useSource();
   const { sensorIds } = useSensor();
   const [snapshot, setSnapshot] = useState<FrequencySnapshot>({
     sensors: new Map(),
@@ -28,40 +28,48 @@ export function useFrequency(): FrequencySnapshot {
     const interval = setInterval(() => {
       const freqMap = messageFrequencyRef.current;
       if (freqMap.size === 0) {
-        setSnapshot({ sensors: new Map(), hubs: new Map(), sources: new Map() });
+        setSnapshot({
+          sensors: new Map(),
+          hubs: new Map(),
+          sources: new Map(),
+        });
         return;
       }
 
       const hubTxIdSet = new Set<number>();
-      for (const txId of hubTxIds.values()) {
-        if (txId !== null) hubTxIdSet.add(txId);
+      for (const hub of hubs) {
+        if (hub.txId !== null) hubTxIdSet.add(hub.txId);
       }
 
       const sourceTxIdSet = new Set<number>();
-      for (const txId of sourceTxIds.values()) {
-        if (txId !== null) sourceTxIdSet.add(txId);
+      for (const source of sources) {
+        if (source.txId !== null) sourceTxIdSet.add(source.txId);
       }
 
       const sensorIdSet = new Set(sensorIds);
-      const sensors = new Map<number, DeviceFrequency>();
-      const hubs = new Map<number, DeviceFrequency>();
-      const sources = new Map<number, DeviceFrequency>();
+      const sensorFreq = new Map<number, DeviceFrequency>();
+      const hubFreq = new Map<number, DeviceFrequency>();
+      const sourceFreq = new Map<number, DeviceFrequency>();
 
       for (const [txId, freq] of freqMap) {
         if (hubTxIdSet.has(txId)) {
-          hubs.set(txId, freq);
+          hubFreq.set(txId, freq);
         } else if (sourceTxIdSet.has(txId)) {
-          sources.set(txId, freq);
+          sourceFreq.set(txId, freq);
         } else if (sensorIdSet.has(txId)) {
-          sensors.set(txId, freq);
+          sensorFreq.set(txId, freq);
         }
       }
 
-      setSnapshot({ sensors, hubs, sources });
+      setSnapshot({
+        sensors: sensorFreq,
+        hubs: hubFreq,
+        sources: sourceFreq,
+      });
     }, 200);
 
     return () => clearInterval(interval);
-  }, [sensorIds, hubTxIds, sourceTxIds, messageFrequencyRef]);
+  }, [sensorIds, hubs, sources, messageFrequencyRef]);
 
   return snapshot;
 }

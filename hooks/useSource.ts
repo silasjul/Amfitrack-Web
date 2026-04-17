@@ -5,22 +5,21 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
+import { Source } from "@/amfitrackWebSDK";
 import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
 export interface SourceContextValue {
-  sourceDevices: HIDDevice[];
-  sourceConfigurations: Map<HIDDevice, Configuration[]>;
-  sourceTxIds: Map<HIDDevice, number | null>;
+  sources: Source[];
+  sourceConfigurations: Map<Source, Configuration[]>;
   updateSourceParameterValue: (
-    device: HIDDevice,
+    source: Source,
     uid: number,
     value: number | boolean | string,
   ) => void;
-  refetchSourceConfiguration: (device: HIDDevice) => Promise<void>;
+  refetchSourceConfiguration: (source: Source) => Promise<void>;
 }
 
 const SourceContext = createContext<SourceContextValue | null>(null);
@@ -38,66 +37,85 @@ export function useSource() {
 export function useSourceProvider(
   amfitrackWebRef: React.RefObject<AmfitrackWeb>,
 ): SourceContextValue {
-  const [sourceDevices, setSourceDevices] = useState<HIDDevice[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
   const [sourceConfigurations, setSourceConfigurations] = useState<
-    Map<HIDDevice, Configuration[]>
+    Map<Source, Configuration[]>
   >(new Map());
-
-  const sourceTxIds = useMemo(() => {
-    const map = new Map<HIDDevice, number | null>();
-    for (const [device, config] of sourceConfigurations) {
-      map.set(
-        device,
-        config.length > 0 ? extractDeviceId(config) : null,
-      );
-    }
-    return map;
-  }, [sourceConfigurations]);
 
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
-    const unbind = sdk.on("sourceConnection", async (device, connected) => {
-      if (connected) {
-        let config: Configuration[] = [];
-        try {
-          config = (await sdk.getSourceConfiguration(device)) ?? [];
-          console.log("source configuration", config);
-        } catch (err) {
-          console.error("Failed to get source config", err);
-        }
+    // Track which sources we have already fetched/are fetching, so that
+    // `deviceUpdated` events (e.g. when a hub-forwarded source finally has
+    // a txId) do not retrigger a fetch once we already have the config.
+    const fetched = new WeakSet<Source>();
 
+    const fetchConfig = async (source: Source) => {
+      if (fetched.has(source)) return;
+      // USB needs an hidDevice; hub-forwarded path needs a known txId.
+      if (!source.hidDevice && source.txId === null) return;
+      fetched.add(source);
+      try {
+        const config = (await sdk.getSourceConfiguration(source)) ?? [];
+        console.log("source configuration", config);
+        const txId = extractDeviceId(config);
+        if (txId !== null) sdk.setDeviceTxId(source, txId);
         setSourceConfigurations((prev) => {
           const next = new Map(prev);
-          next.set(device, config);
+          next.set(source, config);
           return next;
         });
-        setSourceDevices((prev) =>
-          prev.includes(device) ? prev : [...prev, device],
-        );
-      } else {
-        setSourceDevices((prev) => prev.filter((d) => d !== device));
-        setSourceConfigurations((prev) => {
-          const next = new Map(prev);
-          next.delete(device);
-          return next;
-        });
+        setSources((prev) => [...prev]);
+      } catch (err) {
+        fetched.delete(source);
+        console.error("Failed to get source config", err);
       }
+    };
+
+    const unbindAdded = sdk.on("deviceAdded", (device) => {
+      if (device.kind !== "source") return;
+      const source = device as Source;
+      setSources((prev) =>
+        prev.includes(source) ? prev : [...prev, source],
+      );
+      fetchConfig(source);
+    });
+
+    const unbindUpdated = sdk.on("deviceUpdated", (device) => {
+      if (device.kind !== "source") return;
+      const source = device as Source;
+      setSources((prev) => (prev.includes(source) ? [...prev] : prev));
+      // A txId may have landed after the device was first seen; retry.
+      fetchConfig(source);
+    });
+
+    const unbindRemoved = sdk.on("deviceRemoved", (device) => {
+      if (device.kind !== "source") return;
+      const source = device as Source;
+      setSources((prev) => prev.filter((s) => s !== source));
+      setSourceConfigurations((prev) => {
+        if (!prev.has(source)) return prev;
+        const next = new Map(prev);
+        next.delete(source);
+        return next;
+      });
     });
 
     return () => {
-      unbind();
+      unbindAdded();
+      unbindUpdated();
+      unbindRemoved();
     };
   }, [amfitrackWebRef]);
 
   const updateSourceParameterValue = useCallback(
-    (device: HIDDevice, uid: number, value: number | boolean | string) => {
+    (source: Source, uid: number, value: number | boolean | string) => {
       setSourceConfigurations((prev) => {
         const next = new Map(prev);
-        const existing = next.get(device);
+        const existing = next.get(source);
         if (existing) {
           next.set(
-            device,
+            source,
             existing.map((cat) => ({
               ...cat,
               parameters: cat.parameters.map((p) =>
@@ -113,15 +131,20 @@ export function useSourceProvider(
   );
 
   const refetchSourceConfiguration = useCallback(
-    async (device: HIDDevice) => {
+    async (source: Source) => {
+      const sdk = amfitrackWebRef.current;
+      if (!source.hidDevice && source.txId === null) return;
       try {
-        const config =
-          await amfitrackWebRef.current.getSourceConfiguration(device);
+        const config = (await sdk.getSourceConfiguration(source)) ?? [];
+        console.log("source configuration", config);
+        const txId = extractDeviceId(config);
+        if (txId !== null) sdk.setDeviceTxId(source, txId);
         setSourceConfigurations((prev) => {
           const next = new Map(prev);
-          next.set(device, config ?? []);
+          next.set(source, config);
           return next;
         });
+        setSources((prev) => [...prev]);
       } catch (err) {
         console.error("Failed to refetch source config", err);
       }
@@ -130,9 +153,8 @@ export function useSourceProvider(
   );
 
   return {
-    sourceDevices,
+    sources,
     sourceConfigurations,
-    sourceTxIds,
     updateSourceParameterValue,
     refetchSourceConfiguration,
   };

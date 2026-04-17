@@ -5,22 +5,21 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
+import { Hub } from "@/amfitrackWebSDK";
 import { Configuration, extractDeviceId } from "@/amfitrackWebSDK/Configurator";
 
 export interface HubContextValue {
-  hubDevices: HIDDevice[];
-  hubConfigurations: Map<HIDDevice, Configuration[]>;
-  hubTxIds: Map<HIDDevice, number | null>;
+  hubs: Hub[];
+  hubConfigurations: Map<Hub, Configuration[]>;
   updateHubParameterValue: (
-    device: HIDDevice,
+    hub: Hub,
     uid: number,
     value: number | boolean | string,
   ) => void;
-  refetchHubConfiguration: (device: HIDDevice) => Promise<void>;
+  refetchHubConfiguration: (hub: Hub) => Promise<void>;
 }
 
 const HubContext = createContext<HubContextValue | null>(null);
@@ -38,63 +37,71 @@ export function useHub() {
 export function useHubProvider(
   amfitrackWebRef: React.RefObject<AmfitrackWeb>,
 ): HubContextValue {
-  const [hubDevices, setHubDevices] = useState<HIDDevice[]>([]);
+  const [hubs, setHubs] = useState<Hub[]>([]);
   const [hubConfigurations, setHubConfigurations] = useState<
-    Map<HIDDevice, Configuration[]>
+    Map<Hub, Configuration[]>
   >(new Map());
-
-  const hubTxIds = useMemo(() => {
-    const map = new Map<HIDDevice, number | null>();
-    for (const [device, config] of hubConfigurations) {
-      map.set(device, config.length > 0 ? extractDeviceId(config) : null);
-    }
-    return map;
-  }, [hubConfigurations]);
 
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
-    const unbind = sdk.on("hubConnection", async (device, connected) => {
-      if (connected) {
-        let config: Configuration[] = [];
-        try {
-          config = (await sdk.getHubConfiguration(device)) ?? [];
-          console.log("hub configuration", config);
-        } catch (err) {
-          console.error("Failed to get hub config", err);
-        }
-
+    const fetchConfig = async (hub: Hub) => {
+      if (!hub.hidDevice) return;
+      try {
+        const config = (await sdk.getHubConfiguration(hub.hidDevice)) ?? [];
+        console.log("hub configuration", config);
+        const txId = extractDeviceId(config);
+        if (txId !== null) sdk.setDeviceTxId(hub, txId);
         setHubConfigurations((prev) => {
           const next = new Map(prev);
-          next.set(device, config);
+          next.set(hub, config);
           return next;
         });
-        setHubDevices((prev) =>
-          prev.includes(device) ? prev : [...prev, device],
-        );
-      } else {
-        setHubDevices((prev) => prev.filter((d) => d !== device));
-        setHubConfigurations((prev) => {
-          const next = new Map(prev);
-          next.delete(device);
-          return next;
-        });
+        setHubs((prev) => [...prev]);
+      } catch (err) {
+        console.error("Failed to get hub config", err);
       }
+    };
+
+    const unbindAdded = sdk.on("deviceAdded", (device) => {
+      if (device.kind !== "hub") return;
+      const hub = device as Hub;
+      setHubs((prev) => (prev.includes(hub) ? prev : [...prev, hub]));
+      fetchConfig(hub);
+    });
+
+    const unbindUpdated = sdk.on("deviceUpdated", (device) => {
+      if (device.kind !== "hub") return;
+      setHubs((prev) => (prev.includes(device as Hub) ? [...prev] : prev));
+    });
+
+    const unbindRemoved = sdk.on("deviceRemoved", (device) => {
+      if (device.kind !== "hub") return;
+      const hub = device as Hub;
+      setHubs((prev) => prev.filter((h) => h !== hub));
+      setHubConfigurations((prev) => {
+        if (!prev.has(hub)) return prev;
+        const next = new Map(prev);
+        next.delete(hub);
+        return next;
+      });
     });
 
     return () => {
-      unbind();
+      unbindAdded();
+      unbindUpdated();
+      unbindRemoved();
     };
   }, [amfitrackWebRef]);
 
   const updateHubParameterValue = useCallback(
-    (device: HIDDevice, uid: number, value: number | boolean | string) => {
+    (hub: Hub, uid: number, value: number | boolean | string) => {
       setHubConfigurations((prev) => {
         const next = new Map(prev);
-        const existing = next.get(device);
+        const existing = next.get(hub);
         if (existing) {
           next.set(
-            device,
+            hub,
             existing.map((cat) => ({
               ...cat,
               parameters: cat.parameters.map((p) =>
@@ -110,15 +117,20 @@ export function useHubProvider(
   );
 
   const refetchHubConfiguration = useCallback(
-    async (device: HIDDevice) => {
+    async (hub: Hub) => {
+      if (!hub.hidDevice) return;
+      const sdk = amfitrackWebRef.current;
       try {
-        const config =
-          await amfitrackWebRef.current.getHubConfiguration(device);
+        const config = (await sdk.getHubConfiguration(hub.hidDevice)) ?? [];
+        console.log("hub configuration", config);
+        const txId = extractDeviceId(config);
+        if (txId !== null) sdk.setDeviceTxId(hub, txId);
         setHubConfigurations((prev) => {
           const next = new Map(prev);
-          next.set(device, config ?? []);
+          next.set(hub, config);
           return next;
         });
+        setHubs((prev) => [...prev]);
       } catch (err) {
         console.error("Failed to refetch hub config", err);
       }
@@ -127,9 +139,8 @@ export function useHubProvider(
   );
 
   return {
-    hubDevices,
+    hubs,
     hubConfigurations,
-    hubTxIds,
     updateHubParameterValue,
     refetchHubConfiguration,
   };

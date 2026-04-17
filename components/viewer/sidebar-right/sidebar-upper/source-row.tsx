@@ -28,10 +28,10 @@ export function SourceRow({
     <button
       onClick={onSelect}
       className={cn(
-        "group w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-[width,height,padding]",
+        "w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-[width,height,padding]",
         isSelected
           ? "bg-sidebar-foreground/8 ring-1 ring-sidebar-foreground/10"
-          : "ring-1 ring-transparent",
+          : "ring-1 ring-transparent hover:[&_.device-row-label]:text-sidebar-foreground/90",
         "hover:bg-white/13",
       )}
     >
@@ -45,10 +45,10 @@ export function SourceRow({
         <div className="flex items-center justify-between gap-2">
           <span
             className={cn(
-              "text-xs font-medium truncate",
+              "device-row-label text-xs font-medium truncate",
               isSelected
                 ? "text-sidebar-foreground"
-                : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground/90",
+                : "text-sidebar-foreground/70",
             )}
           >
             {label}

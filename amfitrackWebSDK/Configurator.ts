@@ -45,14 +45,9 @@ export class Configurator {
   private packetBuilder = new PacketBuilder();
   private configValueDecoder = new ReplyConfigurationValueUidPayload();
   private valueEncoder = new ValueEncoder();
-  private _hubDevice: HIDDevice | null = null;
 
   constructor(hidManager: HIDManager) {
     this.hidManager = hidManager;
-  }
-
-  set hubDevice(device: HIDDevice | null) {
-    this._hubDevice = device;
   }
 
   /**
@@ -447,6 +442,28 @@ export class Configurator {
     return { value: decoded.value, dataType: decoded.dataType };
   }
 
+  /**
+   * Request the human-readable device name.
+   *
+   * Mirrors `RequestDeviceNamePayload` / `ReplyDeviceNamePayload` in the
+   * Python SDK. Used by `DeviceRegistry` to tell a Hub from a Sensor on
+   * product id 0x0d12.
+   *
+   * Request payload: [0x08]
+   * Reply payload:   [0x09, ...ascii_name..., 0x00]
+   */
+  public async getDeviceName(device: HIDDevice): Promise<string> {
+    await this.hidManager.openDevice(device);
+
+    const { bytes } = this.buildRequest(CommonPayloadId.REQUEST_DEVICE_NAME, 1);
+    const reply = await this.sendCommonPayloadDevice(
+      device,
+      bytes,
+      CommonPayloadId.REPLY_DEVICE_NAME,
+    );
+    return this.decodeString(reply, 1);
+  }
+
   public async getConfigurationUSBDevice(
     device: HIDDevice,
   ): Promise<Configuration[]> {
@@ -476,12 +493,10 @@ export class Configurator {
   }
 
   public async getConfigurationSensor(
+    hubDevice: HIDDevice,
     sensorID: number,
   ): Promise<Configuration[]> {
-    if (!this._hubDevice) {
-      throw new Error("Hub device is not connected");
-    }
-    const device = this._hubDevice;
+    const device = hubDevice;
     await this.hidManager.openDevice(device);
 
     const config: Configuration[] = [];

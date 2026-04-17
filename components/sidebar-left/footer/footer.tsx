@@ -8,6 +8,7 @@ import { useHub } from "@/hooks/useHub";
 import { useSource } from "@/hooks/useSource";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { useSensor } from "@/hooks/useSensor";
 
 type ConnectedDevice = {
   key: string;
@@ -18,28 +19,32 @@ type ConnectedDevice = {
 
 export default function Footer() {
   const { requestConnectionDevice } = useAmfitrack();
-  const { hubDevices, hubTxIds } = useHub();
-  const { sourceDevices, sourceTxIds } = useSource();
+  const { hubs } = useHub();
+  const { sources } = useSource();
 
   const connectedDevices: ConnectedDevice[] = [
-    ...hubDevices.map<ConnectedDevice>((device, idx) => {
-      const id = hubTxIds.get(device) ?? null;
-      return {
-        key: id !== null ? `hub-${id}` : `hub-idx-${idx}`,
-        label: "Hub",
-        id,
-        image: "/hub.png",
-      };
-    }),
-    ...sourceDevices.map<ConnectedDevice>((device, idx) => {
-      const id = sourceTxIds.get(device) ?? null;
-      return {
-        key: id !== null ? `source-${id}` : `source-idx-${idx}`,
-        label: "Source",
-        id,
-        image: "/source.png",
-      };
-    }),
+    ...hubs
+      .filter((hub) => hub.hidDevice !== null)
+      .map<ConnectedDevice>((hub, idx) => {
+        const id = hub.txId;
+        return {
+          key: id !== null ? `hub-${id}` : `hub-idx-${idx}`,
+          label: "Hub",
+          id,
+          image: "/hub.png",
+        };
+      }),
+    ...sources
+      .filter((source) => source.hidDevice !== null)
+      .map<ConnectedDevice>((source, idx) => {
+        const id = source.txId;
+        return {
+          key: id !== null ? `source-${id}` : `source-idx-${idx}`,
+          label: "Source",
+          id,
+          image: "/source.png",
+        };
+      }),
   ];
 
   const hasDevices = connectedDevices.length > 0;

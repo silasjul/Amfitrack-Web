@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
+import { type Hub, type Source } from "@/amfitrackWebSDK";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -29,8 +30,8 @@ export default function SidebarUpper() {
     useViewer();
   const { sensorIds, sensorsDataRef, sensorConfigurations, lastSensorIdRemap } =
     useSensor();
-  const { hubDevices, hubConfigurations, hubTxIds } = useHub();
-  const { sourceDevices, sourceConfigurations, sourceTxIds } = useSource();
+  const { hubs, hubConfigurations } = useHub();
+  const { sources, sourceConfigurations } = useSource();
   const {
     sensors: sensorFrequencies,
     hubs: hubFrequencies,
@@ -46,14 +47,12 @@ export default function SidebarUpper() {
   const [configDialogSensorId, setConfigDialogSensorId] = useState<
     number | null
   >(null);
-  const [configDialogHub, setConfigDialogHub] = useState<HIDDevice | null>(
+  const [configDialogHub, setConfigDialogHub] = useState<Hub | null>(null);
+  const [configDialogSource, setConfigDialogSource] = useState<Source | null>(
     null,
   );
-  const [configDialogSource, setConfigDialogSource] =
-    useState<HIDDevice | null>(null);
 
-  const totalDeviceCount =
-    hubDevices.length + sourceDevices.length + sensorIds.length;
+  const totalDeviceCount = hubs.length + sources.length + sensorIds.length;
 
   // Snapshot sensor data periodically for display
   useEffect(() => {
@@ -115,12 +114,12 @@ export default function SidebarUpper() {
       };
     if (configDialogHub !== null)
       return {
-        dialogDeviceName: `Hub ${hubTxIds.get(configDialogHub) ?? "?"}`,
+        dialogDeviceName: `Hub ${configDialogHub.txId ?? "?"}`,
         dialogConfiguration: hubConfigurations.get(configDialogHub) ?? [],
       };
     if (configDialogSource !== null)
       return {
-        dialogDeviceName: `Source ${sourceTxIds.get(configDialogSource) ?? "?"}`,
+        dialogDeviceName: `Source ${configDialogSource.txId ?? "?"}`,
         dialogConfiguration: sourceConfigurations.get(configDialogSource) ?? [],
       };
     return { dialogDeviceName: "", dialogConfiguration: [] };
@@ -161,10 +160,30 @@ export default function SidebarUpper() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="min-w-12" position="popper" align="end">
-                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="all">All</SelectItem>
-                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="hubs">Hubs</SelectItem>
-                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="sources">Sources</SelectItem>
-                <SelectItem className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest" value="sensors">Sensors</SelectItem>
+                <SelectItem
+                  className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
+                  value="all"
+                >
+                  All
+                </SelectItem>
+                <SelectItem
+                  className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
+                  value="hubs"
+                >
+                  Hubs
+                </SelectItem>
+                <SelectItem
+                  className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
+                  value="sources"
+                >
+                  Sources
+                </SelectItem>
+                <SelectItem
+                  className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
+                  value="sensors"
+                >
+                  Sensors
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -175,24 +194,24 @@ export default function SidebarUpper() {
             {totalDeviceCount === 0 && <SkeletonRows />}
 
             {showHubs &&
-              hubDevices.map((device, idx) => {
-                const id = hubTxIds.get(device) ?? null;
+              hubs.map((hub, idx) => {
+                const id = hub.txId;
                 return (
                   <HubRow
                     key={`hub-${id ?? idx}`}
                     id={id}
                     frequency={id != null ? hubFrequencies.get(id) : undefined}
-                    configuration={hubConfigurations.get(device) ?? []}
+                    configuration={hubConfigurations.get(hub) ?? []}
                     isSelected={false}
                     onSelect={() => {}}
-                    onOpenSettings={() => setConfigDialogHub(device)}
+                    onOpenSettings={() => setConfigDialogHub(hub)}
                   />
                 );
               })}
 
             {showSources &&
-              sourceDevices.map((device, idx) => {
-                const id = sourceTxIds.get(device) ?? null;
+              sources.map((source, idx) => {
+                const id = source.txId;
                 return (
                   <SourceRow
                     key={`source-${id ?? idx}`}
@@ -200,10 +219,10 @@ export default function SidebarUpper() {
                     frequency={
                       id != null ? sourceFrequencies.get(id) : undefined
                     }
-                    configuration={sourceConfigurations.get(device) ?? []}
+                    configuration={sourceConfigurations.get(source) ?? []}
                     isSelected={false}
                     onSelect={() => {}}
-                    onOpenSettings={() => setConfigDialogSource(device)}
+                    onOpenSettings={() => setConfigDialogSource(source)}
                   />
                 );
               })}

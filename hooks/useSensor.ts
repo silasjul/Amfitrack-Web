@@ -10,12 +10,11 @@ import {
 } from "react";
 import * as THREE from "three";
 import type { AmfitrackWeb } from "@/amfitrackWebSDK";
+import { Sensor } from "@/amfitrackWebSDK";
 import type { EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
 import type { Configuration } from "@/amfitrackWebSDK/Configurator";
 
 const POSITION_SCALE = 0.01;
-const SENSOR_TIMEOUT_MS = 3000;
-const SENSOR_CLEANUP_INTERVAL_MS = 1000;
 
 export interface SensorIdRemap {
   oldId: number;
@@ -61,15 +60,43 @@ export function useSensorProvider(
     useState<SensorIdRemap | null>(null);
 
   const sensorsDataRef = useRef<Map<number, EmfImuFrameIdData>>(new Map());
-  const sensorLastSeenRef = useRef<Map<number, number>>(new Map());
   const configFetchedRef = useRef<Set<number>>(new Set());
 
+  // Registration (add/remove) is driven by the SDK's unified device events.
+  // The SDK now owns timeout-based liveness so there is no local cleanup.
+  useEffect(() => {
+    const sdk = amfitrackWebRef.current;
+
+    const unbindAdded = sdk.on("deviceAdded", (device) => {
+      if (device.kind !== "sensor") return;
+      const sensor = device as Sensor;
+      const id = sensor.txId;
+      if (id === null) return;
+      setSensorIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    });
+
+    const unbindRemoved = sdk.on("deviceRemoved", (device) => {
+      if (device.kind !== "sensor") return;
+      const sensor = device as Sensor;
+      const id = sensor.txId;
+      if (id === null) return;
+      sensorsDataRef.current.delete(id);
+      setSensorIds((prev) => prev.filter((x) => x !== id));
+    });
+
+    return () => {
+      unbindAdded();
+      unbindRemoved();
+    };
+  }, [amfitrackWebRef]);
+
+  // Hot path: mirror raw EMF frames into THREE.js-enriched entries on the ref.
+  // Kept out of state so it does not trigger re-renders at the packet rate.
   useEffect(() => {
     const sdk = amfitrackWebRef.current;
 
     const unbindEmf = sdk.on("emfImuFrameId", (header, data) => {
       const id = header.sourceTxId;
-      sensorLastSeenRef.current.set(id, Date.now());
       let entry = sensorsDataRef.current.get(id);
 
       if (!entry) {
@@ -80,7 +107,6 @@ export function useSensorProvider(
           quaternion: new THREE.Quaternion(),
         };
         sensorsDataRef.current.set(id, entry);
-        setSensorIds(Array.from(sensorsDataRef.current.keys()));
       } else {
         entry.sensorStatus = data.sensorStatus;
         entry.sourceCoilId = data.sourceCoilId;
@@ -115,27 +141,6 @@ export function useSensorProvider(
     };
   }, [amfitrackWebRef]);
 
-  // Cleanup expired sensors
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      let changed = false;
-      for (const [id, lastSeen] of sensorLastSeenRef.current) {
-        if (now - lastSeen > SENSOR_TIMEOUT_MS) {
-          sensorLastSeenRef.current.delete(id);
-          sensorsDataRef.current.delete(id);
-          changed = true;
-        }
-      }
-      if (changed) {
-        setSensorIds(Array.from(sensorsDataRef.current.keys()));
-      }
-    }, SENSOR_CLEANUP_INTERVAL_MS);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch config for new sensors
   useEffect(() => {
     if (!hubConnected || sensorIds.length === 0) return;
 
@@ -220,9 +225,6 @@ export function useSensorProvider(
     }
     sensorsDataRef.current.delete(oldId);
 
-    sensorLastSeenRef.current.set(newId, Date.now());
-    sensorLastSeenRef.current.delete(oldId);
-
     if (configFetchedRef.current.has(oldId)) {
       configFetchedRef.current.delete(oldId);
       configFetchedRef.current.add(newId);
@@ -238,7 +240,10 @@ export function useSensorProvider(
       return next;
     });
 
-    setSensorIds(Array.from(sensorsDataRef.current.keys()));
+    setSensorIds((prev) => {
+      const without = prev.filter((x) => x !== oldId);
+      return without.includes(newId) ? without : [...without, newId];
+    });
     setLastSensorIdRemap({ oldId, newId });
   }, []);
 

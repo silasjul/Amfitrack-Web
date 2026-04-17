@@ -5,7 +5,10 @@ import { AmfitrackContext, useAmfitrackProvider } from "@/hooks/useAmfitrack";
 import { HubContext, useHubProvider } from "@/hooks/useHub";
 import { SourceContext, useSourceProvider } from "@/hooks/useSource";
 import { SensorContext, useSensorProvider } from "@/hooks/useSensor";
-import { ConfigurationsContext, useConfigurationsProvider } from "@/hooks/useConfigurations";
+import {
+  ConfigurationsContext,
+  useConfigurationsProvider,
+} from "@/hooks/useConfigurations";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const amfitrack = useAmfitrackProvider();
@@ -13,7 +16,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   const source = useSourceProvider(amfitrack.amfitrackWebRef);
   const sensor = useSensorProvider(
     amfitrack.amfitrackWebRef,
-    hub.hubDevices.length > 0,
+    hub.hubs.length > 0,
   );
   const configurations = useConfigurationsProvider();
 
