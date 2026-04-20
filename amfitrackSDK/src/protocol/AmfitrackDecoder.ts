@@ -39,6 +39,14 @@ export type DecodedPayload =
   | CommonData;
 
 export class AmfitrackDecoder implements IDecoder {
+  private decoderMap: Record<PayloadType, IPayloadDecoder<DecodedPayload>> = {
+    [PayloadType.SOURCE_CALIBRATION]: new SourceCalibrationPayload(),
+    [PayloadType.SOURCE_MEASUREMENT]: new SourceMeasurementPayload(),
+    [PayloadType.EMF_IMU_FRAME_ID]: new EmfImuFrameIdPayload(),
+    [PayloadType.COMMON]: new CommonPayload(), // TODO
+    [PayloadType.NOT_IMPLEMENTED]: new CommonPayload(), // TODO
+  };
+
   decode(bytes: Uint8Array): AmfitrackMessage {
     const headerBytes = bytes.subarray(1, 8);
     const payloadBytes = bytes.subarray(8);
@@ -63,16 +71,8 @@ export class AmfitrackDecoder implements IDecoder {
     bytes: Uint8Array,
     payloadType: PayloadType,
   ): DecodedPayload {
-    const decoder = decoderMap[payloadType];
+    const decoder = this.decoderMap[payloadType];
     if (!decoder) throw new Error(`Unknown payload type: ${payloadType}`);
     return decoder.getDecoded(bytes);
   }
 }
-
-const decoderMap: Record<PayloadType, IPayloadDecoder<DecodedPayload>> = {
-  [PayloadType.SOURCE_CALIBRATION]: new SourceCalibrationPayload(),
-  [PayloadType.SOURCE_MEASUREMENT]: new SourceMeasurementPayload(),
-  [PayloadType.EMF_IMU_FRAME_ID]: new EmfImuFrameIdPayload(),
-  [PayloadType.COMMON]: new CommonPayload(), // TODO
-  [PayloadType.NOT_IMPLEMENTED]: new CommonPayload(), // TODO
-};

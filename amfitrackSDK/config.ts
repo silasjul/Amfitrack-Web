@@ -4,6 +4,9 @@ export const PRODUCT_ID_SOURCE = 0x0d01;
 
 export const LE = true; // Little Endian
 
+export const DEVICE_CLEANUP_INTERVAL_MS = 500;
+export const DEVICE_TIMEOUT_MS = 5000;
+
 // Config fetching
 export const DEFAULT_RETRIES = 5;
 export const DEFAULT_TIMEOUT_MS = 500;
