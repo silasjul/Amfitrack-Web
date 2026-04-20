@@ -23,26 +23,15 @@ export default class HIDManager {
    */
   public async requestDevice(
     productIds: number | number[],
-  ): Promise<HIDDevice | null> {
+  ): Promise<HIDDevice> {
     const ids = Array.isArray(productIds) ? productIds : [productIds];
-    try {
-      const devices = await navigator.hid.requestDevice({
-        filters: ids.map((productId) => ({ vendorId: VENDOR_ID, productId })),
-      });
+    const devices = await navigator.hid.requestDevice({
+      filters: ids.map((productId) => ({ vendorId: VENDOR_ID, productId })),
+    });
 
-      if (devices.length === 0) {
-        console.warn("No device was selected.");
-        return null;
-      }
+    if (devices.length === 0) throw new Error("No device was selected.");
 
-      return devices[0];
-    } catch (error: any) {
-      if (error.name === "NotFoundError") {
-        console.warn("No device was selected.");
-        return null;
-      }
-      throw new Error(`Connection failed: ${error.message}`);
-    }
+    return devices[0];
   }
 
   /**
