@@ -1,5 +1,14 @@
+import { IDecoder } from "../interfaces/IProtocol";
+
 export class ReadPipeline {
+  private decoder: IDecoder;
+
+  constructor(decoder: IDecoder) {
+    this.decoder = decoder;
+  }
+
   processData(bytes: Uint8Array): void {
-    console.log(bytes);
+    const { header, payload } = this.decoder.decode(bytes);
+    console.log(header, payload);
   }
 }

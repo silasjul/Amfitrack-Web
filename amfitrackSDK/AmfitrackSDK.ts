@@ -2,14 +2,17 @@ import { IAmfitrackSDK } from "./src/interfaces/IAmfitrackSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE, VENDOR_ID } from "./config";
 import { HIDConnection } from "./src/transport/HIDConnection";
 import { ReadPipeline } from "./src/pipeline/ReadPipeline";
+import { IDecoder } from "./src/interfaces/IProtocol";
+import { AmfitrackDecoder } from "./src/protocol/AmfitrackDecoder";
 
 /**
  * Big facade pattern that connects everything.
  */
 export class AmfitrackSDK implements IAmfitrackSDK {
   private USBConnections: HIDConnection[] = [];
+  private decoder: IDecoder = new AmfitrackDecoder();
 
-  private readPipeline = new ReadPipeline();
+  private readPipeline = new ReadPipeline(this.decoder);
 
   public async requestConnectionViaUSB(
     productIds: number[] = [PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE],
@@ -26,7 +29,9 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     const connection = new HIDConnection(devices[0]);
     this.USBConnections.push(connection); // A reference for cleanup
 
-    await connection.startReading(this.readPipeline.processData);
+    await connection.startReading((bytes) =>
+      this.readPipeline.processData(bytes),
+    );
 
     return true;
   }
