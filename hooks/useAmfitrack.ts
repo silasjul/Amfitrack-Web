@@ -39,28 +39,28 @@ export function useAmfitrackProvider(): AmfitrackContextValue {
   const [isReading, setIsReading] = useState(false);
   const messageFrequencyRef = useRef<Map<number, DeviceFrequency>>(new Map());
 
-  useEffect(() => {
-    const sdk = amfitrackWebRef.current;
+  // useEffect(() => {
+  //   const sdk = amfitrackWebRef.current;
 
-    const unbindReading = sdk.on("reading", setIsReading);
+  //   const unbindReading = sdk.on("reading", setIsReading);
 
-    const unbindFrequency = sdk.on("messageFrequency", (data) => {
-      messageFrequencyRef.current = data;
-    });
+  //   const unbindFrequency = sdk.on("messageFrequency", (data) => {
+  //     messageFrequencyRef.current = data;
+  //   });
 
-    const unbindError = sdk.on("error", ({ title, description }) => {
-      toast.error(title, { description });
-    });
+  //   const unbindError = sdk.on("error", ({ title, description }) => {
+  //     toast.error(title, { description });
+  //   });
 
-    sdk.initialize();
+  //   sdk.initialize();
 
-    return () => {
-      unbindReading();
-      unbindFrequency();
-      unbindError();
-      sdk.destroy();
-    };
-  }, []);
+  //   return () => {
+  //     unbindReading();
+  //     unbindFrequency();
+  //     unbindError();
+  //     sdk.destroy();
+  //   };
+  // }, []);
 
   const requestConnectionDevice = useCallback(async () => {
     try {

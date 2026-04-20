@@ -81,23 +81,20 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
     );
   }, []);
 
-  const renameDevice = useCallback(
-    (oldName: string, newName: string) => {
-      setConfigurations((prev) =>
-        prev.map((c) =>
-          c.deviceName === oldName ? { ...c, deviceName: newName } : c,
-        ),
-      );
-    },
-    [],
-  );
+  const renameDevice = useCallback((oldName: string, newName: string) => {
+    setConfigurations((prev) =>
+      prev.map((c) =>
+        c.deviceName === oldName ? { ...c, deviceName: newName } : c,
+      ),
+    );
+  }, []);
 
   const clearConfigurations = useCallback(() => {
     setConfigurations([]);
   }, []);
 
   useEffect(() => {
-    console.log("[Configurations] pending changes:", configurations);
+    // console.log("[Configurations] pending changes:", configurations);
   }, [configurations]);
 
   /**
@@ -110,7 +107,7 @@ export function useConfigurationsProvider(): ConfigurationsContextValue {
         const parsedTooltips = parseConfigToObject(tooltips.data, {
           includeRstOnlyBlocks: true,
         });
-        console.log("[Configurations] parsed tooltips:", parsedTooltips);
+        // console.log("[Configurations] parsed tooltips:", parsedTooltips);
         setConfigurationTooltips(parsedTooltips);
       } catch (err) {
         console.error(
