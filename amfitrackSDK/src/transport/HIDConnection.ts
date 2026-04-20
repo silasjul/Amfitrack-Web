@@ -36,4 +36,8 @@ export class HIDConnection implements ITransport {
   public writeToDevice(bytes: Uint8Array): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
+  public getProductName(): string {
+    return this.device.productName;
+  }
 }

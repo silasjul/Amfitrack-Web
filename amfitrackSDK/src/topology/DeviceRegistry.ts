@@ -2,13 +2,34 @@ import { DEVICE_CLEANUP_INTERVAL_MS, DEVICE_TIMEOUT_MS } from "../../config";
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import { useDeviceStore } from "../store/useDeviceStore";
 import type { DeviceKind } from "../interfaces/IStore";
+import type { HIDConnection } from "../transport/HIDConnection";
 
 export class DeviceRegistry {
   private checkInterval: number | null = null;
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
+  private sourceTxIdMap: Map<HIDConnection, number> = new Map();
 
-  public registerHub(hubTxId: number) {
-    useDeviceStore.getState().registerDevice(hubTxId, "hub", null);
+  public registerSourceOrGetTxId(source: HIDConnection): number {
+    const txId = this.sourceTxIdMap.get(source);
+    if (txId) return txId;
+    
+    // Todo: generate a temporary txID
+    const temporaryTxID = 123;
+
+    this.sourceTxIdMap.set(source, temporaryTxID);
+
+    // Register the device
+    useDeviceStore
+      .getState()
+      .registerDevice(
+        temporaryTxID,
+        source.getProductName() as DeviceKind,
+        null,
+      );
+
+    // Todo: start a background task that fetches the real id and updates the map.
+
+    return temporaryTxID;
   }
 
   public pingOrRegisterDevice(

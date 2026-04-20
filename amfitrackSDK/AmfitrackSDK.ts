@@ -27,14 +27,13 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       })),
     });
     if (devices.length === 0) return false; // User cancelled the selection.
+    const device = devices[0];
 
-    const connection = new HIDConnection(devices[0]);
-    this.USBConnections.push(connection);
-
-    let readFromTxId: number | null = null;
+    const connection = new HIDConnection(device);
+    this.USBConnections.push(connection); // A reference for cleanup.
 
     await connection.startReading((bytes) =>
-      this.readPipeline.processData(bytes, readFromTxId),
+      this.readPipeline.processData(bytes, connection),
     );
 
     return true;
