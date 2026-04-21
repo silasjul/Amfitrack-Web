@@ -4,11 +4,17 @@ import { useDeviceStore } from "../store/useDeviceStore";
 import type { DeviceKind } from "../interfaces/IStore";
 import { ITransport } from "../interfaces/ITransport";
 import { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
+import { IConfigurator } from "../interfaces/IConfigurator";
 
 export class DeviceRegistry implements IDeviceRegistry {
   private checkInterval: number | null = null;
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
   private sourceTxIdMap: Map<ITransport, number> = new Map();
+  private configurator: IConfigurator;
+
+  constructor(configurator: IConfigurator) {
+    this.configurator = configurator;
+  }
 
   public registerSourceOrGetTxId(source: ITransport): number {
     const txId = this.sourceTxIdMap.get(source);
@@ -29,6 +35,7 @@ export class DeviceRegistry implements IDeviceRegistry {
       );
 
     // Todo: start a background task that fetches the real id and updates it the map.
+    this.updateDeviceTxId(source, temporaryTxID);
 
     return temporaryTxID;
   }
@@ -86,5 +93,10 @@ export class DeviceRegistry implements IDeviceRegistry {
       default:
         return null;
     }
+  }
+
+  private async updateDeviceTxId(device: ITransport, temporaryTxId: number) {
+    const configuration = await this.configurator.getConfiguration(device);
+    console.log("configuration", configuration);
   }
 }

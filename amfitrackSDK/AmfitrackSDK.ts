@@ -5,6 +5,12 @@ import { ReadPipeline } from "./src/pipeline/ReadPipeline";
 import { IDecoder } from "./src/interfaces/IDecoder";
 import { AmfitrackDecoder } from "./src/protocol/AmfitrackDecoder";
 import { DeviceRegistry } from "./src/topology/DeviceRegistry";
+import { IConfigurator } from "./src/interfaces/IConfigurator";
+import { Configurator } from "./src/commands/Configurator";
+import { ISendPipeline } from "./src/interfaces/ISendPipeline";
+import { SendPipeline } from "./src/pipeline/SendPipeline";
+import { IEncoder } from "./src/interfaces/IEncoder";
+import { AmfitrackEncoder } from "./src/protocol/AmfitrackEncoder";
 
 /**
  * Big facade pattern that connects everything.
@@ -12,7 +18,10 @@ import { DeviceRegistry } from "./src/topology/DeviceRegistry";
 export class AmfitrackSDK implements IAmfitrackSDK {
   private USBConnections: HIDConnection[] = [];
   private decoder: IDecoder = new AmfitrackDecoder();
-  private deviceRegistry: DeviceRegistry = new DeviceRegistry();
+  private encoder: IEncoder = new AmfitrackEncoder();
+  private sendPipeline: ISendPipeline = new SendPipeline(this.encoder);
+  private configurator: IConfigurator = new Configurator(this.sendPipeline, this.encoder, this.decoder);
+  private deviceRegistry: DeviceRegistry = new DeviceRegistry(this.configurator);
 
   private readPipeline = new ReadPipeline(this.decoder, this.deviceRegistry);
 
@@ -32,9 +41,10 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     const connection = new HIDConnection(device);
     this.USBConnections.push(connection); // A reference for cleanup.
 
-    await connection.startReading((bytes) =>
+    connection.addListener((bytes) =>
       this.readPipeline.processData(bytes, connection),
     );
+    await connection.startReading();
 
     return true;
   }

@@ -41,7 +41,7 @@ export enum CommonPayloadId {
   RESET_PARAMETER = 0x24,
 }
 
-import { IPayloadDecoder } from "../../interfaces/IProtocol";
+import { IPayloadDecoder } from "../../interfaces/IDecoder";
 
 export type CommonData = ReturnType<CommonPayload["getDecoded"]>;
 

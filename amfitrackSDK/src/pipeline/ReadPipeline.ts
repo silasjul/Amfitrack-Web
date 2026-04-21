@@ -2,8 +2,9 @@ import type { IDecoder } from "../interfaces/IDecoder";
 import { DeviceRegistry } from "../topology/DeviceRegistry";
 import { useDeviceStore } from "../store/useDeviceStore";
 import { ITransport } from "../interfaces/ITransport";
+import { IReadPipeline } from "../interfaces/IReadPipeline";
 
-export class ReadPipeline {
+export class ReadPipeline implements IReadPipeline {
   private decoder: IDecoder;
   private deviceRegistry: DeviceRegistry;
 

@@ -1,4 +1,4 @@
-import { IPayloadDecoder } from "../../interfaces/IProtocol";
+import { IPayloadDecoder } from "../../interfaces/IDecoder";
 import { LE } from "../../../config";
 
 export type SourceCalibrationData = ReturnType<SourceCalibrationPayload["getDecoded"]>;
