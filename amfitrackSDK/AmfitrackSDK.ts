@@ -18,33 +18,42 @@ import { SendPipeline } from "./src/pipeline/SendPipeline";
 import { IEncoder } from "./src/interfaces/IEncoder";
 import { AmfitrackEncoder } from "./src/protocol/AmfitrackEncoder";
 import { useDeviceStore } from "./src/store/useDeviceStore";
+import type { DeviceStoreApi } from "./src/interfaces/IStore";
 import { FrequencyTracker } from "./src/tracking/FrequencyTracker";
 
 /**
- * Big facade pattern that connects everything.
+ * Facade that wires all SDK subsystems together.
  */
 export class AmfitrackSDK implements IAmfitrackSDK {
+  private store: DeviceStoreApi;
   private USBConnections: HIDConnection[] = [];
-  private decoder: IDecoder = new AmfitrackDecoder();
-  private encoder: IEncoder = new AmfitrackEncoder();
-  private sendPipeline: ISendPipeline = new SendPipeline(this.encoder);
-  private configurator: IConfigurator = new Configurator(
-    this.sendPipeline,
-    this.encoder,
-    this.decoder,
-  );
-  private deviceRegistry: DeviceRegistry = new DeviceRegistry(
-    this.configurator,
-  );
-  private frequencyTracker: FrequencyTracker = new FrequencyTracker();
+  private decoder: IDecoder;
+  private encoder: IEncoder;
+  private sendPipeline: ISendPipeline;
+  private configurator: IConfigurator;
+  private deviceRegistry: DeviceRegistry;
+  private frequencyTracker: FrequencyTracker;
+  private readPipeline: ReadPipeline;
 
-  private readPipeline = new ReadPipeline(
-    this.decoder,
-    this.deviceRegistry,
-    this.frequencyTracker,
-  );
+  constructor(store: DeviceStoreApi = useDeviceStore) {
+    this.store = store;
+    this.decoder = new AmfitrackDecoder();
+    this.encoder = new AmfitrackEncoder();
+    this.sendPipeline = new SendPipeline(this.encoder);
+    this.configurator = new Configurator(
+      this.sendPipeline,
+      this.encoder,
+      this.decoder,
+    );
+    this.deviceRegistry = new DeviceRegistry(this.configurator, this.store);
+    this.frequencyTracker = new FrequencyTracker(this.store);
+    this.readPipeline = new ReadPipeline(
+      this.decoder,
+      this.store,
+      this.deviceRegistry,
+      this.frequencyTracker,
+    );
 
-  constructor() {
     this.sendPipeline.setTransportResolver((txId) =>
       this.deviceRegistry.resolveTransport(txId),
     );
@@ -95,7 +104,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       );
       const newTxId = confirmed as number;
       this.deviceRegistry.remapTxId(deviceID, newTxId);
-      useDeviceStore.getState().remapDeviceTxId(deviceID, newTxId);
+      this.store.getState().remapDeviceTxId(deviceID, newTxId);
       await this.deviceRegistry.updateDeviceConfig(newTxId);
       return confirmed;
     }
@@ -115,7 +124,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       paramUID,
       value,
     );
-    useDeviceStore.getState().updateParameterValue(deviceID, paramUID, confirmed);
+    this.store.getState().updateParameterValue(deviceID, paramUID, confirmed);
     return confirmed;
   }
 
@@ -123,7 +132,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     deviceID: number,
     paramUID: number,
   ): string | null {
-    const meta = useDeviceStore.getState().deviceMeta[deviceID];
+    const meta = this.store.getState().deviceMeta[deviceID];
     if (!meta?.configuration) return null;
     for (const category of meta.configuration) {
       for (const param of category.parameters) {

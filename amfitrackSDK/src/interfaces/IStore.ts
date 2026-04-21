@@ -57,3 +57,8 @@ export interface IDeviceStoreActions {
 }
 
 export type IDeviceStore = IDeviceStoreState & IDeviceStoreActions;
+
+/** Minimal accessor that classes use to reach the store at runtime. */
+export type DeviceStoreApi = {
+  getState: () => IDeviceStore;
+};

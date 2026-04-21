@@ -1,13 +1,17 @@
 import { PayloadType } from "../protocol/AmfitrackDecoder";
-import { useDeviceStore } from "../store/useDeviceStore";
-import type { DeviceFrequency } from "../interfaces/IStore";
+import type { DeviceFrequency, DeviceStoreApi } from "../interfaces/IStore";
 
 const FREQUENCY_INTERVAL_MS = 200;
 
 export class FrequencyTracker {
+  private store: DeviceStoreApi;
   private packetCounts: Map<number, Map<PayloadType, number>> = new Map();
   private lastFrequencyTime = 0;
   private intervalId: number | null = null;
+
+  constructor(store: DeviceStoreApi) {
+    this.store = store;
+  }
 
   public trackPacket(txId: number, payloadType: PayloadType): void {
     let typeCounts = this.packetCounts.get(txId);
@@ -40,7 +44,7 @@ export class FrequencyTracker {
         result[txId] = { totalHz, byPayloadType };
       }
 
-      useDeviceStore.getState().updateFrequencies(result);
+      this.store.getState().updateFrequencies(result);
       this.packetCounts.clear();
       this.lastFrequencyTime = now;
     }, FREQUENCY_INTERVAL_MS);

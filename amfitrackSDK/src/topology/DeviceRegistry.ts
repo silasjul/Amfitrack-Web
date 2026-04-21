@@ -1,7 +1,6 @@
 import { DEVICE_CLEANUP_INTERVAL_MS, DEVICE_TIMEOUT_MS } from "../../config";
 import { PayloadType } from "../protocol/AmfitrackDecoder";
-import { useDeviceStore } from "../store/useDeviceStore";
-import type { DeviceKind } from "../interfaces/IStore";
+import type { DeviceKind, DeviceStoreApi } from "../interfaces/IStore";
 import { ITransport } from "../interfaces/ITransport";
 import { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
 import { IConfigurator } from "../interfaces/IConfigurator";
@@ -12,11 +11,13 @@ export class DeviceRegistry implements IDeviceRegistry {
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
   private sourceTxIdMap: Map<ITransport, number> = new Map();
   private configurator: IConfigurator;
+  private store: DeviceStoreApi;
   private temporaryTxIdCounter = 0;
   private pendingConfigDevices: Set<number> = new Set();
 
-  constructor(configurator: IConfigurator) {
+  constructor(configurator: IConfigurator, store: DeviceStoreApi) {
     this.configurator = configurator;
+    this.store = store;
   }
 
   public registerSourceOrGetTxId(source: ITransport): number {
@@ -28,7 +29,7 @@ export class DeviceRegistry implements IDeviceRegistry {
     this.sourceTxIdMap.set(source, temporaryTxID);
 
     // Register the device
-    useDeviceStore
+    this.store
       .getState()
       .registerDevice(
         temporaryTxID,
@@ -48,7 +49,7 @@ export class DeviceRegistry implements IDeviceRegistry {
     readFromTxId: number | null,
   ) {
     const { deviceMeta, registerDevice, pingDevice } =
-      useDeviceStore.getState();
+      this.store.getState();
 
     if (deviceMeta[deviceTxId]) {
       pingDevice(deviceTxId);
@@ -72,7 +73,7 @@ export class DeviceRegistry implements IDeviceRegistry {
       }
     }
 
-    const { deviceMeta } = useDeviceStore.getState();
+    const { deviceMeta } = this.store.getState();
     const meta = deviceMeta[txId];
     if (meta?.readFromTxId != null) {
       for (const [transport, id] of this.sourceTxIdMap) {
@@ -96,7 +97,7 @@ export class DeviceRegistry implements IDeviceRegistry {
     if (this.checkInterval) return;
 
     this.checkInterval = window.setInterval(() => {
-      const { deviceMeta, removeDevice } = useDeviceStore.getState();
+      const { deviceMeta, removeDevice } = this.store.getState();
       const now = Date.now();
 
       for (const txId of Object.keys(deviceMeta)) {
@@ -135,7 +136,7 @@ export class DeviceRegistry implements IDeviceRegistry {
     const txId = this.configurator.extractDeviceId(configuration);
     if (txId === null) return;
 
-    useDeviceStore
+    this.store
       .getState()
       .commitSourceTxIdResolution(temporaryTxId, txId, configuration);
 
@@ -146,7 +147,7 @@ export class DeviceRegistry implements IDeviceRegistry {
   private flushPendingConfigs() {
     for (const deviceTxId of this.pendingConfigDevices) {
       this.pendingConfigDevices.delete(deviceTxId);
-      const meta = useDeviceStore.getState().deviceMeta[deviceTxId];
+      const meta = this.store.getState().deviceMeta[deviceTxId];
       if (!meta?.configuration) {
         this.updateDeviceConfig(deviceTxId);
       }
@@ -155,7 +156,7 @@ export class DeviceRegistry implements IDeviceRegistry {
 
   public async updateDeviceConfig(deviceTxId: number) {
     const configuration = await this.configurator.getConfiguration(deviceTxId);
-    useDeviceStore.getState().updateConfiguration(deviceTxId, configuration);
+    this.store.getState().updateConfiguration(deviceTxId, configuration);
   }
 
   public remapTxId(oldTxId: number, newTxId: number) {
