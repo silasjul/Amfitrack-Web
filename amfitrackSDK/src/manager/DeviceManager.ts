@@ -6,11 +6,11 @@ import {
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import type { DeviceKind, DeviceStoreApi } from "../interfaces/IStore";
 import { ITransport } from "../interfaces/ITransport";
-import { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
+import { IDeviceManager } from "../interfaces/IDeviceManager";
 import type { Configuration, IConfigurator } from "../interfaces/IConfigurator";
 import { ResolvedTransport } from "../interfaces/ISendPipeline";
 
-export class DeviceRegistry implements IDeviceRegistry {
+export class DeviceManager implements IDeviceManager {
   private checkInterval: ReturnType<typeof setInterval> | null = null;
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
   private sourceTxIdMap: Map<ITransport, number> = new Map();
@@ -44,9 +44,7 @@ export class DeviceRegistry implements IDeviceRegistry {
       // Config probe failed -- fall through to default.
     }
 
-    console.warn(
-      "Could not determine role of USB device; defaulting to hub.",
-    );
+    console.warn("Could not determine role of USB device; defaulting to hub.");
     return "hub";
   }
 
@@ -70,8 +68,7 @@ export class DeviceRegistry implements IDeviceRegistry {
     payloadType: PayloadType,
     readFromTxId: number | null,
   ) {
-    const { deviceMeta, registerDevice, pingDevice } =
-      this.store.getState();
+    const { deviceMeta, registerDevice, pingDevice } = this.store.getState();
 
     if (deviceMeta[deviceTxId]) {
       pingDevice(deviceTxId);
@@ -217,10 +214,7 @@ export class DeviceRegistry implements IDeviceRegistry {
         await this.configurator.getConfiguration(deviceTxId);
       this.store.getState().updateConfiguration(deviceTxId, configuration);
     } catch (err) {
-      console.error(
-        `Failed to fetch config for device ${deviceTxId}`,
-        err,
-      );
+      console.error(`Failed to fetch config for device ${deviceTxId}`, err);
     }
   }
 

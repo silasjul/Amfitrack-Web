@@ -3,7 +3,7 @@ import { ResolvedTransport } from "./ISendPipeline";
 import { DeviceKind } from "./IStore";
 import { ITransport } from "./ITransport";
 
-export interface IDeviceRegistry {
+export interface IDeviceManager {
   classifyUsbDevice(transport: ITransport): Promise<DeviceKind>;
   registerSourceOrGetTxId(source: ITransport): number;
   pingOrRegisterDevice(

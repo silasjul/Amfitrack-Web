@@ -1,6 +1,6 @@
 import type { IDecoder } from "../interfaces/IDecoder";
 import type { DeviceStoreApi } from "../interfaces/IStore";
-import type { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
+import type { IDeviceManager } from "../interfaces/IDeviceManager";
 import type { IFrequencyTracker } from "../interfaces/IFrequencyTracker";
 import { ITransport } from "../interfaces/ITransport";
 import { IReadPipeline } from "../interfaces/IReadPipeline";
@@ -8,27 +8,27 @@ import { IReadPipeline } from "../interfaces/IReadPipeline";
 export class ReadPipeline implements IReadPipeline {
   private decoder: IDecoder;
   private store: DeviceStoreApi;
-  private deviceRegistry: IDeviceRegistry;
+  private deviceManager: IDeviceManager;
   private frequencyTracker: IFrequencyTracker;
 
   constructor(
     decoder: IDecoder,
     store: DeviceStoreApi,
-    deviceRegistry: IDeviceRegistry,
+    deviceManager: IDeviceManager,
     frequencyTracker: IFrequencyTracker,
   ) {
     this.decoder = decoder;
     this.store = store;
-    this.deviceRegistry = deviceRegistry;
+    this.deviceManager = deviceManager;
     this.frequencyTracker = frequencyTracker;
   }
 
   processData(bytes: Uint8Array, source: ITransport): void {
     const { header, payload } = this.decoder.decode(bytes);
 
-    const readFromTxId = this.deviceRegistry.registerSourceOrGetTxId(source);
+    const readFromTxId = this.deviceManager.registerSourceOrGetTxId(source);
 
-    this.deviceRegistry.pingOrRegisterDevice(
+    this.deviceManager.pingOrRegisterDevice(
       header.sourceTxId,
       header.payloadType,
       readFromTxId,

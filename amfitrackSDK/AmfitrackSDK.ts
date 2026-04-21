@@ -12,8 +12,8 @@ import { IReadPipeline } from "./src/interfaces/IReadPipeline";
 import { ReadPipeline } from "./src/pipeline/ReadPipeline";
 import { IDecoder } from "./src/interfaces/IDecoder";
 import { AmfitrackDecoder } from "./src/protocol/AmfitrackDecoder";
-import { IDeviceRegistry } from "./src/interfaces/IDeviceRegistry";
-import { DeviceRegistry } from "./src/topology/DeviceRegistry";
+import { IDeviceManager } from "./src/interfaces/IDeviceManager";
+import { DeviceManager } from "./src/manager/DeviceManager";
 import { IConfigurator } from "./src/interfaces/IConfigurator";
 import { Configurator } from "./src/commands/Configurator";
 import { ISendPipeline } from "./src/interfaces/ISendPipeline";
@@ -35,7 +35,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   private encoder: IEncoder;
   private sendPipeline: ISendPipeline;
   private configurator: IConfigurator;
-  private deviceRegistry: IDeviceRegistry;
+  private deviceManager: IDeviceManager;
   private frequencyTracker: IFrequencyTracker;
   private readPipeline: IReadPipeline;
 
@@ -49,17 +49,17 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       this.encoder,
       this.decoder,
     );
-    this.deviceRegistry = new DeviceRegistry(this.configurator, this.store);
+    this.deviceManager = new DeviceManager(this.configurator, this.store);
     this.frequencyTracker = new FrequencyTracker(this.store);
     this.readPipeline = new ReadPipeline(
       this.decoder,
       this.store,
-      this.deviceRegistry,
+      this.deviceManager,
       this.frequencyTracker,
     );
 
     this.sendPipeline.setTransportResolver((txId) =>
-      this.deviceRegistry.resolveTransport(txId),
+      this.deviceManager.resolveTransport(txId),
     );
   }
 
@@ -98,17 +98,17 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         { alternateSourceTxId: value },
       );
       const newTxId = confirmed as number;
-      this.deviceRegistry.retireTxId(kind, deviceID, 3000);
-      this.deviceRegistry.clearRetiredTxId(kind, newTxId);
+      this.deviceManager.retireTxId(kind, deviceID, 3000);
+      this.deviceManager.clearRetiredTxId(kind, newTxId);
 
       if (this.store.getState().deviceMeta[newTxId]) {
         this.store.getState().removeDevice(deviceID);
       } else {
-        this.deviceRegistry.remapTxId(deviceID, newTxId);
+        this.deviceManager.remapTxId(deviceID, newTxId);
         this.store.getState().remapDeviceTxId(deviceID, newTxId);
       }
 
-      await this.deviceRegistry.updateDeviceConfig(newTxId);
+      await this.deviceManager.updateDeviceConfig(newTxId);
       return confirmed;
     }
 
@@ -118,7 +118,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         paramUID,
         value,
       );
-      await this.deviceRegistry.updateDeviceConfig(deviceID);
+      await this.deviceManager.updateDeviceConfig(deviceID);
       return confirmed;
     }
 
@@ -169,7 +169,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       connection.stopReading();
     }
     this.connections.clear();
-    this.deviceRegistry.destroy();
+    this.deviceManager.destroy();
     this.store.getState().clearAll();
     return Promise.resolve();
   }
