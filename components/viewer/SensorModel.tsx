@@ -5,11 +5,13 @@ import { ThreeEvent, useFrame } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useSensor } from "@/hooks/useSensor";
-import { useViewer } from "@/hooks/useViewer";
+import { useDeviceStore } from "@/amfitrackSDK";
+import { useViewerStore } from "@/stores/useViewerStore";
 import { DISTORTION_THRESHOLDS } from "@/config/distortion";
 
 useFBX.preload("/models/viewer/sensor.fbx");
+
+const POSITION_SCALE = 0.01;
 
 export const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
 const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
@@ -23,9 +25,9 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   const lightMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const bodyMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const originalBodyColorRef = useRef<THREE.Color | null>(null);
-  const { sensorsDataRef } = useSensor();
-  const { setSelectedSensorId, hoveredSensorId, setHoveredSensorId } =
-    useViewer();
+  const setSelectedSensorId = useViewerStore((s) => s.setSelectedSensorId);
+  const hoveredSensorId = useViewerStore((s) => s.hoveredSensorId);
+  const setHoveredSensorId = useViewerStore((s) => s.setHoveredSensorId);
   const fbx = useFBX("/models/viewer/sensor.fbx");
   const clone = useMemo(() => fbx.clone(), [fbx]);
 
@@ -51,20 +53,35 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   }, [clone]);
 
   useFrame(() => {
-    const data = sensorsDataRef.current.get(sensorId);
+    const data = useDeviceStore.getState().emfImuFrameId[sensorId];
     if (!data || !groupRef.current) return;
 
-    groupRef.current.position.copy(data.position).y += MODEL_OFFSET_Y - 0.01;
-    groupRef.current.quaternion.copy(data.quaternion);
+    groupRef.current.position
+      .set(
+        -data.position.y * POSITION_SCALE,
+        data.position.z * POSITION_SCALE,
+        -data.position.x * POSITION_SCALE,
+      )
+      .y += MODEL_OFFSET_Y - 0.01;
+
+    groupRef.current.quaternion
+      .set(
+        -data.quaternion.y,
+        data.quaternion.z,
+        -data.quaternion.x,
+        data.quaternion.w,
+      )
+      .normalize();
 
     if (lightMaterialRef.current) {
-      if (data.metalDistortion < DISTORTION_THRESHOLDS.CLEAN) {
+      const distortion = data.metalDistortion / 255;
+      if (distortion < DISTORTION_THRESHOLDS.CLEAN) {
         lightMaterialRef.current.color.set(COLOR_CLEAN);
       } else {
         lightMaterialRef.current.color.lerpColors(
           COLOR_CLEAN,
           COLOR_DISTORTED,
-          data.metalDistortion,
+          distortion,
         );
       }
     }
@@ -133,7 +150,16 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
 }
 
 export default function SensorModels() {
-  const { sensorIds } = useSensor();
+  const deviceMeta = useDeviceStore((s) => s.deviceMeta);
+
+  const sensorIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const [txIdStr, meta] of Object.entries(deviceMeta)) {
+      const txId = Number(txIdStr);
+      if (txId >= 0 && meta.kind === "sensor") ids.push(txId);
+    }
+    return ids;
+  }, [deviceMeta]);
 
   return (
     <>

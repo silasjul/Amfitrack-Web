@@ -11,8 +11,10 @@ import {
 import { useControls, folder, button, Leva } from "leva";
 import Lightsaber from "@/components/minigames/starwars/lightsaber/lightsaber";
 import Light from "@/components/minigames/starwars/light";
-import { useEffect, useRef, useState } from "react";
-import { useSensor } from "@/hooks/useSensor";
+import { useRef, useState } from "react";
+import { useDeviceStore } from "@/amfitrackSDK";
+
+const POSITION_SCALE = 0.01;
 
 function SensorSync({
   modelRef,
@@ -23,17 +25,28 @@ function SensorSync({
   metalDistortionRef: React.RefObject<number>;
   centerOffsetRef: React.RefObject<THREE.Vector3>;
 }) {
-  const { sensorsDataRef } = useSensor();
-
   useFrame(() => {
-    const first = sensorsDataRef.current.values().next().value;
-    if (!first || !modelRef.current) return;
+    const emfData = useDeviceStore.getState().emfImuFrameId;
+    const firstKey = Object.keys(emfData)[0];
+    if (!firstKey || !modelRef.current) return;
+    const first = emfData[Number(firstKey)];
 
-    modelRef.current.position
-      .copy(first.position as THREE.Vector3)
-      .sub(centerOffsetRef.current);
-    modelRef.current.quaternion.copy(first.quaternion as THREE.Quaternion);
-    metalDistortionRef.current = first.metalDistortion;
+    const pos = new THREE.Vector3(
+      -first.position.y * POSITION_SCALE,
+      first.position.z * POSITION_SCALE,
+      -first.position.x * POSITION_SCALE,
+    );
+
+    modelRef.current.position.copy(pos).sub(centerOffsetRef.current);
+    modelRef.current.quaternion
+      .set(
+        -first.quaternion.y,
+        first.quaternion.z,
+        -first.quaternion.x,
+        first.quaternion.w,
+      )
+      .normalize();
+    metalDistortionRef.current = first.metalDistortion / 255;
   });
 
   return null;
@@ -44,12 +57,17 @@ export default function Home() {
   const modelRef = useRef<THREE.Group>(null);
   const metalDistortionRef = useRef<number>(0);
   const centerOffsetRef = useRef(new THREE.Vector3());
-  const { sensorsDataRef } = useSensor();
 
   const resetCenter = () => {
-    const first = sensorsDataRef.current.values().next().value;
-    if (first) {
-      centerOffsetRef.current.copy(first.position as THREE.Vector3);
+    const emfData = useDeviceStore.getState().emfImuFrameId;
+    const firstKey = Object.keys(emfData)[0];
+    if (firstKey) {
+      const first = emfData[Number(firstKey)];
+      centerOffsetRef.current.set(
+        -first.position.y * POSITION_SCALE,
+        first.position.z * POSITION_SCALE,
+        -first.position.x * POSITION_SCALE,
+      );
     }
   };
 
@@ -59,7 +77,7 @@ export default function Home() {
         value: THREE.ReinhardToneMapping as THREE.ToneMapping,
         options: {
           None: THREE.NoToneMapping,
-          Linear: THREE.LinearToneMapping, // Default
+          Linear: THREE.LinearToneMapping,
           Reinhard: THREE.ReinhardToneMapping,
           Cineon: THREE.CineonToneMapping,
           ACESFilmic: THREE.ACESFilmicToneMapping,

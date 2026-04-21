@@ -4,18 +4,18 @@ import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { useConfigurations } from "@/hooks/useConfigurations";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import { ConfigItem } from "@/lib/configTooltipParser";
 import { ParameterConfigHoverCard } from "./ParameterConfigHoverCard";
 
 export default function ParameterCard({
   param,
-  deviceName,
+  txId,
   onValueChange,
   configurationTooltip = undefined,
 }: {
   param: { name: string; uid: number; value: number | boolean | string };
-  deviceName: string;
+  txId: number;
   configurationTooltip?: ConfigItem;
   onValueChange?: (
     uid: number,
@@ -24,9 +24,8 @@ export default function ParameterCard({
     newValue: number | boolean | string,
   ) => void;
 }) {
-  const { configurations } = useConfigurations();
-  const pending = configurations.find(
-    (c) => c.deviceName === deviceName && c.uid === param.uid,
+  const pending = usePendingConfigStore((s) =>
+    s.pending.find((c) => c.txId === txId && c.paramUid === param.uid),
   );
 
   const value = param.value;
@@ -96,9 +95,6 @@ export default function ParameterCard({
             className="font-mono text-sm font-medium h-8 px-2 opacity-80"
           />
         )}
-        {/* <span className="text-[10px] text-muted-foreground/60">
-          {param.uid.toString(16).toUpperCase().padStart(8, "0")}
-        </span> */}
       </CardContent>
     </Card>
   );

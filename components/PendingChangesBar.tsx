@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useConfigurations } from "@/hooks/useConfigurations";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import { useSaveConfigurations } from "@/hooks/useSaveConfigurations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,8 @@ import { Loader2, X } from "lucide-react";
 export const PENDING_BAR_ATTR = "data-pending-changes-bar";
 
 export default function PendingChangesBar() {
-  const { configurations, clearConfigurations } = useConfigurations();
+  const pending = usePendingConfigStore((s) => s.pending);
+  const clearPending = usePendingConfigStore((s) => s.clearPending);
   const { save, saving } = useSaveConfigurations();
   const [mounted, setMounted] = useState(false);
 
@@ -19,16 +20,16 @@ export default function PendingChangesBar() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Enter" && !saving && configurations.length > 0) {
+      if (e.key === "Enter" && !saving && pending.length > 0) {
         e.preventDefault();
         save();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [save, saving, configurations.length]);
+  }, [save, saving, pending.length]);
 
-  const count = configurations.length;
+  const count = pending.length;
   if (count === 0 || !mounted) return null;
 
   return createPortal(
@@ -46,7 +47,7 @@ export default function PendingChangesBar() {
           <Button
             variant="outline"
             size="sm"
-            onClick={clearConfigurations}
+            onClick={clearPending}
             disabled={saving}
           >
             <X data-icon="inline-start" />

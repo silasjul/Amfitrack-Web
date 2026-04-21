@@ -1,15 +1,16 @@
 "use client";
 
-import { useSensor } from "@/hooks/useSensor";
-import { useHub } from "@/hooks/useHub";
-import { useSource } from "@/hooks/useSource";
-import { useFrequency } from "@/hooks/useFrequency";
-import { useViewer } from "@/hooks/useViewer";
-import { useEffect, useState } from "react";
+import { useDeviceStore } from "@/amfitrackSDK";
+import type {
+  DeviceMeta,
+  EmfImuFrameIdData,
+  Configuration,
+} from "@/amfitrackSDK";
+import { useViewerStore } from "@/stores/useViewerStore";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import { type Hub, type Source } from "@/amfitrackWebSDK";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -25,64 +26,72 @@ import { SourceRow } from "./source-row";
 
 type DeviceFilter = "all" | "hubs" | "sources" | "sensors";
 
+function deviceDisplayName(kind: string, txId: number): string {
+  const prefix = kind.charAt(0).toUpperCase() + kind.slice(1);
+  return `${prefix} ${txId}`;
+}
+
 export default function SidebarUpper() {
-  const { selectedSensorId, setSelectedSensorId, hoveredSensorId } =
-    useViewer();
-  const { sensorIds, sensorsDataRef, sensorConfigurations, lastSensorIdRemap } =
-    useSensor();
-  const { hubs, hubConfigurations } = useHub();
-  const { sources, sourceConfigurations } = useSource();
-  const {
-    sensors: sensorFrequencies,
-    hubs: hubFrequencies,
-    sources: sourceFrequencies,
-  } = useFrequency();
+  const selectedSensorId = useViewerStore((s) => s.selectedSensorId);
+  const setSelectedSensorId = useViewerStore((s) => s.setSelectedSensorId);
+  const hoveredSensorId = useViewerStore((s) => s.hoveredSensorId);
+
+  const deviceMeta = useDeviceStore((s) => s.deviceMeta);
+  const frequency = useDeviceStore((s) => s.frequency);
+
+  const lastDeviceIdRemap = usePendingConfigStore((s) => s.lastDeviceIdRemap);
 
   const [filter, setFilter] = useState<DeviceFilter>("all");
-  const [snapshots, setSnapshots] = useState<Map<number, EmfImuFrameIdData>>(
-    new Map(),
+  const [snapshots, setSnapshots] = useState<Record<number, EmfImuFrameIdData>>(
+    {},
   );
 
-  // Settings dialog state — can target sensors, hubs, or sources
-  const [configDialogSensorId, setConfigDialogSensorId] = useState<
-    number | null
-  >(null);
-  const [configDialogHub, setConfigDialogHub] = useState<Hub | null>(null);
-  const [configDialogSource, setConfigDialogSource] = useState<Source | null>(
-    null,
-  );
+  const [configDialogTxId, setConfigDialogTxId] = useState<number | null>(null);
 
-  const totalDeviceCount = hubs.length + sources.length + sensorIds.length;
+  const { hubIds, sourceIds, sensorIds } = useMemo(() => {
+    const hubs: number[] = [];
+    const sources: number[] = [];
+    const sensors: number[] = [];
+    for (const [txIdStr, meta] of Object.entries(deviceMeta)) {
+      const txId = Number(txIdStr);
+      if (txId < 0) continue;
+      switch (meta.kind) {
+        case "hub":
+          hubs.push(txId);
+          break;
+        case "source":
+          sources.push(txId);
+          break;
+        case "sensor":
+          sensors.push(txId);
+          break;
+      }
+    }
+    return { hubIds: hubs, sourceIds: sources, sensorIds: sensors };
+  }, [deviceMeta]);
 
-  // Snapshot sensor data periodically for display
+  const totalDeviceCount = hubIds.length + sourceIds.length + sensorIds.length;
+
   useEffect(() => {
     if (sensorIds.length === 0) return;
     const interval = setInterval(() => {
-      const map = sensorsDataRef.current;
-      if (map.size === 0) return;
-      const next = new Map<number, EmfImuFrameIdData>();
-      for (const [id, d] of map) {
-        next.set(id, {
-          ...d,
-          position: { x: d.position.x, y: d.position.y, z: d.position.z },
-          quaternion: {
-            x: d.quaternion.x,
-            y: d.quaternion.y,
-            z: d.quaternion.z,
-            w: d.quaternion.w,
-          },
-        });
+      const data = useDeviceStore.getState().emfImuFrameId;
+      if (Object.keys(data).length === 0) return;
+      const next: Record<number, EmfImuFrameIdData> = {};
+      for (const id of sensorIds) {
+        const d = data[id];
+        if (d) next[id] = d;
       }
       setSnapshots(next);
     }, 100);
     return () => clearInterval(interval);
-  }, [sensorIds, sensorsDataRef]);
+  }, [sensorIds]);
 
   useEffect(() => {
-    if (lastSensorIdRemap && configDialogSensorId === lastSensorIdRemap.oldId) {
-      setConfigDialogSensorId(lastSensorIdRemap.newId);
+    if (lastDeviceIdRemap && configDialogTxId === lastDeviceIdRemap.oldTxId) {
+      setConfigDialogTxId(lastDeviceIdRemap.newTxId);
     }
-  }, [lastSensorIdRemap, configDialogSensorId]);
+  }, [lastDeviceIdRemap, configDialogTxId]);
 
   useEffect(() => {
     if (selectedSensorId === null && sensorIds.length > 0) {
@@ -99,41 +108,17 @@ export default function SidebarUpper() {
   const showSources = filter === "all" || filter === "sources";
   const showSensors = filter === "all" || filter === "sensors";
 
-  // Determine which dialog is open
-  const dialogOpen =
-    configDialogSensorId !== null ||
-    configDialogHub !== null ||
-    configDialogSource !== null;
+  const dialogOpen = configDialogTxId !== null;
+  const dialogMeta: DeviceMeta | undefined =
+    configDialogTxId !== null ? deviceMeta[configDialogTxId] : undefined;
+  const dialogDeviceName =
+    configDialogTxId !== null && dialogMeta
+      ? deviceDisplayName(dialogMeta.kind, configDialogTxId)
+      : "";
+  const dialogConfiguration: Configuration[] = dialogMeta?.configuration ?? [];
+  const dialogLoading = configDialogTxId !== null && !dialogMeta?.configuration;
 
-  const { dialogDeviceName, dialogConfiguration } = (() => {
-    if (configDialogSensorId !== null)
-      return {
-        dialogDeviceName: `Sensor ${configDialogSensorId}`,
-        dialogConfiguration:
-          sensorConfigurations.get(configDialogSensorId) ?? [],
-      };
-    if (configDialogHub !== null)
-      return {
-        dialogDeviceName: `Hub ${configDialogHub.txId ?? "?"}`,
-        dialogConfiguration: hubConfigurations.get(configDialogHub) ?? [],
-      };
-    if (configDialogSource !== null)
-      return {
-        dialogDeviceName: `Source ${configDialogSource.txId ?? "?"}`,
-        dialogConfiguration: sourceConfigurations.get(configDialogSource) ?? [],
-      };
-    return { dialogDeviceName: "", dialogConfiguration: [] };
-  })();
-
-  const dialogLoading =
-    configDialogSensorId !== null &&
-    !sensorConfigurations.has(configDialogSensorId);
-
-  const closeDialog = () => {
-    setConfigDialogSensorId(null);
-    setConfigDialogHub(null);
-    setConfigDialogSource(null);
-  };
+  const closeDialog = () => setConfigDialogTxId(null);
 
   return (
     <div className="flex h-full w-full flex-col pl-1 pr-1 pb-0.5">
@@ -192,53 +177,44 @@ export default function SidebarUpper() {
         <ScrollArea className="min-h-0 flex-1 p-1.5">
           <div className="space-y-1">
             {totalDeviceCount === 0 && <SkeletonRows />}
-
-            {showHubs &&
-              hubs.map((hub, idx) => {
-                const id = hub.txId;
-                return (
-                  <HubRow
-                    key={`hub-${id ?? idx}`}
-                    id={id}
-                    frequency={id != null ? hubFrequencies.get(id) : undefined}
-                    configuration={hubConfigurations.get(hub) ?? []}
-                    isSelected={false}
-                    onSelect={() => {}}
-                    onOpenSettings={() => setConfigDialogHub(hub)}
-                  />
-                );
-              })}
-
-            {showSources &&
-              sources.map((source, idx) => {
-                const id = source.txId;
-                return (
-                  <SourceRow
-                    key={`source-${id ?? idx}`}
-                    id={id}
-                    frequency={
-                      id != null ? sourceFrequencies.get(id) : undefined
-                    }
-                    configuration={sourceConfigurations.get(source) ?? []}
-                    isSelected={false}
-                    onSelect={() => {}}
-                    onOpenSettings={() => setConfigDialogSource(source)}
-                  />
-                );
-              })}
-
             {showSensors &&
               sensorIds.map((id) => (
                 <SensorRow
                   key={id}
                   id={id}
                   label={`SENSOR_${id}`}
-                  data={snapshots.get(id)}
-                  frequency={sensorFrequencies.get(id)}
+                  data={snapshots[id]}
+                  frequency={frequency[id]}
                   isSelected={selectedSensorId === id}
                   isHovered={hoveredSensorId === id}
                   onSelect={() => setSelectedSensorId(id)}
-                  onOpenSettings={() => setConfigDialogSensorId(id)}
+                  onOpenSettings={() => setConfigDialogTxId(id)}
+                />
+              ))}
+
+            {showSources &&
+              sourceIds.map((id) => (
+                <SourceRow
+                  key={`source-${id}`}
+                  id={id}
+                  frequency={frequency[id]}
+                  configuration={deviceMeta[id]?.configuration ?? []}
+                  isSelected={false}
+                  onSelect={() => {}}
+                  onOpenSettings={() => setConfigDialogTxId(id)}
+                />
+              ))}
+
+            {showHubs &&
+              hubIds.map((id) => (
+                <HubRow
+                  key={`hub-${id}`}
+                  id={id}
+                  frequency={frequency[id]}
+                  configuration={deviceMeta[id]?.configuration ?? []}
+                  isSelected={false}
+                  onSelect={() => {}}
+                  onOpenSettings={() => setConfigDialogTxId(id)}
                 />
               ))}
           </div>
@@ -250,6 +226,7 @@ export default function SidebarUpper() {
         onOpenChange={(open) => {
           if (!open) closeDialog();
         }}
+        txId={configDialogTxId ?? 0}
         deviceName={dialogDeviceName}
         configuration={dialogConfiguration}
         loading={dialogLoading}

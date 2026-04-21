@@ -7,7 +7,7 @@ import type {
 } from "../protocol/payloads";
 import type { IDeviceStore } from "../interfaces/IStore";
 
-export const useDeviceStore = create<IDeviceStore>((set) => ({
+export const useDeviceStore = create<IDeviceStore>((set, get) => ({
   deviceMeta: {},
   emfImuFrameId: {},
   sourceMeasurement: {},
@@ -41,17 +41,13 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
       };
     }),
 
-  pingDevice: (txId) =>
-    set((state) => {
-      const meta = state.deviceMeta[txId];
-      if (!meta) return state;
-      return {
-        deviceMeta: {
-          ...state.deviceMeta,
-          [txId]: { ...meta, lastSeen: Date.now() },
-        },
-      };
-    }),
+  pingDevice: (txId) => {
+    // Mutate in place — lastSeen is only consumed by DeviceManager's
+    // liveness check via getState(), never rendered in UI. Avoiding set()
+    // prevents re-renders on every incoming packet.
+    const meta = get().deviceMeta[txId];
+    if (meta) meta.lastSeen = Date.now();
+  },
 
   updatePayload: (txId, payloadType, payload) =>
     set((state) => {

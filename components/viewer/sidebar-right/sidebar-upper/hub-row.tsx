@@ -1,8 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
-import { type Configuration } from "@/amfitrackWebSDK/Configurator";
+import type { DeviceFrequency, Configuration } from "@/amfitrackSDK";
 import { FrequencyHoverCard } from "@/components/frequency-breakdown";
 import { Settings } from "lucide-react";
 

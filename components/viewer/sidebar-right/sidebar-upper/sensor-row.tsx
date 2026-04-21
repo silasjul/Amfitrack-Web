@@ -2,11 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
+import type { EmfImuFrameIdData, DeviceFrequency } from "@/amfitrackSDK";
 import { getDistortionLevel } from "@/config/distortion";
 import { FrequencyHoverCard } from "@/components/frequency-breakdown";
-import { useViewer } from "@/hooks/useViewer";
+import { useViewerStore } from "@/stores/useViewerStore";
 import {
   Settings,
   BatteryFull,
@@ -34,8 +33,8 @@ export function SensorRow({
   onSelect: () => void;
   onOpenSettings: () => void;
 }) {
-  const { setHoveredSensorId } = useViewer();
-  const distortion = data?.metalDistortion ?? 0;
+  const setHoveredSensorId = useViewerStore((s) => s.setHoveredSensorId);
+  const distortion = data ? data.metalDistortion / 255 : 0;
   const level = getDistortionLevel(distortion);
 
   const dotColor = {

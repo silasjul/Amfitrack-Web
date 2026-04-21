@@ -3,61 +3,46 @@
 import Image from "next/image";
 import { Plug, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAmfitrack } from "@/hooks/useAmfitrack";
-import { useHub } from "@/hooks/useHub";
-import { useSource } from "@/hooks/useSource";
+import { useAmfitrack, useDeviceStore } from "@/amfitrackSDK";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
-import { useSensor } from "@/hooks/useSensor";
 
 type ConnectedDevice = {
   key: string;
   label: string;
-  id: number | null;
+  id: number;
   image: string;
 };
 
-export default function Footer() {
-  const { requestConnectionDevice } = useAmfitrack();
-  const { hubs } = useHub();
-  const { sources } = useSource();
-  const { sensors } = useSensor();
+const KIND_LABEL: Record<string, string> = {
+  hub: "Hub",
+  source: "Source",
+  sensor: "Sensor",
+};
 
-  const connectedDevices: ConnectedDevice[] = [
-    ...hubs
-      .filter((hub) => hub.hidDevice !== null)
-      .map<ConnectedDevice>((hub, idx) => {
-        const id = hub.txId;
-        return {
-          key: id !== null ? `hub-${id}` : `hub-idx-${idx}`,
-          label: "Hub",
-          id,
-          image: "/hub.png",
-        };
-      }),
-    ...sources
-      .filter((source) => source.hidDevice !== null)
-      .map<ConnectedDevice>((source, idx) => {
-        const id = source.txId;
-        return {
-          key: id !== null ? `source-${id}` : `source-idx-${idx}`,
-          label: "Source",
-          id,
-          image: "/source.png",
-        };
-      }),
-    ...sensors
-      .filter((sensor) => sensor.hidDevice !== null)
-      .map<ConnectedDevice>((sensor, idx) => {
-        const id = sensor.txId;
-        return {
-          key: id !== null ? `sensor-${id}` : `sensor-idx-${idx}`,
-          label: "Sensor",
-          id,
-          image: "/sensor.png",
-        };
-      }),
-  ];
+const KIND_IMAGE: Record<string, string> = {
+  hub: "/hub.png",
+  source: "/source.png",
+  sensor: "/sensor.png",
+};
+
+export default function Footer() {
+  const { sdk } = useAmfitrack();
+  const deviceMeta = useDeviceStore((s) => s.deviceMeta);
+
+  const connectedDevices: ConnectedDevice[] = [];
+  for (const [txIdStr, meta] of Object.entries(deviceMeta)) {
+    const txId = Number(txIdStr);
+    if (txId < 0) continue;
+    const isUsb =
+      meta.readFromTxId === null || meta.readFromTxId === txId;
+    if (!isUsb) continue;
+    connectedDevices.push({
+      key: `${meta.kind}-${txId}`,
+      label: KIND_LABEL[meta.kind] ?? meta.kind,
+      id: txId,
+      image: KIND_IMAGE[meta.kind] ?? "/sensor.png",
+    });
+  }
 
   const hasDevices = connectedDevices.length > 0;
 
@@ -97,7 +82,7 @@ export default function Footer() {
                   {label}
                 </span>
                 <span className="truncate font-mono text-[10px] text-sidebar-foreground/40">
-                  {id !== null ? `ID ${id}` : "Identifying…"}
+                  ID {id}
                 </span>
               </div>
 
@@ -111,7 +96,7 @@ export default function Footer() {
       )}
 
       <button
-        onClick={requestConnectionDevice}
+        onClick={() => sdk?.requestConnectionViaUSB()}
         className={cn(
           "flex items-center gap-2 rounded-md px-2.5 py-2 text-sm",
           "border border-dashed border-sidebar-foreground/15 bg-transparent",
