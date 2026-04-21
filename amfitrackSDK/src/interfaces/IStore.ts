@@ -4,13 +4,15 @@ import type {
   SourceCalibrationData,
   EmfImuFrameIdData,
 } from "../protocol/payloads";
+import type { Configuration } from "./IConfigurator";
 
 export type DeviceKind = "hub" | "source" | "sensor";
 
 export interface DeviceMeta {
   kind: DeviceKind;
   lastSeen: number;
-  readFromTxId: number | null; // The txId of the device that forwarded this packet.
+  readFromTxId: number | null;
+  configuration?: Configuration[];
 }
 
 export interface IDeviceStoreState {
@@ -33,6 +35,12 @@ export interface IDeviceStoreActions {
     payloadType: PayloadType,
     payload: DecodedPayload,
   ) => void;
+  commitSourceTxIdResolution: (
+    temporaryTxId: number,
+    resolvedTxId: number,
+    configuration: Configuration[],
+  ) => void;
+  updateConfiguration: (txId: number, configuration: Configuration[]) => void;
 }
 
 export type IDeviceStore = IDeviceStoreState & IDeviceStoreActions;

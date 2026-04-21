@@ -7,7 +7,7 @@ export interface ResolvedTransport {
   deviceTxId: number;
 }
 
-export type TransportResolver = (txId: string) => ResolvedTransport;
+export type TransportResolver = (txId: number) => ResolvedTransport;
 
 export interface ReplyFilter {
   expectedCommonId: CommonPayloadId;

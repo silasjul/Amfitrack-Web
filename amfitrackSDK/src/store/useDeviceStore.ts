@@ -78,4 +78,46 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
           return state;
       }
     }),
+
+  commitSourceTxIdResolution: (temporaryTxId, resolvedTxId, configuration) =>
+    set((state) => {
+      const { [temporaryTxId]: tempMeta, ...restMeta } = state.deviceMeta;
+      const { [temporaryTxId]: tempEmf, ...restEmf } = state.emfImuFrameId;
+      const { [temporaryTxId]: tempMeas, ...restMeas } = state.sourceMeasurement;
+      const { [temporaryTxId]: tempCal, ...restCal } = state.sourceCalibration;
+
+      const existingMeta = restMeta[resolvedTxId];
+
+      return {
+        deviceMeta: {
+          ...restMeta,
+          [resolvedTxId]: {
+            ...(tempMeta ?? existingMeta),
+            ...existingMeta,
+            configuration,
+          },
+        },
+        emfImuFrameId: tempEmf
+          ? { ...restEmf, [resolvedTxId]: tempEmf }
+          : restEmf,
+        sourceMeasurement: tempMeas
+          ? { ...restMeas, [resolvedTxId]: tempMeas }
+          : restMeas,
+        sourceCalibration: tempCal
+          ? { ...restCal, [resolvedTxId]: tempCal }
+          : restCal,
+      };
+    }),
+
+  updateConfiguration: (txId, configuration) =>
+    set((state) => {
+      const meta = state.deviceMeta[txId];
+      if (!meta) return state;
+      return {
+        deviceMeta: {
+          ...state.deviceMeta,
+          [txId]: { ...meta, configuration },
+        },
+      };
+    }),
 }));

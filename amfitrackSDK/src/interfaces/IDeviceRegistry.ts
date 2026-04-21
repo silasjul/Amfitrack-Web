@@ -9,6 +9,6 @@ export interface IDeviceRegistry {
     payloadType: PayloadType,
     readFromTxId: number | null,
   ): void;
-  resolveTransport(txId: string): ResolvedTransport;
+  resolveTransport(txId: number): ResolvedTransport;
   destroy(): void;
 }

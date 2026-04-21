@@ -37,8 +37,11 @@ export class SendPipeline implements ISendPipeline {
     filter: ReplyFilter,
     options?: SendOptions,
   ): Promise<Uint8Array> {
-    const { transport, filter: resolvedFilter, options: resolvedOptions } =
-      this.resolveDevice(device, filter, options);
+    const {
+      transport,
+      filter: resolvedFilter,
+      options: resolvedOptions,
+    } = this.resolveDevice(device, filter, options);
 
     const timeoutMs = resolvedOptions?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const retries = resolvedOptions?.retries ?? DEFAULT_RETRIES;
@@ -72,7 +75,7 @@ export class SendPipeline implements ISendPipeline {
     filter: ReplyFilter,
     options?: SendOptions,
   ): { transport: ITransport; filter: ReplyFilter; options?: SendOptions } {
-    if (typeof device !== "string") {
+    if (typeof device !== "number") {
       return { transport: device, filter, options };
     }
 
