@@ -11,6 +11,7 @@ export const DEVICE_TIMEOUT_MS = 5000;
 export const DEFAULT_RETRIES = 5;
 export const DEFAULT_TIMEOUT_MS = 500;
 
-// Configurtation
+// Configuration
 export const DEVICE_ID_PARAM_NAME = "Device ID";
+export const CONFIG_MODE_PARAM_NAME = "Config mode (0 : 2)";
 export const DEVICE_CATEGORY_NAME = "Hardware config";

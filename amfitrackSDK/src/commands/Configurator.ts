@@ -4,6 +4,7 @@ import {
   IConfigurator,
   ParameterValue,
   Parameter,
+  SetParameterOptions,
 } from "../interfaces/IConfigurator";
 import { IDecoder } from "../interfaces/IDecoder";
 import { IEncoder } from "../interfaces/IEncoder";
@@ -69,6 +70,7 @@ export class Configurator implements IConfigurator {
     device: DeviceOrTxId,
     parameterUid: number,
     value: ParameterValue,
+    options?: SetParameterOptions,
   ): Promise<ParameterValue> {
     const { dataType } = await this.getParameterValueAndDataType(
       device,
@@ -85,12 +87,23 @@ export class Configurator implements IConfigurator {
     view.setUint8(5, dataType);
     bytes.set(encodedValue, 6);
 
-    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
-      expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
-      validate: (p) =>
-        new DataView(p.buffer, p.byteOffset, p.byteLength).getUint32(1, LE) ===
-        parameterUid,
-    });
+    const reply = await this.sendPipeline.sendAndAwaitReply(
+      device,
+      bytes,
+      {
+        expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
+        validate: (p) =>
+          new DataView(p.buffer, p.byteOffset, p.byteLength).getUint32(
+            1,
+            LE,
+          ) === parameterUid,
+        alternateSourceTxId: options?.alternateSourceTxId,
+      },
+      {
+        timeoutMs: options?.timeoutMs,
+        retries: options?.retries,
+      },
+    );
 
     return this.decoder.decodeConfigValue(reply).value;
   }

@@ -12,6 +12,7 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
   emfImuFrameId: {},
   sourceMeasurement: {},
   sourceCalibration: {},
+  frequency: {},
 
   registerDevice: (txId, kind, readFromTxId) =>
     set((state) => {
@@ -30,11 +31,13 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
       const { [txId]: _emf, ...restEmf } = state.emfImuFrameId;
       const { [txId]: _meas, ...restMeas } = state.sourceMeasurement;
       const { [txId]: _cal, ...restCal } = state.sourceCalibration;
+      const { [txId]: _freq, ...restFreq } = state.frequency;
       return {
         deviceMeta: restMeta,
         emfImuFrameId: restEmf,
         sourceMeasurement: restMeas,
         sourceCalibration: restCal,
+        frequency: restFreq,
       };
     }),
 
@@ -131,4 +134,58 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
         },
       };
     }),
+
+  updateParameterValue: (txId, paramUid, value) =>
+    set((state) => {
+      const meta = state.deviceMeta[txId];
+      if (!meta?.configuration) return state;
+      const configuration = meta.configuration.map((cat) => ({
+        ...cat,
+        parameters: cat.parameters.map((p) =>
+          p.uid === paramUid ? { ...p, value } : p,
+        ),
+      }));
+      return {
+        deviceMeta: {
+          ...state.deviceMeta,
+          [txId]: { ...meta, configuration },
+        },
+      };
+    }),
+
+  remapDeviceTxId: (oldTxId, newTxId) =>
+    set((state) => {
+      const { [oldTxId]: meta, ...restMeta } = state.deviceMeta;
+      const { [oldTxId]: emf, ...restEmf } = state.emfImuFrameId;
+      const { [oldTxId]: meas, ...restMeas } = state.sourceMeasurement;
+      const { [oldTxId]: cal, ...restCal } = state.sourceCalibration;
+      if (!meta) return state;
+
+      const updatedMeta: typeof state.deviceMeta = {
+        ...restMeta,
+        [newTxId]: meta,
+      };
+
+      for (const key of Object.keys(updatedMeta)) {
+        const id = Number(key);
+        const m = updatedMeta[id];
+        if (m && m.readFromTxId === oldTxId) {
+          updatedMeta[id] = { ...m, readFromTxId: newTxId };
+        }
+      }
+
+      const { [oldTxId]: freq, ...restFreq } = state.frequency;
+      return {
+        deviceMeta: updatedMeta,
+        emfImuFrameId: emf ? { ...restEmf, [newTxId]: emf } : restEmf,
+        sourceMeasurement: meas
+          ? { ...restMeas, [newTxId]: meas }
+          : restMeas,
+        sourceCalibration: cal ? { ...restCal, [newTxId]: cal } : restCal,
+        frequency: freq ? { ...restFreq, [newTxId]: freq } : restFreq,
+      };
+    }),
+
+  updateFrequencies: (frequencies) =>
+    set(() => ({ frequency: frequencies })),
 }));

@@ -153,9 +153,17 @@ export class DeviceRegistry implements IDeviceRegistry {
     }
   }
 
-  private async updateDeviceConfig(deviceTxId: number) {
+  public async updateDeviceConfig(deviceTxId: number) {
     const configuration = await this.configurator.getConfiguration(deviceTxId);
-    console.log("configuration", configuration);
     useDeviceStore.getState().updateConfiguration(deviceTxId, configuration);
+  }
+
+  public remapTxId(oldTxId: number, newTxId: number) {
+    for (const [transport, id] of this.sourceTxIdMap) {
+      if (id === oldTxId) {
+        this.sourceTxIdMap.set(transport, newTxId);
+        break;
+      }
+    }
   }
 }
