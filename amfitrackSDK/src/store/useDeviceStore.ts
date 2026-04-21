@@ -83,20 +83,31 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
     set((state) => {
       const { [temporaryTxId]: tempMeta, ...restMeta } = state.deviceMeta;
       const { [temporaryTxId]: tempEmf, ...restEmf } = state.emfImuFrameId;
-      const { [temporaryTxId]: tempMeas, ...restMeas } = state.sourceMeasurement;
+      const { [temporaryTxId]: tempMeas, ...restMeas } =
+        state.sourceMeasurement;
       const { [temporaryTxId]: tempCal, ...restCal } = state.sourceCalibration;
 
       const existingMeta = restMeta[resolvedTxId];
 
-      return {
-        deviceMeta: {
-          ...restMeta,
-          [resolvedTxId]: {
-            ...(tempMeta ?? existingMeta),
-            ...existingMeta,
-            configuration,
-          },
+      const updatedMeta: Record<number, typeof tempMeta> = {
+        ...restMeta,
+        [resolvedTxId]: {
+          ...(tempMeta ?? existingMeta),
+          ...existingMeta,
+          configuration,
         },
+      };
+
+      for (const key of Object.keys(updatedMeta)) {
+        const id = Number(key);
+        const meta = updatedMeta[id];
+        if (meta && meta.readFromTxId === temporaryTxId) {
+          updatedMeta[id] = { ...meta, readFromTxId: resolvedTxId };
+        }
+      }
+
+      return {
+        deviceMeta: updatedMeta,
         emfImuFrameId: tempEmf
           ? { ...restEmf, [resolvedTxId]: tempEmf }
           : restEmf,

@@ -13,6 +13,7 @@ export class DeviceRegistry implements IDeviceRegistry {
   private sourceTxIdMap: Map<ITransport, number> = new Map();
   private configurator: IConfigurator;
   private temporaryTxIdCounter = 0;
+  private pendingConfigDevices: Set<number> = new Set();
 
   constructor(configurator: IConfigurator) {
     this.configurator = configurator;
@@ -55,7 +56,11 @@ export class DeviceRegistry implements IDeviceRegistry {
       const kind = this.kindFromPayload(payloadType);
       if (!kind) return;
       registerDevice(deviceTxId, kind, readFromTxId);
-      this.updateDeviceConfig(deviceTxId);
+      if (readFromTxId != null && readFromTxId >= 0) {
+        this.updateDeviceConfig(deviceTxId);
+      } else {
+        this.pendingConfigDevices.add(deviceTxId);
+      }
       this.startLivenessCheck();
     }
   }
@@ -135,6 +140,17 @@ export class DeviceRegistry implements IDeviceRegistry {
       .commitSourceTxIdResolution(temporaryTxId, txId, configuration);
 
     this.sourceTxIdMap.set(device, txId);
+    this.flushPendingConfigs();
+  }
+
+  private flushPendingConfigs() {
+    for (const deviceTxId of this.pendingConfigDevices) {
+      this.pendingConfigDevices.delete(deviceTxId);
+      const meta = useDeviceStore.getState().deviceMeta[deviceTxId];
+      if (!meta?.configuration) {
+        this.updateDeviceConfig(deviceTxId);
+      }
+    }
   }
 
   private async updateDeviceConfig(deviceTxId: number) {
