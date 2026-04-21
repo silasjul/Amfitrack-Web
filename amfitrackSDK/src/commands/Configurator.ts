@@ -87,10 +87,6 @@ export class Configurator implements IConfigurator {
     return { value: this.decoder.decodeConfigValue(reply).value };
   }
 
-  // ---------------------------------------------------------------------------
-  // Private protocol methods
-  // ---------------------------------------------------------------------------
-
   private async getCategoryCount(transport: ITransport): Promise<number> {
     const { bytes } = this.encoder.buildCommonPayload(
       CommonPayloadId.REQUEST_CATEGORY_COUNT,
