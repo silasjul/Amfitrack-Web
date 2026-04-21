@@ -14,6 +14,7 @@ export interface IDeviceManager {
   resolveTransport(txId: number): ResolvedTransport;
   updateDeviceConfig(deviceTxId: number): Promise<void>;
   remapTxId(oldTxId: number, newTxId: number): void;
+  isDirectlyConnected(txId: number): boolean;
   retireTxId(kind: DeviceKind, txId: number, durationMs: number): void;
   clearRetiredTxId(kind: DeviceKind, txId: number): void;
   destroy(): void;

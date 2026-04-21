@@ -133,6 +133,13 @@ export class DeviceManager implements IDeviceManager {
     throw new Error(`No transport found for txId "${txId}"`);
   }
 
+  public isDirectlyConnected(txId: number): boolean {
+    for (const id of this.sourceTxIdMap.values()) {
+      if (id === txId) return true;
+    }
+    return false;
+  }
+
   public retireTxId(kind: DeviceKind, txId: number, durationMs: number): void {
     let kindMap = this.retiredTxIds.get(kind);
     if (!kindMap) {
