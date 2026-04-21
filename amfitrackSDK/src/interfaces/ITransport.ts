@@ -13,4 +13,6 @@ export interface ITransport {
   writeToDevice(bytes: Uint8Array): Promise<void>;
 
   getProductName(): string;
+
+  getProductId(): number;
 }

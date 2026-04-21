@@ -52,4 +52,8 @@ export class HIDConnection implements ITransport {
   public getProductName(): string {
     return this.device.productName;
   }
+
+  public getProductId(): number {
+    return this.device.productId;
+  }
 }

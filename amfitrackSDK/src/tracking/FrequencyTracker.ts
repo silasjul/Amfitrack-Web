@@ -1,13 +1,14 @@
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import type { DeviceFrequency, DeviceStoreApi } from "../interfaces/IStore";
+import type { IFrequencyTracker } from "../interfaces/IFrequencyTracker";
 
 const FREQUENCY_INTERVAL_MS = 200;
 
-export class FrequencyTracker {
+export class FrequencyTracker implements IFrequencyTracker {
   private store: DeviceStoreApi;
   private packetCounts: Map<number, Map<PayloadType, number>> = new Map();
   private lastFrequencyTime = 0;
-  private intervalId: number | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(store: DeviceStoreApi) {
     this.store = store;
@@ -27,7 +28,7 @@ export class FrequencyTracker {
     this.lastFrequencyTime = performance.now();
     this.packetCounts.clear();
 
-    this.intervalId = window.setInterval(() => {
+    this.intervalId = setInterval(() => {
       const now = performance.now();
       const elapsedSec = (now - this.lastFrequencyTime) / 1000;
       if (elapsedSec <= 0) return;

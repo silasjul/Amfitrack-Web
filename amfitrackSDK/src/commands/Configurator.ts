@@ -28,6 +28,17 @@ export class Configurator implements IConfigurator {
     this.decoder = decoder;
   }
 
+  public async getDeviceName(device: DeviceOrTxId): Promise<string> {
+    const { bytes } = this.encoder.buildCommonPayload(
+      CommonPayloadId.REQUEST_DEVICE_NAME,
+      1,
+    );
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
+      expectedCommonId: CommonPayloadId.REPLY_DEVICE_NAME,
+    });
+    return this.decoder.decodeString(reply, 1);
+  }
+
   public async getConfiguration(
     device: DeviceOrTxId,
   ): Promise<Configuration[]> {

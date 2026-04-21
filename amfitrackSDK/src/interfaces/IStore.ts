@@ -54,6 +54,7 @@ export interface IDeviceStoreActions {
   ) => void;
   remapDeviceTxId: (oldTxId: number, newTxId: number) => void;
   updateFrequencies: (frequencies: Record<number, DeviceFrequency>) => void;
+  clearAll: () => void;
 }
 
 export type IDeviceStore = IDeviceStoreState & IDeviceStoreActions;

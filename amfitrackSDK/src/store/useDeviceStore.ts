@@ -188,4 +188,13 @@ export const useDeviceStore = create<IDeviceStore>((set) => ({
 
   updateFrequencies: (frequencies) =>
     set(() => ({ frequency: frequencies })),
+
+  clearAll: () =>
+    set(() => ({
+      deviceMeta: {},
+      emfImuFrameId: {},
+      sourceMeasurement: {},
+      sourceCalibration: {},
+      frequency: {},
+    })),
 }));

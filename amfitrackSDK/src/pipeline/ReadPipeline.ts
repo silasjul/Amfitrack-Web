@@ -1,21 +1,21 @@
 import type { IDecoder } from "../interfaces/IDecoder";
 import type { DeviceStoreApi } from "../interfaces/IStore";
-import { DeviceRegistry } from "../topology/DeviceRegistry";
+import type { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
+import type { IFrequencyTracker } from "../interfaces/IFrequencyTracker";
 import { ITransport } from "../interfaces/ITransport";
 import { IReadPipeline } from "../interfaces/IReadPipeline";
-import { FrequencyTracker } from "../tracking/FrequencyTracker";
 
 export class ReadPipeline implements IReadPipeline {
   private decoder: IDecoder;
   private store: DeviceStoreApi;
-  private deviceRegistry: DeviceRegistry;
-  private frequencyTracker: FrequencyTracker;
+  private deviceRegistry: IDeviceRegistry;
+  private frequencyTracker: IFrequencyTracker;
 
   constructor(
     decoder: IDecoder,
     store: DeviceStoreApi,
-    deviceRegistry: DeviceRegistry,
-    frequencyTracker: FrequencyTracker,
+    deviceRegistry: IDeviceRegistry,
+    frequencyTracker: IFrequencyTracker,
   ) {
     this.decoder = decoder;
     this.store = store;
