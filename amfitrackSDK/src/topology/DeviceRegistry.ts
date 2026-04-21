@@ -5,6 +5,7 @@ import type { DeviceKind } from "../interfaces/IStore";
 import { ITransport } from "../interfaces/ITransport";
 import { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
 import { IConfigurator } from "../interfaces/IConfigurator";
+import { ResolvedTransport } from "../interfaces/ISendPipeline";
 
 export class DeviceRegistry implements IDeviceRegistry {
   private checkInterval: number | null = null;
@@ -56,6 +57,33 @@ export class DeviceRegistry implements IDeviceRegistry {
       registerDevice(deviceTxId, kind, readFromTxId);
       this.startLivenessCheck();
     }
+  }
+
+  public resolveTransport(txId: string): ResolvedTransport {
+    const numericTxId = Number(txId);
+    if (Number.isNaN(numericTxId)) {
+      throw new Error(`Invalid txId "${txId}": not a number`);
+    }
+
+    for (const [transport, id] of this.sourceTxIdMap) {
+      if (id === numericTxId) {
+        return { transport, deviceTxId: numericTxId };
+      }
+    }
+
+    const { deviceMeta } = useDeviceStore.getState();
+    const meta = deviceMeta[numericTxId];
+    if (meta?.readFromTxId != null) {
+      for (const [transport, id] of this.sourceTxIdMap) {
+        if (id === meta.readFromTxId) {
+          return { transport, deviceTxId: numericTxId };
+        }
+      }
+    }
+
+    throw new Error(
+      `No transport found for txId "${txId}"`,
+    );
   }
 
   public destroy() {

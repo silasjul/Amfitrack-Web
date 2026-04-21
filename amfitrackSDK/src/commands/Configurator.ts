@@ -7,7 +7,6 @@ import {
 import { IDecoder } from "../interfaces/IDecoder";
 import { IEncoder } from "../interfaces/IEncoder";
 import { ISendPipeline } from "../interfaces/ISendPipeline";
-import { ITransport } from "../interfaces/ITransport";
 import { CommonPayloadId } from "../protocol/payloads/CommonPayload";
 import { LE } from "../../config";
 
@@ -25,23 +24,18 @@ export class Configurator implements IConfigurator {
   public async getConfiguration(
     device: DeviceOrTxId,
   ): Promise<Configuration[]> {
-    const transport = this.resolveTransport(device);
     const config: Configuration[] = [];
 
-    const categoryCount = await this.getCategoryCount(transport);
+    const categoryCount = await this.getCategoryCount(device);
 
     for (let catIdx = 0; catIdx < categoryCount; catIdx++) {
-      const categoryName = await this.getCategoryName(transport, catIdx);
+      const categoryName = await this.getCategoryName(device, catIdx);
       const parameters: Parameter[] = [];
 
-      const parameterCount = await this.getParameterCount(transport, catIdx);
+      const parameterCount = await this.getParameterCount(device, catIdx);
       for (let pIdx = 0; pIdx < parameterCount; pIdx++) {
-        const { uid } = await this.getParameterNameAndUid(
-          transport,
-          catIdx,
-          pIdx,
-        );
-        const { value } = await this.getParameterValue(transport, uid);
+        const { uid } = await this.getParameterNameAndUid(device, catIdx, pIdx);
+        const { value } = await this.getParameterValue(device, uid);
         parameters.push({ value });
       }
       config.push({ name: categoryName, parameters });
@@ -54,8 +48,7 @@ export class Configurator implements IConfigurator {
     device: DeviceOrTxId,
     parameterUid: number,
   ): Promise<Parameter> {
-    const transport = this.resolveTransport(device);
-    const { value } = await this.getParameterValue(transport, parameterUid);
+    const { value } = await this.getParameterValue(device, parameterUid);
     return { value };
   }
 
@@ -64,8 +57,7 @@ export class Configurator implements IConfigurator {
     parameterUid: number,
     value: Parameter,
   ): Promise<Parameter> {
-    const transport = this.resolveTransport(device);
-    const { dataType } = await this.getParameterValue(transport, parameterUid);
+    const { dataType } = await this.getParameterValue(device, parameterUid);
 
     const encodedValue = this.encoder.encodeConfigValue(value.value, dataType);
     const payloadSize = 1 + 4 + 1 + encodedValue.length;
@@ -77,7 +69,7 @@ export class Configurator implements IConfigurator {
     view.setUint8(5, dataType);
     bytes.set(encodedValue, 6);
 
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
       validate: (p) =>
         new DataView(p.buffer, p.byteOffset, p.byteLength).getUint32(1, LE) ===
@@ -87,12 +79,12 @@ export class Configurator implements IConfigurator {
     return { value: this.decoder.decodeConfigValue(reply).value };
   }
 
-  private async getCategoryCount(transport: ITransport): Promise<number> {
+  private async getCategoryCount(device: DeviceOrTxId): Promise<number> {
     const { bytes } = this.encoder.buildCommonPayload(
       CommonPayloadId.REQUEST_CATEGORY_COUNT,
       1,
     );
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CATEGORY_COUNT,
     });
     return new DataView(reply.buffer, reply.byteOffset, reply.byteLength)
@@ -100,7 +92,7 @@ export class Configurator implements IConfigurator {
   }
 
   private async getCategoryName(
-    transport: ITransport,
+    device: DeviceOrTxId,
     index: number,
   ): Promise<string> {
     const { bytes, view } = this.encoder.buildCommonPayload(
@@ -108,7 +100,7 @@ export class Configurator implements IConfigurator {
       2,
     );
     view.setUint8(1, index);
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_CATEGORY,
       validate: (p) => p[1] === index,
     });
@@ -116,7 +108,7 @@ export class Configurator implements IConfigurator {
   }
 
   private async getParameterCount(
-    transport: ITransport,
+    device: DeviceOrTxId,
     categoryIndex: number,
   ): Promise<number> {
     const { bytes, view } = this.encoder.buildCommonPayload(
@@ -124,7 +116,7 @@ export class Configurator implements IConfigurator {
       2,
     );
     view.setUint8(1, categoryIndex);
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_VALUE_COUNT,
       validate: (p) => p[1] === categoryIndex,
     });
@@ -133,7 +125,7 @@ export class Configurator implements IConfigurator {
   }
 
   private async getParameterNameAndUid(
-    transport: ITransport,
+    device: DeviceOrTxId,
     categoryIndex: number,
     parameterIndex: number,
   ): Promise<{ name: string; uid: number }> {
@@ -143,7 +135,7 @@ export class Configurator implements IConfigurator {
     );
     view.setUint8(1, categoryIndex);
     view.setUint16(2, parameterIndex, LE);
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_NAME_AND_UID,
       validate: (p) => {
         const v = new DataView(p.buffer, p.byteOffset, p.byteLength);
@@ -160,7 +152,7 @@ export class Configurator implements IConfigurator {
   }
 
   private async getParameterValue(
-    transport: ITransport,
+    device: DeviceOrTxId,
     uid: number,
   ): Promise<{ value: number | boolean | string; dataType: number }> {
     const { bytes, view } = this.encoder.buildCommonPayload(
@@ -168,22 +160,12 @@ export class Configurator implements IConfigurator {
       5,
     );
     view.setUint32(1, uid, LE);
-    const reply = await this.sendPipeline.sendAndAwaitReply(transport, bytes, {
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
       expectedCommonId: CommonPayloadId.REPLY_CONFIGURATION_VALUE_UID,
       validate: (p) =>
         new DataView(p.buffer, p.byteOffset, p.byteLength).getUint32(1, LE) ===
         uid,
     });
     return this.decoder.decodeConfigValue(reply);
-  }
-
-  private resolveTransport(device: DeviceOrTxId): ITransport {
-    if (typeof device === "string") {
-      // TODO: resolve txId string to ITransport via DeviceRegistry
-      throw new Error(
-        `Transport resolution for txId "${device}" not yet implemented`,
-      );
-    }
-    return device;
   }
 }

@@ -20,10 +20,22 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   private decoder: IDecoder = new AmfitrackDecoder();
   private encoder: IEncoder = new AmfitrackEncoder();
   private sendPipeline: ISendPipeline = new SendPipeline(this.encoder);
-  private configurator: IConfigurator = new Configurator(this.sendPipeline, this.encoder, this.decoder);
-  private deviceRegistry: DeviceRegistry = new DeviceRegistry(this.configurator);
+  private configurator: IConfigurator = new Configurator(
+    this.sendPipeline,
+    this.encoder,
+    this.decoder,
+  );
+  private deviceRegistry: DeviceRegistry = new DeviceRegistry(
+    this.configurator,
+  );
 
   private readPipeline = new ReadPipeline(this.decoder, this.deviceRegistry);
+
+  constructor() {
+    this.sendPipeline.setTransportResolver((txId) =>
+      this.deviceRegistry.resolveTransport(txId),
+    );
+  }
 
   public async requestConnectionViaUSB(
     productIds: number[] = [PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE],

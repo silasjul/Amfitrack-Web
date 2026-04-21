@@ -1,5 +1,11 @@
+import { DeviceOrTxId } from "../interfaces/IConfigurator";
 import { IEncoder } from "../interfaces/IEncoder";
-import { ISendPipeline, ReplyFilter, SendOptions } from "../interfaces/ISendPipeline";
+import {
+  ISendPipeline,
+  ReplyFilter,
+  SendOptions,
+  TransportResolver,
+} from "../interfaces/ISendPipeline";
 import { ITransport } from "../interfaces/ITransport";
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import { DEFAULT_RETRIES, DEFAULT_TIMEOUT_MS } from "../../config";
@@ -15,36 +21,79 @@ const OFFSET_PAYLOAD_START = 8;
 
 export class SendPipeline implements ISendPipeline {
   private encoder: IEncoder;
+  private transportResolver?: TransportResolver;
 
   constructor(encoder: IEncoder) {
     this.encoder = encoder;
   }
 
+  public setTransportResolver(resolver: TransportResolver): void {
+    this.transportResolver = resolver;
+  }
+
   public async sendAndAwaitReply(
-    transport: ITransport,
+    device: DeviceOrTxId,
     payloadBytes: Uint8Array,
     filter: ReplyFilter,
     options?: SendOptions,
   ): Promise<Uint8Array> {
-    const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const retries = options?.retries ?? DEFAULT_RETRIES;
+    const { transport, filter: resolvedFilter, options: resolvedOptions } =
+      this.resolveDevice(device, filter, options);
+
+    const timeoutMs = resolvedOptions?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const retries = resolvedOptions?.retries ?? DEFAULT_RETRIES;
 
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        return await this.sendOnce(transport, payloadBytes, filter, timeoutMs, options?.destinationId);
+        return await this.sendOnce(
+          transport,
+          payloadBytes,
+          resolvedFilter,
+          timeoutMs,
+          resolvedOptions?.destinationId,
+        );
       } catch (err) {
         lastError = err as Error;
         if (attempt < retries) {
           console.warn(
-            `Retry ${attempt + 1}/${retries} for reply 0x${filter.expectedCommonId.toString(16)}`,
+            `Retry ${attempt + 1}/${retries} for reply 0x${resolvedFilter.expectedCommonId.toString(16)}`,
           );
         }
       }
     }
 
     throw lastError;
+  }
+
+  private resolveDevice(
+    device: DeviceOrTxId,
+    filter: ReplyFilter,
+    options?: SendOptions,
+  ): { transport: ITransport; filter: ReplyFilter; options?: SendOptions } {
+    if (typeof device !== "string") {
+      return { transport: device, filter, options };
+    }
+
+    if (!this.transportResolver) {
+      throw new Error(
+        `Cannot resolve txId "${device}": no TransportResolver configured`,
+      );
+    }
+
+    const resolved = this.transportResolver(device);
+    return {
+      transport: resolved.transport,
+      filter: {
+        ...filter,
+        filterSourceTxId: filter.filterSourceTxId ?? resolved.deviceTxId,
+      },
+      options: {
+        ...options,
+        destinationId: options?.destinationId ?? resolved.deviceTxId,
+      },
+    };
   }
 
   private sendOnce(

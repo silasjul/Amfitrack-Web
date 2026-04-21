@@ -1,5 +1,13 @@
 import { CommonPayloadId } from "../protocol/payloads/CommonPayload";
+import { DeviceOrTxId } from "./IConfigurator";
 import { ITransport } from "./ITransport";
+
+export interface ResolvedTransport {
+  transport: ITransport;
+  deviceTxId: number;
+}
+
+export type TransportResolver = (txId: string) => ResolvedTransport;
 
 export interface ReplyFilter {
   expectedCommonId: CommonPayloadId;
@@ -15,8 +23,9 @@ export interface SendOptions {
 }
 
 export interface ISendPipeline {
+  setTransportResolver(resolver: TransportResolver): void;
   sendAndAwaitReply(
-    transport: ITransport,
+    device: DeviceOrTxId,
     payloadBytes: Uint8Array,
     filter: ReplyFilter,
     options?: SendOptions,

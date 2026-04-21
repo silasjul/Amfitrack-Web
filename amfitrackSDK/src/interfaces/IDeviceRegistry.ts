@@ -1,4 +1,5 @@
 import { PayloadType } from "../protocol/AmfitrackDecoder";
+import { ResolvedTransport } from "./ISendPipeline";
 import { ITransport } from "./ITransport";
 
 export interface IDeviceRegistry {
@@ -8,5 +9,6 @@ export interface IDeviceRegistry {
     payloadType: PayloadType,
     readFromTxId: number | null,
   ): void;
+  resolveTransport(txId: string): ResolvedTransport;
   destroy(): void;
 }
