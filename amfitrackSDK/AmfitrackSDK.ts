@@ -66,12 +66,14 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   public async requestConnectionViaUSB(
     productIds: number[] = [PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE],
   ): Promise<boolean> {
+    // Prompts user to select a device
     const devices = await navigator.hid.requestDevice({
       filters: productIds.map((productId) => ({
         vendorId: VENDOR_ID,
         productId,
       })),
     });
+    // User cancelled device selection
     if (devices.length === 0) return false;
     await this.addTransport(new HIDConnection(devices[0]));
     return true;
@@ -91,6 +93,10 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     if (paramName === DEVICE_ID_PARAM_NAME && typeof value === "number") {
       const meta = this.store.getState().deviceMeta[deviceID];
       const kind = meta?.kind ?? "sensor";
+
+      // alternateSourceTxId tells the send pipeline to also listen on the new
+      // TX ID for the reply, because the device starts broadcasting under its
+      // new ID immediately after the change is applied.
       const confirmed = await this.configurator.setParameter(
         deviceID,
         paramUID,
@@ -98,10 +104,16 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         { alternateSourceTxId: value },
       );
       const newTxId = confirmed as number;
+
+      // Tombstone the old ID for 3 seconds so straggler packets that still
+      // carry the old TX ID don't resurrect a ghost entry in the store.
       this.deviceManager.retireTxId(kind, deviceID, 3000);
+      // Clear any tombstone on the new ID in case it was previously retired.
       this.deviceManager.clearRetiredTxId(kind, newTxId);
 
       if (this.store.getState().deviceMeta[newTxId]) {
+        // The new TX ID already appeared in the store (a packet arrived before
+        // the reply came back). Discard the old entry -- the new one is live.
         this.store.getState().removeDevice(deviceID);
       } else {
         this.deviceManager.remapTxId(deviceID, newTxId);
@@ -118,6 +130,8 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         paramUID,
         value,
       );
+      // Config mode changes can add/remove parameter categories, so we need
+      // to refresh the whole configuration tree.
       await this.deviceManager.updateDeviceConfig(deviceID);
       return confirmed;
     }
@@ -146,6 +160,8 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   }
 
   public async initialize(): Promise<void> {
+    // getDevices() returns only devices the user has already granted access to
+    // in a previous session -- no permission prompt is shown.
     const granted = await navigator.hid.getDevices();
     const relevant = granted.filter(
       (d) =>
@@ -170,11 +186,14 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     }
     this.connections.clear();
     this.deviceManager.destroy();
+    // Wipe the store so no ghost devices linger after teardown.
     this.store.getState().clearAll();
     return Promise.resolve();
   }
 
   private async addTransport(transport: ITransport): Promise<void> {
+    // Guard against adding the same transport twice (e.g. initialize() and
+    // requestConnectionViaUSB() both called for the same device).
     if (this.connections.has(transport)) return;
     this.connections.add(transport);
 
@@ -185,6 +204,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     try {
       await transport.startReading();
     } catch (err) {
+      // Clean up so a failed transport doesn't stay in the set.
       this.connections.delete(transport);
       throw err;
     }

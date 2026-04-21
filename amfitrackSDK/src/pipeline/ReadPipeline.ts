@@ -26,8 +26,13 @@ export class ReadPipeline implements IReadPipeline {
   processData(bytes: Uint8Array, source: ITransport): void {
     const { header, payload } = this.decoder.decode(bytes);
 
+    // source is the physical transport the packet arrived on (e.g. the hub's
+    // HID connection). readFromTxId is its resolved TX ID, used to link sensors
+    // to the hub they're relayed through.
     const readFromTxId = this.deviceManager.registerSourceOrGetTxId(source);
 
+    // header.sourceTxId is the TX ID of the device that generated the packet --
+    // may be the hub itself or a sensor the hub is relaying for.
     this.deviceManager.pingOrRegisterDevice(
       header.sourceTxId,
       header.payloadType,

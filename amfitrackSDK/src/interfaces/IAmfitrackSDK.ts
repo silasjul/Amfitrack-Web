@@ -1,3 +1,5 @@
+import { ParameterValue } from "./IConfigurator";
+
 export interface IAmfitrackSDK {
   /** Connect to a device over USB. */
   requestConnectionViaUSB(productIds: number[]): Promise<boolean>;
@@ -15,8 +17,8 @@ export interface IAmfitrackSDK {
   setParam(
     deviceID: number,
     paramUID: number,
-    value: number | boolean | string,
-  ): Promise<number | boolean | string>;
+    value: ParameterValue,
+  ): Promise<ParameterValue>;
 
   /** Initialize the SDK. Setup listeners and auto connect to known USB devices. */
   initialize(): Promise<void>;

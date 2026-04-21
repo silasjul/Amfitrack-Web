@@ -87,10 +87,9 @@ export class AmfitrackEncoder implements IEncoder {
     return { bytes, view: new DataView(bytes.buffer) };
   }
 
-  // ---------------------------------------------------------------------------
-  // Config value encoding / decoding
-  // ---------------------------------------------------------------------------
-
+  /**
+   * Config value encoding / decoding
+   */
   public encodeConfigValue(
     value: number | boolean | string,
     dataType: number,
@@ -173,5 +172,4 @@ export class AmfitrackEncoder implements IEncoder {
       }
     }
   }
-
 }

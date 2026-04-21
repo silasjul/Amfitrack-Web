@@ -24,10 +24,14 @@ export class FrequencyTracker implements IFrequencyTracker {
   }
 
   public start(): void {
+    // Calling start() while already running restarts the interval cleanly so
+    // adding a second transport doesn't create duplicate intervals.
     this.stop();
     this.lastFrequencyTime = performance.now();
     this.packetCounts.clear();
 
+    // Every FREQUENCY_INTERVAL_MS, convert raw packet counts into Hz values and
+    // push them to the store. The counts are then cleared for the next window.
     this.intervalId = setInterval(() => {
       const now = performance.now();
       const elapsedSec = (now - this.lastFrequencyTime) / 1000;
