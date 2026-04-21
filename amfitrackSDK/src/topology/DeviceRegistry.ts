@@ -2,17 +2,18 @@ import { DEVICE_CLEANUP_INTERVAL_MS, DEVICE_TIMEOUT_MS } from "../../config";
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import { useDeviceStore } from "../store/useDeviceStore";
 import type { DeviceKind } from "../interfaces/IStore";
-import type { HIDConnection } from "../transport/HIDConnection";
+import { ITransport } from "../interfaces/ITransport";
+import { IDeviceRegistry } from "../interfaces/IDeviceRegistry";
 
-export class DeviceRegistry {
+export class DeviceRegistry implements IDeviceRegistry {
   private checkInterval: number | null = null;
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
-  private sourceTxIdMap: Map<HIDConnection, number> = new Map();
+  private sourceTxIdMap: Map<ITransport, number> = new Map();
 
-  public registerSourceOrGetTxId(source: HIDConnection): number {
+  public registerSourceOrGetTxId(source: ITransport): number {
     const txId = this.sourceTxIdMap.get(source);
     if (txId) return txId;
-    
+
     // Todo: generate a temporary txID
     const temporaryTxID = 123;
 
@@ -27,7 +28,7 @@ export class DeviceRegistry {
         null,
       );
 
-    // Todo: start a background task that fetches the real id and updates the map.
+    // Todo: start a background task that fetches the real id and updates it the map.
 
     return temporaryTxID;
   }

@@ -1,7 +1,7 @@
-import type { IDecoder } from "../interfaces/IProtocol";
+import type { IDecoder } from "../interfaces/IDecoder";
 import { DeviceRegistry } from "../topology/DeviceRegistry";
 import { useDeviceStore } from "../store/useDeviceStore";
-import type { HIDConnection } from "../transport/HIDConnection";
+import { ITransport } from "../interfaces/ITransport";
 
 export class ReadPipeline {
   private decoder: IDecoder;
@@ -12,7 +12,7 @@ export class ReadPipeline {
     this.deviceRegistry = deviceRegistry;
   }
 
-  processData(bytes: Uint8Array, source: HIDConnection): void {
+  processData(bytes: Uint8Array, source: ITransport): void {
     const { header, payload } = this.decoder.decode(bytes);
 
     const readFromTxId = this.deviceRegistry.registerSourceOrGetTxId(source);

@@ -8,4 +8,6 @@ export interface ITransport {
   stopReading(): void;
 
   writeToDevice(bytes: Uint8Array): Promise<void>;
+
+  getProductName(): string;
 }

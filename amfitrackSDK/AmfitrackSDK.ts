@@ -2,7 +2,7 @@ import { IAmfitrackSDK } from "./src/interfaces/IAmfitrackSDK";
 import { PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE, VENDOR_ID } from "./config";
 import { HIDConnection } from "./src/transport/HIDConnection";
 import { ReadPipeline } from "./src/pipeline/ReadPipeline";
-import { IDecoder } from "./src/interfaces/IProtocol";
+import { IDecoder } from "./src/interfaces/IDecoder";
 import { AmfitrackDecoder } from "./src/protocol/AmfitrackDecoder";
 import { DeviceRegistry } from "./src/topology/DeviceRegistry";
 
