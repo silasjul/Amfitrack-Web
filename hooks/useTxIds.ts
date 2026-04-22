@@ -26,12 +26,16 @@ export default function useTxIds(): UseTxIdsResult {
       const meta = deviceMeta[id];
       if (!meta) continue;
 
+      // Transport lists include all entries (temp negative IDs too).
+      if (meta.uplink === "ble") BLETxIds.push(id);
+      else if (meta.uplink === "usb") USBTxIds.push(id);
+
+      // // Device lists only include resolved IDs.
+      // if (id < 0) continue;
+
       if (meta.kind === "sensor") sensorTxIds.push(id);
       else if (meta.kind === "source") sourceTxIds.push(id);
       else if (meta.kind === "hub") hubTxIds.push(id);
-
-      if (meta.uplink === "ble") BLETxIds.push(id);
-      else if (meta.uplink === "usb") USBTxIds.push(id);
     }
 
     return { sensorTxIds, sourceTxIds, hubTxIds, BLETxIds, USBTxIds };

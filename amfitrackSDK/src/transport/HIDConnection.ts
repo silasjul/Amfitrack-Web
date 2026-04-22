@@ -1,6 +1,7 @@
 import {
   ITransport,
   DataCallback,
+  DisconnectCallback,
   TransportConnectionKind,
 } from "../interfaces/ITransport";
 
@@ -10,7 +11,9 @@ const HID_REPORT_DATA_SIZE = 63; // 64-byte USB report minus 1-byte report ID
 export class HIDConnection implements ITransport {
   private device: HIDDevice;
   private listeners = new Set<DataCallback>();
+  private disconnectCallbacks = new Set<DisconnectCallback>();
   private inputReportHandler: EventListener | null = null;
+  private hidDisconnectHandler: ((ev: Event) => void) | null = null;
 
   constructor(device: HIDDevice) {
     this.device = device;
@@ -30,12 +33,24 @@ export class HIDConnection implements ITransport {
     };
 
     this.device.addEventListener("inputreport", this.inputReportHandler);
+
+    this.hidDisconnectHandler = (ev: Event) => {
+      const e = ev as HIDConnectionEvent;
+      if (e.device === this.device) {
+        this.fireDisconnect();
+      }
+    };
+    navigator.hid.addEventListener("disconnect", this.hidDisconnectHandler);
   }
 
   public stopReading(): void {
     if (this.inputReportHandler) {
       this.device.removeEventListener("inputreport", this.inputReportHandler);
       this.inputReportHandler = null;
+    }
+    if (this.hidDisconnectHandler) {
+      navigator.hid.removeEventListener("disconnect", this.hidDisconnectHandler);
+      this.hidDisconnectHandler = null;
     }
   }
 
@@ -61,7 +76,17 @@ export class HIDConnection implements ITransport {
     return this.device.productId;
   }
 
+  public onDisconnect(cb: DisconnectCallback): void {
+    this.disconnectCallbacks.add(cb);
+  }
+
   public getConnectionKind(): TransportConnectionKind {
     return "usb";
+  }
+
+  private fireDisconnect(): void {
+    this.stopReading();
+    for (const cb of this.disconnectCallbacks) cb();
+    this.disconnectCallbacks.clear();
   }
 }

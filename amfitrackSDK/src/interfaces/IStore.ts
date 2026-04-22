@@ -6,7 +6,7 @@ import type {
 } from "../protocol/payloads";
 import type { Configuration, ParameterValue } from "./IConfigurator";
 
-export type DeviceKind = "hub" | "source" | "sensor";
+export type DeviceKind = "hub" | "source" | "sensor" | "unknown";
 
 /**
  * How a device's packets reach us:
@@ -37,7 +37,11 @@ export interface IDeviceStoreState {
 }
 
 export interface IDeviceStoreActions {
-  registerDevice: (txId: number, kind: DeviceKind, uplink: DeviceUplink) => void;
+  registerDevice: (
+    txId: number,
+    kind: DeviceKind,
+    uplink: DeviceUplink,
+  ) => void;
   removeDevice: (txId: number) => void;
   pingDevice: (txId: number) => void;
   updatePayload: (
@@ -45,10 +49,11 @@ export interface IDeviceStoreActions {
     payloadType: PayloadType,
     payload: DecodedPayload,
   ) => void;
-  commitSourceTxIdResolution: (
+  commitTransportTxIdResolution: (
     temporaryTxId: number,
     resolvedTxId: number,
     configuration: Configuration[],
+    kind: DeviceKind,
   ) => void;
   updateConfiguration: (txId: number, configuration: Configuration[]) => void;
   updateParameterValue: (

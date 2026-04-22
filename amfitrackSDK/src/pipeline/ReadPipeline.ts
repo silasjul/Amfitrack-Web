@@ -24,24 +24,24 @@ export class ReadPipeline implements IReadPipeline {
   }
 
   processData(bytes: Uint8Array, source: ITransport): void {
-    const { header, payload } = this.decoder.decode(bytes);
+    // Ensure the transport is registered first — even if decoding fails the
+    // transport should be visible in the store.
+    const readFromTxId = this.deviceManager.registerTransportOrGetTxId(source);
 
-    // source is the physical transport the packet arrived on (e.g. the hub's
-    // HID connection). readFromTxId is its resolved TX ID, used to link sensors
-    // to the hub they're relayed through.
-    const readFromTxId = this.deviceManager.registerSourceOrGetTxId(source);
+    let decoded;
+    try {
+      decoded = this.decoder.decode(bytes);
+    } catch {
+      return;
+    }
+    const { header, payload } = decoded;
 
-    // header.sourceTxId is the TX ID of the device that generated the packet --
-    // may be the hub itself or a sensor the hub is relaying for.
     this.deviceManager.pingOrRegisterDevice(
       header.sourceTxId,
       header.payloadType,
       readFromTxId,
     );
 
-    // Only count this packet for frequency if it arrived directly from its
-    // source. When a device (e.g. a source) is connected via USB AND a hub
-    // relays the same packets, we'd otherwise double-count.
     const isRelayed = header.sourceTxId !== readFromTxId;
     if (
       !isRelayed ||

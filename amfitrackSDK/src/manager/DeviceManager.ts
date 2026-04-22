@@ -13,19 +13,11 @@ import { ResolvedTransport } from "../interfaces/ISendPipeline";
 export class DeviceManager implements IDeviceManager {
   private checkInterval: ReturnType<typeof setInterval> | null = null;
   private TIMEOUT_MS = DEVICE_TIMEOUT_MS;
-  // Maps a physical transport (e.g. a HID connection) to the TX ID we resolved
-  // for it. Initially a negative temporary ID, replaced once we read the real
-  // Device ID from the firmware configuration.
-  private sourceTxIdMap: Map<ITransport, number> = new Map();
+  private transportTxIdMap: Map<ITransport, number> = new Map();
   private configurator: IConfigurator;
   private store: DeviceStoreApi;
   private temporaryTxIdCounter = 0;
-  // Sensors that arrived via packets from a hub before their source's real TX
-  // ID was resolved -- they can't fetch their config until the hub is known.
   private pendingConfigDevices: Set<number> = new Set();
-  // Tombstone map: kind -> (txId -> expiry timestamp). When a device's TX ID
-  // is changed, the old ID is retired here for a few seconds so straggler
-  // packets don't spawn a ghost entry in the store.
   private retiredTxIds: Map<DeviceKind, Map<number, number>> = new Map();
 
   constructor(configurator: IConfigurator, store: DeviceStoreApi) {
@@ -33,52 +25,45 @@ export class DeviceManager implements IDeviceManager {
     this.store = store;
   }
 
-  public async classifyUsbDevice(transport: ITransport): Promise<DeviceKind> {
-    // Sources have a unique product ID so we can identify them instantly.
-    if (transport.getProductId() === PRODUCT_ID_SOURCE) return "source";
+  // ---------------------------------------------------------------------------
+  // Transport registration
+  // ---------------------------------------------------------------------------
 
-    // For devices on the shared product ID (0x0d12, used by both hubs and
-    // sensors), ask the firmware for its name and fall back to checking the
-    // configuration category names if that fails.
-    try {
-      const name = await this.configurator.getDeviceName(transport);
-      const kind = classifyByName(name);
-      if (kind) return kind;
-    } catch {
-      // Name probe failed -- fall through to config probe.
-    }
+  public registerTransportOrGetTxId(transport: ITransport): number {
+    const existing = this.transportTxIdMap.get(transport);
+    if (existing !== undefined) return existing;
 
-    try {
-      const config = await this.configurator.getConfiguration(transport);
-      const kind = classifyByConfiguration(config);
-      if (kind) return kind;
-    } catch {
-      // Config probe failed -- fall through to default.
-    }
+    const temporaryTxId = this.generateTemporaryTxId();
+    this.transportTxIdMap.set(transport, temporaryTxId);
 
-    console.warn("Could not determine role of USB device; defaulting to hub.");
-    return "hub";
-  }
-
-  public registerSourceOrGetTxId(source: ITransport): number {
-    const txId = this.sourceTxIdMap.get(source);
-    if (txId) return txId;
-
-    // Assign a negative temporary ID so we can track packets from this
-    // transport immediately while we wait for the real Device ID from firmware.
-    const temporaryTxID = this.generateTemporaryTxId();
-    this.sourceTxIdMap.set(source, temporaryTxID);
-
-    // Register with a placeholder kind; classifyAndResolveDevice() will replace
-    // it with the real TX ID and configuration once the firmware responds.
-    // uplink is set immediately so downstream code knows the physical link type.
     this.store
       .getState()
-      .registerDevice(temporaryTxID, "hub", source.getConnectionKind());
-    this.classifyAndResolveDevice(source, temporaryTxID);
+      .registerDevice(temporaryTxId, "unknown", transport.getConnectionKind());
+    this.resolveDeviceConfig(transport, temporaryTxId);
 
-    return temporaryTxID;
+    return temporaryTxId;
   }
+
+  public unregisterTransport(transport: ITransport): void {
+    const txId = this.transportTxIdMap.get(transport);
+    this.transportTxIdMap.delete(transport);
+    if (txId === undefined) return;
+
+    const { deviceMeta, removeDevice } = this.store.getState();
+
+    removeDevice(txId);
+
+    for (const key of Object.keys(deviceMeta)) {
+      const id = Number(key);
+      if (deviceMeta[id]?.uplink === txId) {
+        removeDevice(id);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Device discovery (packet-driven)
+  // ---------------------------------------------------------------------------
 
   public pingOrRegisterDevice(
     deviceTxId: number,
@@ -88,8 +73,6 @@ export class DeviceManager implements IDeviceManager {
     const { deviceMeta, registerDevice, pingDevice } = this.store.getState();
 
     if (deviceMeta[deviceTxId]) {
-      // Device already known -- just update its last-seen timestamp so the
-      // liveness check doesn't remove it.
       pingDevice(deviceTxId);
       return;
     }
@@ -97,36 +80,32 @@ export class DeviceManager implements IDeviceManager {
     const kind = this.kindFromPayload(payloadType);
     if (!kind) return;
 
-    // Drop packets for tombstoned IDs -- these are old TX IDs that were just
-    // changed and will briefly keep broadcasting before the device resets.
     if (this.isTxIdRetired(kind, deviceTxId)) return;
 
     registerDevice(deviceTxId, kind, uplink);
     if (uplink != null && uplink >= 0) {
-      // Device is relayed through a known hub -- fetch its config now.
-      this.updateDeviceConfig(deviceTxId);
+      this.fetchDeviceConfig(deviceTxId);
     } else {
-      // Hub not resolved yet; queue this device and fetch its config once
-      // the hub's TX ID is confirmed.
       this.pendingConfigDevices.add(deviceTxId);
     }
     this.startLivenessCheck();
   }
 
+  // ---------------------------------------------------------------------------
+  // Transport → TX ID resolution (for sending commands)
+  // ---------------------------------------------------------------------------
+
   public resolveTransport(txId: number): ResolvedTransport {
-    // Direct match: this TX ID belongs to a physically connected transport.
-    for (const [transport, id] of this.sourceTxIdMap) {
+    for (const [transport, id] of this.transportTxIdMap) {
       if (id === txId) {
         return { transport, deviceTxId: txId };
       }
     }
 
-    // Indirect match: this device is relayed through a hub. Find the hub's
-    // transport using the uplink TX ID stored in the device's metadata.
     const { deviceMeta } = this.store.getState();
     const meta = deviceMeta[txId];
     if (typeof meta?.uplink === "number") {
-      for (const [transport, id] of this.sourceTxIdMap) {
+      for (const [transport, id] of this.transportTxIdMap) {
         if (id === meta.uplink) {
           return { transport, deviceTxId: txId };
         }
@@ -136,12 +115,18 @@ export class DeviceManager implements IDeviceManager {
     throw new Error(`No transport found for txId "${txId}"`);
   }
 
+  // ---------------------------------------------------------------------------
+  // Frequency de-duplication
+  // ---------------------------------------------------------------------------
+
   public isDirectlyConnected(txId: number): boolean {
-    for (const id of this.sourceTxIdMap.values()) {
-      if (id === txId) return true;
-    }
-    return false;
+    const meta = this.store.getState().deviceMeta[txId];
+    return meta?.uplink === "usb" || meta?.uplink === "ble";
   }
+
+  // ---------------------------------------------------------------------------
+  // TX ID tombstoning (for device-ID changes)
+  // ---------------------------------------------------------------------------
 
   public retireTxId(kind: DeviceKind, txId: number, durationMs: number): void {
     let kindMap = this.retiredTxIds.get(kind);
@@ -156,6 +141,38 @@ export class DeviceManager implements IDeviceManager {
     this.retiredTxIds.get(kind)?.delete(txId);
   }
 
+  // ---------------------------------------------------------------------------
+  // TX ID remapping
+  // ---------------------------------------------------------------------------
+
+  public remapTxId(oldTxId: number, newTxId: number) {
+    for (const [transport, id] of this.transportTxIdMap) {
+      if (id === oldTxId) {
+        this.transportTxIdMap.set(transport, newTxId);
+        break;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Configuration
+  // ---------------------------------------------------------------------------
+
+  public async fetchDeviceConfig(deviceTxId: number) {
+    try {
+      const configuration =
+        await this.configurator.getConfiguration(deviceTxId);
+      console.log(`configuration ID_${deviceTxId}`, configuration);
+      this.store.getState().updateConfiguration(deviceTxId, configuration);
+    } catch (err) {
+      console.error(`Failed to fetch config for device ${deviceTxId}`, err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
   public destroy() {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
@@ -163,11 +180,13 @@ export class DeviceManager implements IDeviceManager {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
   private startLivenessCheck() {
     if (this.checkInterval) return;
 
-    // Periodically sweep for sensors/sources that have gone silent. Hubs are
-    // excluded because they don't broadcast on their own TX ID.
     this.checkInterval = setInterval(() => {
       const { deviceMeta, removeDevice } = this.store.getState();
       const now = Date.now();
@@ -176,7 +195,9 @@ export class DeviceManager implements IDeviceManager {
         const id = Number(txId);
         const meta = deviceMeta[id];
         if (!meta) continue;
-        if (meta.kind === "hub") continue;
+        // Transport placeholders (hub / unknown) are not swept by liveness —
+        // they're only removed when the transport itself disconnects.
+        if (meta.kind === "hub" || meta.kind === "unknown") continue;
         if (now - meta.lastSeen > this.TIMEOUT_MS) {
           removeDevice(id);
         }
@@ -190,7 +211,6 @@ export class DeviceManager implements IDeviceManager {
     const expiry = kindMap.get(txId);
     if (expiry === undefined) return false;
     if (Date.now() >= expiry) {
-      // Tombstone expired -- clean it up automatically.
       kindMap.delete(txId);
       return false;
     }
@@ -198,7 +218,6 @@ export class DeviceManager implements IDeviceManager {
   }
 
   private generateTemporaryTxId(): number {
-    // Negative IDs are guaranteed not to clash with real firmware TX IDs.
     return -++this.temporaryTxIdCounter;
   }
 
@@ -214,23 +233,29 @@ export class DeviceManager implements IDeviceManager {
     }
   }
 
-  private async classifyAndResolveDevice(
-    device: ITransport,
-    temporaryTxId: number,
-  ) {
+  /**
+   * Fetch config from a newly connected transport, classify the device,
+   * extract the device ID, and migrate the temporary store entry to the
+   * real TX ID with the correct kind.
+   */
+  private async resolveDeviceConfig(device: ITransport, temporaryTxId: number) {
     try {
+      const kind = await this.classifyDevice(device);
       const configuration = await this.configurator.getConfiguration(device);
       const txId = this.configurator.extractDeviceId(configuration);
-      console.log(`configuration ID_${txId}`, configuration);
+      console.log(`configuration ID_${txId} (${kind})`, configuration);
       if (txId === null) return;
 
-      // Swap the temporary ID for the real one and attach the full config.
-      // Any store entries that referenced the temporary ID are migrated.
       this.store
         .getState()
-        .commitSourceTxIdResolution(temporaryTxId, txId, configuration);
+        .commitTransportTxIdResolution(
+          temporaryTxId,
+          txId,
+          configuration,
+          kind,
+        );
 
-      this.sourceTxIdMap.set(device, txId);
+      this.transportTxIdMap.set(device, txId);
     } catch (err) {
       console.warn(
         `Could not resolve device config for temp ID ${temporaryTxId} — ` +
@@ -238,10 +263,23 @@ export class DeviceManager implements IDeviceManager {
         err,
       );
     } finally {
-      // Flush regardless of success: sensors waiting for the hub to resolve
-      // should attempt their own config fetch (which may also fail gracefully).
       this.flushPendingConfigs();
     }
+  }
+
+  private async classifyDevice(transport: ITransport): Promise<DeviceKind> {
+    if (transport.getProductId() === PRODUCT_ID_SOURCE) return "source";
+
+    try {
+      const name = await this.configurator.getDeviceName(transport);
+      const kind = classifyByName(name);
+      if (kind) return kind;
+    } catch (err) {
+      // Name probe failed — fall through to default.
+      console.warn(`Could not classify device`, err);
+    }
+
+    return "unknown";
   }
 
   private flushPendingConfigs() {
@@ -249,49 +287,16 @@ export class DeviceManager implements IDeviceManager {
       this.pendingConfigDevices.delete(deviceTxId);
       const meta = this.store.getState().deviceMeta[deviceTxId];
       if (!meta?.configuration) {
-        this.updateDeviceConfig(deviceTxId);
-      }
-    }
-  }
-
-  public async updateDeviceConfig(deviceTxId: number) {
-    try {
-      const configuration =
-        await this.configurator.getConfiguration(deviceTxId);
-      console.log(`configuration ID_${deviceTxId}`, configuration);
-      this.store.getState().updateConfiguration(deviceTxId, configuration);
-    } catch (err) {
-      console.error(`Failed to fetch config for device ${deviceTxId}`, err);
-    }
-  }
-
-  public remapTxId(oldTxId: number, newTxId: number) {
-    for (const [transport, id] of this.sourceTxIdMap) {
-      if (id === oldTxId) {
-        this.sourceTxIdMap.set(transport, newTxId);
-        break;
+        this.fetchDeviceConfig(deviceTxId);
       }
     }
   }
 }
 
-// Check if the firmware device name string indicates its role.
 function classifyByName(name: string): DeviceKind | null {
   const normalised = name.toLowerCase();
   if (normalised.includes("hub")) return "hub";
   if (normalised.includes("source")) return "source";
   if (normalised.includes("sensor")) return "sensor";
-  return null;
-}
-
-// Fall back to scanning configuration category names when the device name
-// probe is unavailable or inconclusive.
-function classifyByConfiguration(config: Configuration[]): DeviceKind | null {
-  for (const category of config) {
-    const name = category.name.toLowerCase();
-    if (name.includes("hub")) return "hub";
-    if (name.includes("sensor")) return "sensor";
-    if (name.includes("source")) return "source";
-  }
   return null;
 }

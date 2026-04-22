@@ -78,7 +78,12 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
       }
     }),
 
-  commitSourceTxIdResolution: (temporaryTxId, resolvedTxId, configuration) =>
+  commitTransportTxIdResolution: (
+    temporaryTxId,
+    resolvedTxId,
+    configuration,
+    kind,
+  ) =>
     set((state) => {
       const { [temporaryTxId]: tempMeta, ...restMeta } = state.deviceMeta;
       const { [temporaryTxId]: tempEmf, ...restEmf } = state.emfImuFrameId;
@@ -93,6 +98,7 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
         [resolvedTxId]: {
           ...(tempMeta ?? existingMeta),
           ...existingMeta,
+          kind,
           configuration,
           uplink: tempMeta?.uplink ?? existingMeta?.uplink,
         },

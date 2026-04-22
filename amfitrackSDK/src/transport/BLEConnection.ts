@@ -1,6 +1,7 @@
 import {
   ITransport,
   DataCallback,
+  DisconnectCallback,
   TransportConnectionKind,
 } from "../interfaces/ITransport";
 import { AMFITRACK_SERVICE_UUID } from "../../config";
@@ -8,9 +9,11 @@ import { AMFITRACK_SERVICE_UUID } from "../../config";
 export class BLEConnection implements ITransport {
   private device: BluetoothDevice;
   private listeners = new Set<DataCallback>();
+  private disconnectCallbacks = new Set<DisconnectCallback>();
   private notifyCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private writeCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private onCharValueChanged: ((event: Event) => void) | null = null;
+  private gattDisconnectHandler: (() => void) | null = null;
 
   constructor(device: BluetoothDevice) {
     this.device = device;
@@ -68,6 +71,12 @@ export class BLEConnection implements ITransport {
       this.onCharValueChanged,
     );
     await this.notifyCharacteristic.startNotifications();
+
+    this.gattDisconnectHandler = () => this.fireDisconnect();
+    this.device.addEventListener(
+      "gattserverdisconnected",
+      this.gattDisconnectHandler,
+    );
   }
 
   public stopReading(): void {
@@ -77,6 +86,13 @@ export class BLEConnection implements ITransport {
         this.onCharValueChanged,
       );
       this.onCharValueChanged = null;
+    }
+    if (this.gattDisconnectHandler) {
+      this.device.removeEventListener(
+        "gattserverdisconnected",
+        this.gattDisconnectHandler,
+      );
+      this.gattDisconnectHandler = null;
     }
   }
 
@@ -109,7 +125,17 @@ export class BLEConnection implements ITransport {
     return 0;
   }
 
+  public onDisconnect(cb: DisconnectCallback): void {
+    this.disconnectCallbacks.add(cb);
+  }
+
   public getConnectionKind(): TransportConnectionKind {
     return "ble";
+  }
+
+  private fireDisconnect(): void {
+    this.stopReading();
+    for (const cb of this.disconnectCallbacks) cb();
+    this.disconnectCallbacks.clear();
   }
 }

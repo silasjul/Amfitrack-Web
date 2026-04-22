@@ -132,7 +132,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         this.store.getState().remapDeviceTxId(deviceID, newTxId);
       }
 
-      await this.deviceManager.updateDeviceConfig(newTxId);
+      await this.deviceManager.fetchDeviceConfig(newTxId);
       return confirmed;
     }
 
@@ -144,7 +144,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       );
       // Config mode changes can add/remove parameter categories, so we need
       // to refresh the whole configuration tree.
-      await this.deviceManager.updateDeviceConfig(deviceID);
+      await this.deviceManager.fetchDeviceConfig(deviceID);
       return confirmed;
     }
 
@@ -220,6 +220,15 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       this.connections.delete(transport);
       throw err;
     }
+
+    transport.onDisconnect(() => {
+      this.connections.delete(transport);
+      this.deviceManager.unregisterTransport(transport);
+    });
+
+    // Register after startReading so the transport is open and ready for
+    // classifyAndResolveDevice to send commands.
+    this.deviceManager.registerTransportOrGetTxId(transport);
 
     this.frequencyTracker.start();
   }
