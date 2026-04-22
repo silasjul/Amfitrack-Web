@@ -3,13 +3,7 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useAmfitrack } from "@/amfitrackSDK";
-import {
-  usePendingConfigStore,
-  type PendingConfiguration,
-} from "@/stores/usePendingConfigStore";
-
-const DEVICE_ID_PARAM_NAME = "Device ID";
-const CONFIG_MODE_PREFIX = "Config mode";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 
 export function useSaveConfigurations() {
   const { sdk } = useAmfitrack();
@@ -36,22 +30,17 @@ export function useSaveConfigurations() {
       if (skippedDevices.has(currentTxId)) continue;
 
       try {
-        const isDeviceIdChange =
-          config.parameterName === DEVICE_ID_PARAM_NAME;
-        const isConfigModeChange =
-          config.parameterName.startsWith(CONFIG_MODE_PREFIX);
-
-        const confirmed = await sdk.setParam(
+        const result = await sdk.setParam(
           currentTxId,
           config.paramUid,
           config.valueToPush,
         );
 
-        if (isDeviceIdChange && typeof confirmed === "number") {
+        if (result.txIdChanged !== undefined) {
           removePending(currentTxId, config.paramUid);
-          remapDeviceTxId(currentTxId, confirmed);
-          remaps.set(config.txId, confirmed);
-        } else if (isConfigModeChange) {
+          remapDeviceTxId(currentTxId, result.txIdChanged);
+          remaps.set(config.txId, result.txIdChanged);
+        } else if (result.configInvalidated) {
           removePendingForDevice(currentTxId);
           skippedDevices.add(currentTxId);
         } else {

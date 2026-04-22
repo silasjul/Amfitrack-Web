@@ -21,3 +21,4 @@ export type {
   SourceMeasurementData,
   SourceCalibrationData,
 } from "./src/protocol/payloads";
+export type { SetParamResult } from "./src/interfaces/IAmfitrackSDK";

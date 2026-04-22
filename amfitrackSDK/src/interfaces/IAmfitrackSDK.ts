@@ -1,5 +1,14 @@
 import { ParameterValue } from "./IConfigurator";
 
+export interface SetParamResult {
+  value: ParameterValue;
+  /** Present when the device TX ID changed (e.g. Device ID param). */
+  txIdChanged?: number;
+  /** True when remaining pending params for this device are now invalid
+   *  (e.g. config mode changed → parameter tree was rebuilt). */
+  configInvalidated?: boolean;
+}
+
 export interface IAmfitrackSDK {
   /** Connect to a device over USB. */
   requestConnectionViaUSB(productIds: number[]): Promise<boolean>;
@@ -18,7 +27,7 @@ export interface IAmfitrackSDK {
     deviceID: number,
     paramUID: number,
     value: ParameterValue,
-  ): Promise<ParameterValue>;
+  ): Promise<SetParamResult>;
 
   /** Start polling for previously-granted HID and BLE devices. */
   initialize(): void;

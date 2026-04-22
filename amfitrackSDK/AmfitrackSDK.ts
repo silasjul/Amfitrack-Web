@@ -1,4 +1,7 @@
-import { IAmfitrackSDK } from "./src/interfaces/IAmfitrackSDK";
+import {
+  IAmfitrackSDK,
+  SetParamResult,
+} from "./src/interfaces/IAmfitrackSDK";
 import {
   PRODUCT_ID_SENSOR,
   PRODUCT_ID_SOURCE,
@@ -102,7 +105,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     deviceID: number,
     paramUID: number,
     value: number | boolean | string,
-  ): Promise<number | boolean | string> {
+  ): Promise<SetParamResult> {
     const paramName = this.resolveParameterName(deviceID, paramUID);
 
     if (paramName === DEVICE_ID_PARAM_NAME && typeof value === "number") {
@@ -128,15 +131,24 @@ export class AmfitrackSDK implements IAmfitrackSDK {
 
       if (this.store.getState().deviceMeta[newTxId]) {
         // The new TX ID already appeared in the store (a packet arrived before
-        // the reply came back). Discard the old entry -- the new one is live.
+        // the reply came back). Transfer the old configuration so the UI stays
+        // populated instead of flashing a loading skeleton.
+        const oldConfig = this.store.getState().deviceMeta[deviceID]?.configuration;
+        if (oldConfig && !this.store.getState().deviceMeta[newTxId]?.configuration) {
+          this.store.getState().updateConfiguration(newTxId, oldConfig);
+        }
         this.store.getState().removeDevice(deviceID);
       } else {
         this.deviceManager.remapTxId(deviceID, newTxId);
         this.store.getState().remapDeviceTxId(deviceID, newTxId);
       }
 
-      await this.deviceManager.fetchDeviceConfig(newTxId);
-      return confirmed;
+      this.store.getState().updateParameterValue(newTxId, paramUID, confirmed);
+      // Background refresh — the config tree itself hasn't changed, so we
+      // don't need to block the caller waiting for it.
+      this.deviceManager.fetchDeviceConfig(newTxId);
+
+      return { value: confirmed, txIdChanged: newTxId };
     }
 
     if (paramName === CONFIG_MODE_PARAM_NAME) {
@@ -148,7 +160,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       // Config mode changes can add/remove parameter categories, so we need
       // to refresh the whole configuration tree.
       await this.deviceManager.fetchDeviceConfig(deviceID);
-      return confirmed;
+      return { value: confirmed, configInvalidated: true };
     }
 
     const confirmed = await this.configurator.setParameter(
@@ -157,7 +169,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       value,
     );
     this.store.getState().updateParameterValue(deviceID, paramUID, confirmed);
-    return confirmed;
+    return { value: confirmed };
   }
 
   private resolveParameterName(
