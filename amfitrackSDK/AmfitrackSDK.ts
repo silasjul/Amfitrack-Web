@@ -37,7 +37,8 @@ import { FrequencyTracker } from "./src/tracking/FrequencyTracker";
  */
 export class AmfitrackSDK implements IAmfitrackSDK {
   private store: DeviceStoreApi;
-  private connections: Set<ITransport> = new Set();
+  private connections: Map<string, ITransport> = new Map();
+  private nextTransportId = 0;
   private decoder: IDecoder;
   private encoder: IEncoder;
   private sendPipeline: ISendPipeline;
@@ -84,7 +85,9 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       })),
     });
     if (devices.length === 0) return false;
-    await this.addTransport(new HIDConnection(devices[0]));
+    await this.addTransport(
+      new HIDConnection(devices[0], this.allocateTransportId()),
+    );
     return true;
   }
 
@@ -97,7 +100,9 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       optionalServices: [AMFITRACK_SERVICE_UUID],
     });
     if (!device) return false;
-    await this.addTransport(new BLEConnection(device));
+    await this.addTransport(
+      new BLEConnection(device, this.allocateTransportId()),
+    );
     return true;
   }
 
@@ -209,7 +214,9 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         try {
           // Wait for 500ms to allow the device to be fully initialized
           setTimeout(async () => {
-            await this.addTransport(new HIDConnection(device));
+            await this.addTransport(
+              new HIDConnection(device, this.allocateTransportId()),
+            );
           }, 500);
         } catch {
           this.knownHIDDevices.delete(device);
@@ -225,7 +232,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     this.hidPollTimer = null;
 
     this.frequencyTracker.stop();
-    for (const connection of this.connections) {
+    for (const connection of this.connections.values()) {
       connection.stopReading();
     }
     this.connections.clear();
@@ -234,11 +241,15 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     return Promise.resolve();
   }
 
+  private allocateTransportId(): number {
+    this.nextTransportId += 1;
+    return this.nextTransportId;
+  }
+
   private async addTransport(transport: ITransport): Promise<void> {
-    // Guard against adding the same transport twice (e.g. initialize() and
-    // requestConnectionViaUSB() both called for the same device).
-    if (this.connections.has(transport)) return;
-    this.connections.add(transport);
+    const key = transport.getPhysicalLinkKey() ?? String(transport.id);
+    if (this.connections.has(key)) return;
+    this.connections.set(key, transport);
 
     transport.addListener((bytes) =>
       this.readPipeline.processData(bytes, transport),
@@ -247,13 +258,12 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     try {
       await transport.startReading();
     } catch (err) {
-      // Clean up so a failed transport doesn't stay in the set.
-      this.connections.delete(transport);
+      this.connections.delete(key);
       throw err;
     }
 
     transport.onDisconnect(() => {
-      this.connections.delete(transport);
+      this.connections.delete(key);
       this.deviceManager.unregisterTransport(transport);
     });
 

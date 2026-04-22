@@ -7,6 +7,7 @@ import {
 import { AMFITRACK_SERVICE_UUID } from "../../config";
 
 export class BLEConnection implements ITransport {
+  public readonly id: number;
   private device: BluetoothDevice;
   private listeners = new Set<DataCallback>();
   private disconnectCallbacks = new Set<DisconnectCallback>();
@@ -15,8 +16,13 @@ export class BLEConnection implements ITransport {
   private onCharValueChanged: ((event: Event) => void) | null = null;
   private gattDisconnectHandler: (() => void) | null = null;
 
-  constructor(device: BluetoothDevice) {
+  constructor(device: BluetoothDevice, id: number) {
     this.device = device;
+    this.id = id;
+  }
+
+  public getPhysicalLinkKey(): string | null {
+    return `ble:${this.device.id}`;
   }
 
   public async startReading(): Promise<void> {
