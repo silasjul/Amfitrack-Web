@@ -8,7 +8,7 @@ import type {
 } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +23,7 @@ import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSetting
 import { SensorRow } from "./sensor-row";
 import { HubRow } from "./hub-row";
 import { SourceRow } from "./source-row";
+import useTxIds from "@/hooks/useTxIds";
 
 type DeviceFilter = "all" | "hubs" | "sources" | "sensors";
 
@@ -48,44 +49,25 @@ export default function SidebarUpper() {
 
   const [configDialogTxId, setConfigDialogTxId] = useState<number | null>(null);
 
-  const { hubIds, sourceIds, sensorIds } = useMemo(() => {
-    const hubs: number[] = [];
-    const sources: number[] = [];
-    const sensors: number[] = [];
-    for (const [txIdStr, meta] of Object.entries(deviceMeta)) {
-      const txId = Number(txIdStr);
-      if (txId < 0) continue;
-      switch (meta.kind) {
-        case "hub":
-          hubs.push(txId);
-          break;
-        case "source":
-          sources.push(txId);
-          break;
-        case "sensor":
-          sensors.push(txId);
-          break;
-      }
-    }
-    return { hubIds: hubs, sourceIds: sources, sensorIds: sensors };
-  }, [deviceMeta]);
+  const { sensorTxIds, sourceTxIds, hubTxIds } = useTxIds();
 
-  const totalDeviceCount = hubIds.length + sourceIds.length + sensorIds.length;
+  const totalDeviceCount =
+    hubTxIds.length + sourceTxIds.length + sensorTxIds.length;
 
   useEffect(() => {
-    if (sensorIds.length === 0) return;
+    if (sensorTxIds.length === 0) return;
     const interval = setInterval(() => {
       const data = useDeviceStore.getState().emfImuFrameId;
       if (Object.keys(data).length === 0) return;
       const next: Record<number, EmfImuFrameIdData> = {};
-      for (const id of sensorIds) {
+      for (const id of sensorTxIds) {
         const d = data[id];
         if (d) next[id] = d;
       }
       setSnapshots(next);
     }, 100);
     return () => clearInterval(interval);
-  }, [sensorIds]);
+  }, [sensorTxIds]);
 
   useEffect(() => {
     if (lastDeviceIdRemap && configDialogTxId === lastDeviceIdRemap.oldTxId) {
@@ -94,15 +76,15 @@ export default function SidebarUpper() {
   }, [lastDeviceIdRemap, configDialogTxId]);
 
   useEffect(() => {
-    if (selectedSensorId === null && sensorIds.length > 0) {
-      setSelectedSensorId(sensorIds[0]);
+    if (selectedSensorId === null && sensorTxIds.length > 0) {
+      setSelectedSensorId(sensorTxIds[0]);
     } else if (
       selectedSensorId !== null &&
-      !sensorIds.includes(selectedSensorId)
+      !sensorTxIds.includes(selectedSensorId)
     ) {
-      setSelectedSensorId(sensorIds[0] ?? null);
+      setSelectedSensorId(sensorTxIds[0] ?? null);
     }
-  }, [sensorIds, selectedSensorId, setSelectedSensorId]);
+  }, [sensorTxIds, selectedSensorId, setSelectedSensorId]);
 
   const showHubs = filter === "all" || filter === "hubs";
   const showSources = filter === "all" || filter === "sources";
@@ -178,7 +160,7 @@ export default function SidebarUpper() {
           <div className="space-y-1">
             {totalDeviceCount === 0 && <SkeletonRows />}
             {showSensors &&
-              sensorIds.map((id) => (
+              sensorTxIds.map((id) => (
                 <SensorRow
                   key={id}
                   id={id}
@@ -193,7 +175,7 @@ export default function SidebarUpper() {
               ))}
 
             {showSources &&
-              sourceIds.map((id) => (
+              sourceTxIds.map((id) => (
                 <SourceRow
                   key={`source-${id}`}
                   id={id}
@@ -206,7 +188,7 @@ export default function SidebarUpper() {
               ))}
 
             {showHubs &&
-              hubIds.map((id) => (
+              hubTxIds.map((id) => (
                 <HubRow
                   key={`hub-${id}`}
                   id={id}

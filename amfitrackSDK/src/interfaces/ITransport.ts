@@ -1,5 +1,7 @@
 export type DataCallback = (bytes: Uint8Array) => void;
 
+export type TransportConnectionKind = "usb" | "ble";
+
 export interface ITransport {
   /** Opens the device and begins listening for incoming data. */
   startReading(): Promise<void>;
@@ -15,4 +17,7 @@ export interface ITransport {
   getProductName(): string;
 
   getProductId(): number;
+
+  /** Physical link used for this transport (HID vs Bluetooth). */
+  getConnectionKind(): TransportConnectionKind;
 }

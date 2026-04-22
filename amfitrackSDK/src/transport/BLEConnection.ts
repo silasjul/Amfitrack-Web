@@ -1,4 +1,8 @@
-import { ITransport, DataCallback } from "../interfaces/ITransport";
+import {
+  ITransport,
+  DataCallback,
+  TransportConnectionKind,
+} from "../interfaces/ITransport";
 import { AMFITRACK_SERVICE_UUID } from "../../config";
 
 export class BLEConnection implements ITransport {
@@ -46,7 +50,15 @@ export class BLEConnection implements ITransport {
     this.onCharValueChanged = (event: Event) => {
       const char = event.target as BluetoothRemoteGATTCharacteristic;
       if (char.value) {
-        const bytes = new Uint8Array(char.value.buffer);
+        const raw = new Uint8Array(
+          char.value.buffer,
+          char.value.byteOffset,
+          char.value.byteLength,
+        );
+        // The pipeline expects byte 0 to be a padding / report-ID byte (as in
+        // USB HID). BLE has no such prefix, so we prepend a zero byte.
+        const bytes = new Uint8Array(raw.length + 1);
+        bytes.set(raw, 1);
         for (const cb of this.listeners) cb(bytes);
       }
     };
@@ -95,5 +107,9 @@ export class BLEConnection implements ITransport {
 
   public getProductId(): number {
     return 0;
+  }
+
+  public getConnectionKind(): TransportConnectionKind {
+    return "ble";
   }
 }

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAmfitrack, useDeviceStore } from "@/amfitrackSDK";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import useTxIds from "@/hooks/useTxIds";
 
 type ConnectedDevice = {
   rowKey: string;
@@ -15,12 +16,6 @@ type ConnectedDevice = {
 };
 
 type DeviceItemProps = Pick<ConnectedDevice, "label" | "id" | "image">;
-
-const KIND_LABEL: Record<string, string> = {
-  hub: "Hub",
-  source: "Source",
-  sensor: "Sensor",
-};
 
 const KIND_IMAGE: Record<string, string> = {
   hub: "/hub.png",
@@ -32,28 +27,29 @@ export default function Footer() {
   const { sdk } = useAmfitrack();
   const deviceMeta = useDeviceStore((s) => s.deviceMeta);
 
-  const connectedDevices: ConnectedDevice[] = [];
-  for (const [txIdStr, meta] of Object.entries(deviceMeta)) {
-    const txId = Number(txIdStr);
-    if (txId < 0) continue;
-    const isUsb = meta.readFromTxId === null || meta.readFromTxId === txId;
-    if (!isUsb) continue;
-    connectedDevices.push({
-      rowKey: `${meta.kind}-${txId}`,
-      label: KIND_LABEL[meta.kind] ?? meta.kind,
-      id: txId,
-      image: KIND_IMAGE[meta.kind] ?? "/sensor.png",
-    });
-  }
+  const { BLETxIds, USBTxIds } = useTxIds();
 
-  const hasDevices = connectedDevices.length > 0;
+  const hasDevices = BLETxIds.length > 0 || USBTxIds.length > 0;
 
   return (
     <div className="flex flex-col px-1 pb-1">
       {hasDevices && (
         <ul className="flex flex-col gap-1 mb-2">
-          {connectedDevices.map(({ rowKey, label, id, image }) => (
-            <DeviceItem key={rowKey} label={label} id={id} image={image} />
+          {BLETxIds.map((id) => (
+            <DeviceItem
+              key={id}
+              label={deviceMeta[id].kind}
+              id={id}
+              image={KIND_IMAGE[deviceMeta[id].kind]}
+            />
+          ))}
+          {USBTxIds.map((id) => (
+            <DeviceItem
+              key={id}
+              label={deviceMeta[id].kind}
+              id={id}
+              image={KIND_IMAGE[deviceMeta[id].kind]}
+            />
           ))}
         </ul>
       )}

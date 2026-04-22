@@ -71,7 +71,10 @@ export class DeviceManager implements IDeviceManager {
 
     // Register with a placeholder kind; classifyAndResolveDevice() will replace
     // it with the real TX ID and configuration once the firmware responds.
-    this.store.getState().registerDevice(temporaryTxID, "hub", null);
+    // uplink is set immediately so downstream code knows the physical link type.
+    this.store
+      .getState()
+      .registerDevice(temporaryTxID, "hub", source.getConnectionKind());
     this.classifyAndResolveDevice(source, temporaryTxID);
 
     return temporaryTxID;
@@ -80,7 +83,7 @@ export class DeviceManager implements IDeviceManager {
   public pingOrRegisterDevice(
     deviceTxId: number,
     payloadType: PayloadType,
-    readFromTxId: number | null,
+    uplink: number | null,
   ) {
     const { deviceMeta, registerDevice, pingDevice } = this.store.getState();
 
@@ -98,12 +101,12 @@ export class DeviceManager implements IDeviceManager {
     // changed and will briefly keep broadcasting before the device resets.
     if (this.isTxIdRetired(kind, deviceTxId)) return;
 
-    registerDevice(deviceTxId, kind, readFromTxId);
-    if (readFromTxId != null && readFromTxId >= 0) {
-      // Device is relayed through a known source -- fetch its config now.
+    registerDevice(deviceTxId, kind, uplink);
+    if (uplink != null && uplink >= 0) {
+      // Device is relayed through a known hub -- fetch its config now.
       this.updateDeviceConfig(deviceTxId);
     } else {
-      // Source not resolved yet; queue this device and fetch its config once
+      // Hub not resolved yet; queue this device and fetch its config once
       // the hub's TX ID is confirmed.
       this.pendingConfigDevices.add(deviceTxId);
     }
@@ -119,12 +122,12 @@ export class DeviceManager implements IDeviceManager {
     }
 
     // Indirect match: this device is relayed through a hub. Find the hub's
-    // transport using the readFromTxId stored in the device's metadata.
+    // transport using the uplink TX ID stored in the device's metadata.
     const { deviceMeta } = this.store.getState();
     const meta = deviceMeta[txId];
-    if (meta?.readFromTxId != null) {
+    if (typeof meta?.uplink === "number") {
       for (const [transport, id] of this.sourceTxIdMap) {
-        if (id === meta.readFromTxId) {
+        if (id === meta.uplink) {
           return { transport, deviceTxId: txId };
         }
       }
@@ -228,14 +231,16 @@ export class DeviceManager implements IDeviceManager {
         .commitSourceTxIdResolution(temporaryTxId, txId, configuration);
 
       this.sourceTxIdMap.set(device, txId);
-      // Now that the hub's real TX ID is known, sensors waiting in
-      // pendingConfigDevices can have their configurations fetched.
-      this.flushPendingConfigs();
     } catch (err) {
-      console.error(
-        `Failed to resolve device config for temp ID ${temporaryTxId}`,
+      console.warn(
+        `Could not resolve device config for temp ID ${temporaryTxId} — ` +
+          `streaming data will still flow.`,
         err,
       );
+    } finally {
+      // Flush regardless of success: sensors waiting for the hub to resolve
+      // should attempt their own config fetch (which may also fail gracefully).
+      this.flushPendingConfigs();
     }
   }
 

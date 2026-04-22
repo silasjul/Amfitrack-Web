@@ -9,7 +9,7 @@ export interface IDeviceManager {
   pingOrRegisterDevice(
     deviceTxId: number,
     payloadType: PayloadType,
-    readFromTxId: number | null,
+    uplink: number | null,
   ): void;
   resolveTransport(txId: number): ResolvedTransport;
   updateDeviceConfig(deviceTxId: number): Promise<void>;

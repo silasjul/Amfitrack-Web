@@ -1,4 +1,8 @@
-import { ITransport, DataCallback } from "../interfaces/ITransport";
+import {
+  ITransport,
+  DataCallback,
+  TransportConnectionKind,
+} from "../interfaces/ITransport";
 
 const HID_REPORT_ID = 0x01;
 const HID_REPORT_DATA_SIZE = 63; // 64-byte USB report minus 1-byte report ID
@@ -55,5 +59,9 @@ export class HIDConnection implements ITransport {
 
   public getProductId(): number {
     return this.device.productId;
+  }
+
+  public getConnectionKind(): TransportConnectionKind {
+    return "usb";
   }
 }

@@ -14,13 +14,13 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
   sourceCalibration: {},
   frequency: {},
 
-  registerDevice: (txId, kind, readFromTxId) =>
+  registerDevice: (txId, kind, uplink) =>
     set((state) => {
       if (state.deviceMeta[txId]) return state;
       return {
         deviceMeta: {
           ...state.deviceMeta,
-          [txId]: { kind, lastSeen: Date.now(), readFromTxId },
+          [txId]: { kind, lastSeen: Date.now(), uplink },
         },
       };
     }),
@@ -94,14 +94,16 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
           ...(tempMeta ?? existingMeta),
           ...existingMeta,
           configuration,
+          uplink: tempMeta?.uplink ?? existingMeta?.uplink,
         },
       };
 
+      // Update any devices whose uplink pointed at the temporary ID.
       for (const key of Object.keys(updatedMeta)) {
         const id = Number(key);
         const meta = updatedMeta[id];
-        if (meta && meta.readFromTxId === temporaryTxId) {
-          updatedMeta[id] = { ...meta, readFromTxId: resolvedTxId };
+        if (meta && meta.uplink === temporaryTxId) {
+          updatedMeta[id] = { ...meta, uplink: resolvedTxId };
         }
       }
 
@@ -162,11 +164,12 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
         [newTxId]: meta,
       };
 
+      // Update any devices whose uplink pointed at the old ID.
       for (const key of Object.keys(updatedMeta)) {
         const id = Number(key);
         const m = updatedMeta[id];
-        if (m && m.readFromTxId === oldTxId) {
-          updatedMeta[id] = { ...m, readFromTxId: newTxId };
+        if (m && m.uplink === oldTxId) {
+          updatedMeta[id] = { ...m, uplink: newTxId };
         }
       }
 
@@ -174,16 +177,13 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
       return {
         deviceMeta: updatedMeta,
         emfImuFrameId: emf ? { ...restEmf, [newTxId]: emf } : restEmf,
-        sourceMeasurement: meas
-          ? { ...restMeas, [newTxId]: meas }
-          : restMeas,
+        sourceMeasurement: meas ? { ...restMeas, [newTxId]: meas } : restMeas,
         sourceCalibration: cal ? { ...restCal, [newTxId]: cal } : restCal,
         frequency: freq ? { ...restFreq, [newTxId]: freq } : restFreq,
       };
     }),
 
-  updateFrequencies: (frequencies) =>
-    set(() => ({ frequency: frequencies })),
+  updateFrequencies: (frequencies) => set(() => ({ frequency: frequencies })),
 
   clearAll: () =>
     set(() => ({

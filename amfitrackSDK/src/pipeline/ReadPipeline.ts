@@ -43,7 +43,10 @@ export class ReadPipeline implements IReadPipeline {
     // source. When a device (e.g. a source) is connected via USB AND a hub
     // relays the same packets, we'd otherwise double-count.
     const isRelayed = header.sourceTxId !== readFromTxId;
-    if (!isRelayed || !this.deviceManager.isDirectlyConnected(header.sourceTxId)) {
+    if (
+      !isRelayed ||
+      !this.deviceManager.isDirectlyConnected(header.sourceTxId)
+    ) {
       this.frequencyTracker.trackPacket(header.sourceTxId, header.payloadType);
     }
 

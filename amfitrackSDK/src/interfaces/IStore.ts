@@ -8,6 +8,14 @@ import type { Configuration, ParameterValue } from "./IConfigurator";
 
 export type DeviceKind = "hub" | "source" | "sensor";
 
+/**
+ * How a device's packets reach us:
+ *   "usb" | "ble"  — device is physically connected on this link
+ *   number          — packets are relayed through the hub with this TX ID
+ *   null            — not yet determined (transient during initial registration)
+ */
+export type DeviceUplink = number | "usb" | "ble" | null;
+
 export interface DeviceFrequency {
   totalHz: number;
   byPayloadType: Partial<Record<PayloadType, number>>;
@@ -16,7 +24,7 @@ export interface DeviceFrequency {
 export interface DeviceMeta {
   kind: DeviceKind;
   lastSeen: number;
-  readFromTxId: number | null;
+  uplink: DeviceUplink;
   configuration?: Configuration[];
 }
 
@@ -29,11 +37,7 @@ export interface IDeviceStoreState {
 }
 
 export interface IDeviceStoreActions {
-  registerDevice: (
-    txId: number,
-    kind: DeviceKind,
-    readFromTxId: number | null,
-  ) => void;
+  registerDevice: (txId: number, kind: DeviceKind, uplink: DeviceUplink) => void;
   removeDevice: (txId: number) => void;
   pingDevice: (txId: number) => void;
   updatePayload: (
