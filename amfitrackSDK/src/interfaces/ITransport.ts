@@ -5,6 +5,15 @@ export type DisconnectCallback = () => void;
 export type TransportConnectionKind = "usb" | "ble";
 
 export interface ITransport {
+  /** Monotonic id assigned by the SDK when the transport is constructed. */
+  readonly id: number;
+
+  /**
+   * Stable key for the physical link, if the SDK should allow only one active
+   * transport per key (e.g. one BLE wrapper per BluetoothDevice).
+   */
+  getPhysicalLinkKey(): string | null;
+
   /** Opens the device and begins listening for incoming data. */
   startReading(): Promise<void>;
 

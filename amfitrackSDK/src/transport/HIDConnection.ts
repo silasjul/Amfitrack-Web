@@ -9,14 +9,20 @@ const HID_REPORT_ID = 0x01;
 const HID_REPORT_DATA_SIZE = 63; // 64-byte USB report minus 1-byte report ID
 
 export class HIDConnection implements ITransport {
+  public readonly id: number;
   private device: HIDDevice;
   private listeners = new Set<DataCallback>();
   private disconnectCallbacks = new Set<DisconnectCallback>();
   private inputReportHandler: EventListener | null = null;
   private hidDisconnectHandler: ((ev: Event) => void) | null = null;
 
-  constructor(device: HIDDevice) {
+  constructor(device: HIDDevice, id: number) {
     this.device = device;
+    this.id = id;
+  }
+
+  public getPhysicalLinkKey(): string | null {
+    return null;
   }
 
   public async startReading(): Promise<void> {
