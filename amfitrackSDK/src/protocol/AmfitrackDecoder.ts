@@ -80,7 +80,7 @@ export class AmfitrackDecoder implements IDecoder {
     return new TextDecoder("ascii").decode(data.subarray(offset, end));
   }
 
-  private parseHeader(bytes: Uint8Array): PacketHeader {
+  public parseHeader(bytes: Uint8Array): PacketHeader {
     return {
       payloadLength: bytes[0],
       packetType: bytes[1],
@@ -92,7 +92,17 @@ export class AmfitrackDecoder implements IDecoder {
     };
   }
 
-  private parsePayload(
+  public sliceBytesToHeaderAndPayload(bytes: Uint8Array): {
+    headerBytes: Uint8Array;
+    payloadBytes: Uint8Array;
+  } {
+    return {
+      headerBytes: bytes.subarray(1, 8),
+      payloadBytes: bytes.subarray(8),
+    };
+  }
+
+  public parsePayload(
     bytes: Uint8Array,
     payloadType: PayloadType,
   ): DecodedPayload {

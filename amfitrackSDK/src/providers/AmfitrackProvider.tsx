@@ -26,15 +26,9 @@ export function useAmfitrackProvider(): IAmfitrackProvider {
 
   useEffect(() => {
     const sdk = new AmfitrackSDK();
-    sdk
-      .initialize()
-      .catch((error) => {
-        console.error("Failed to initialize SDK", error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    sdk.initialize();
     setSdk(sdk);
+    setIsLoading(false);
 
     return () => {
       sdk.destroy();

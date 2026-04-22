@@ -20,8 +20,8 @@ export interface IAmfitrackSDK {
     value: ParameterValue,
   ): Promise<ParameterValue>;
 
-  /** Initialize the SDK. Setup listeners and auto connect to known USB devices. */
-  initialize(): Promise<void>;
+  /** Start polling for previously-granted HID and BLE devices. */
+  initialize(): void;
 
   /** Disconnect and release resources (listeners, transports, etc.). */
   destroy(): Promise<void>;

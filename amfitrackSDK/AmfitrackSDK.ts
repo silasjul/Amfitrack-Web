@@ -7,6 +7,7 @@ import {
   CONFIG_MODE_PARAM_NAME,
   AMFITRACK_SERVICE_UUID,
   BLUETOOTH_NAME_FILTER,
+  DEVICE_POLL_INTERVAL_MS,
 } from "./config";
 import { ITransport } from "./src/interfaces/ITransport";
 import { HIDConnection } from "./src/transport/HIDConnection";
@@ -42,6 +43,10 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   private frequencyTracker: IFrequencyTracker;
   private readPipeline: IReadPipeline;
 
+  // Polling for previously-granted devices
+  private hidPollTimer: ReturnType<typeof setInterval> | null = null;
+  private knownHIDDevices = new WeakSet<HIDDevice>();
+
   constructor(store: DeviceStoreApi = useDeviceStore) {
     this.store = store;
     this.decoder = new AmfitrackDecoder();
@@ -69,14 +74,12 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   public async requestConnectionViaUSB(
     productIds: number[] = [PRODUCT_ID_SENSOR, PRODUCT_ID_SOURCE],
   ): Promise<boolean> {
-    // Prompts user to select a device
     const devices = await navigator.hid.requestDevice({
       filters: productIds.map((productId) => ({
         vendorId: VENDOR_ID,
         productId,
       })),
     });
-    // User cancelled device selection
     if (devices.length === 0) return false;
     await this.addTransport(new HIDConnection(devices[0]));
     return true;
@@ -171,34 +174,50 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     return null;
   }
 
-  public async initialize(): Promise<void> {
-    // getDevices() returns only devices the user has already granted access to
-    // in a previous session -- no permission prompt is shown.
-    const granted = await navigator.hid.getDevices();
-    const relevant = granted.filter(
-      (d) =>
-        d.vendorId === VENDOR_ID &&
-        (d.productId === PRODUCT_ID_SENSOR ||
-          d.productId === PRODUCT_ID_SOURCE),
+  public initialize(): void {
+    this.hidPollTimer = setInterval(
+      () => this.pollGrantedHIDDevices(),
+      DEVICE_POLL_INTERVAL_MS,
     );
+    this.pollGrantedHIDDevices();
+  }
 
-    for (const device of relevant) {
-      try {
-        await this.addTransport(new HIDConnection(device));
-      } catch (err) {
-        console.error("Failed to auto-connect device", err);
+  private async pollGrantedHIDDevices(): Promise<void> {
+    try {
+      const granted = await navigator.hid.getDevices();
+      const relevant = granted.filter(
+        (d) =>
+          d.vendorId === VENDOR_ID &&
+          (d.productId === PRODUCT_ID_SENSOR ||
+            d.productId === PRODUCT_ID_SOURCE),
+      );
+      for (const device of relevant) {
+        if (this.knownHIDDevices.has(device)) continue;
+        this.knownHIDDevices.add(device);
+        try {
+          // Wait for 500ms to allow the device to be fully initialized
+          setTimeout(async () => {
+            await this.addTransport(new HIDConnection(device));
+          }, 500);
+        } catch {
+          this.knownHIDDevices.delete(device);
+        }
       }
+    } catch {
+      // HID API unavailable or permission revoked -- nothing to do.
     }
   }
 
   public destroy(): Promise<void> {
+    if (this.hidPollTimer) clearInterval(this.hidPollTimer);
+    this.hidPollTimer = null;
+
     this.frequencyTracker.stop();
     for (const connection of this.connections) {
       connection.stopReading();
     }
     this.connections.clear();
     this.deviceManager.destroy();
-    // Wipe the store so no ghost devices linger after teardown.
     this.store.getState().clearAll();
     return Promise.resolve();
   }

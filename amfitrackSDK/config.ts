@@ -10,6 +10,9 @@ export const BLUETOOTH_NAME_FILTER = "AMFITRACK BLE";
 // Encoder / Decoder
 export const LE = true; // Little Endian
 
+// Polling for previously-granted devices
+export const DEVICE_POLL_INTERVAL_MS = 1000;
+
 // Graveyard
 export const DEVICE_CLEANUP_INTERVAL_MS = 500;
 export const DEVICE_TIMEOUT_MS = 5000;

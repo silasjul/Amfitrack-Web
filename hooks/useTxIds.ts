@@ -5,6 +5,7 @@ export interface UseTxIdsResult {
   sensorTxIds: number[];
   sourceTxIds: number[];
   hubTxIds: number[];
+  unknownTxIds: number[];
   BLETxIds: number[];
   USBTxIds: number[];
 }
@@ -16,6 +17,7 @@ export default function useTxIds(): UseTxIdsResult {
     const sensorTxIds: number[] = [];
     const sourceTxIds: number[] = [];
     const hubTxIds: number[] = [];
+    const unknownTxIds: number[] = [];
     const BLETxIds: number[] = [];
     const USBTxIds: number[] = [];
 
@@ -36,8 +38,9 @@ export default function useTxIds(): UseTxIdsResult {
       if (meta.kind === "sensor") sensorTxIds.push(id);
       else if (meta.kind === "source") sourceTxIds.push(id);
       else if (meta.kind === "hub") hubTxIds.push(id);
+      else if (meta.kind === "unknown") unknownTxIds.push(id);
     }
 
-    return { sensorTxIds, sourceTxIds, hubTxIds, BLETxIds, USBTxIds };
+    return { sensorTxIds, sourceTxIds, hubTxIds, unknownTxIds, BLETxIds, USBTxIds };
   }, [deviceMeta]);
 }

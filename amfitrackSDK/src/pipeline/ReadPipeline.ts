@@ -4,6 +4,7 @@ import type { IDeviceManager } from "../interfaces/IDeviceManager";
 import type { IFrequencyTracker } from "../interfaces/IFrequencyTracker";
 import { ITransport } from "../interfaces/ITransport";
 import { IReadPipeline } from "../interfaces/IReadPipeline";
+import { DecodedPayload, PacketHeader } from "../protocol/AmfitrackDecoder";
 
 export class ReadPipeline implements IReadPipeline {
   private decoder: IDecoder;
@@ -23,35 +24,60 @@ export class ReadPipeline implements IReadPipeline {
     this.frequencyTracker = frequencyTracker;
   }
 
-  processData(bytes: Uint8Array, source: ITransport): void {
-    // Ensure the transport is registered first — even if decoding fails the
-    // transport should be visible in the store.
-    const readFromTxId = this.deviceManager.registerTransportOrGetTxId(source);
+  processData(bytes: Uint8Array, transport: ITransport): void {
+    // Registrer and or get the TX ID for the transport
+    const readFromTxId =
+      this.deviceManager.registerTransportOrGetTxId(transport);
 
-    let decoded;
+    const { headerBytes, payloadBytes } =
+      this.decoder.sliceBytesToHeaderAndPayload(bytes);
+
+    // Decode the header
+    let decodedHeader: PacketHeader;
     try {
-      decoded = this.decoder.decode(bytes);
-    } catch {
+      decodedHeader = this.decoder.parseHeader(headerBytes);
+    } catch (err) {
+      console.error(`Failed to decode header`, err, { bytes });
       return;
     }
-    const { header, payload } = decoded;
 
+    // Ping or register the device
     this.deviceManager.pingOrRegisterDevice(
-      header.sourceTxId,
-      header.payloadType,
+      decodedHeader.sourceTxId,
+      decodedHeader.payloadType,
       readFromTxId,
     );
 
-    const isRelayed = header.sourceTxId !== readFromTxId;
+    // Track the frequency of the packet
+    const isRelayed = decodedHeader.sourceTxId !== readFromTxId;
     if (
       !isRelayed ||
-      !this.deviceManager.isDirectlyConnected(header.sourceTxId)
+      !this.deviceManager.isDirectlyConnected(decodedHeader.sourceTxId)
     ) {
-      this.frequencyTracker.trackPacket(header.sourceTxId, header.payloadType);
+      this.frequencyTracker.trackPacket(
+        decodedHeader.sourceTxId,
+        decodedHeader.payloadType,
+      );
+    }
+
+    // Decode payload and store contents in state (payload starts after the header at byte 8)
+    let decodedPayload: DecodedPayload;
+    try {
+      decodedPayload = this.decoder.parsePayload(
+        payloadBytes,
+        decodedHeader.payloadType,
+      );
+    } catch (err) {
+      console.error(`Failed to decode payload`, err, { bytes });
+      return;
     }
 
     this.store
       .getState()
-      .updatePayload(header.sourceTxId, header.payloadType, payload);
+      .updatePayload(
+        decodedHeader.sourceTxId,
+        decodedHeader.payloadType,
+        decodedPayload,
+      );
   }
 }

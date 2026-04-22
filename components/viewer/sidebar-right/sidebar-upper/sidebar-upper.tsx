@@ -23,9 +23,10 @@ import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSetting
 import { SensorRow } from "./sensor-row";
 import { HubRow } from "./hub-row";
 import { SourceRow } from "./source-row";
+import { UnknownRow } from "./unknown-row";
 import useTxIds from "@/hooks/useTxIds";
 
-type DeviceFilter = "all" | "hubs" | "sources" | "sensors";
+type DeviceFilter = "all" | "hubs" | "sources" | "sensors" | "unknown";
 
 function deviceDisplayName(kind: string, txId: number): string {
   const prefix = kind.charAt(0).toUpperCase() + kind.slice(1);
@@ -49,10 +50,10 @@ export default function SidebarUpper() {
 
   const [configDialogTxId, setConfigDialogTxId] = useState<number | null>(null);
 
-  const { sensorTxIds, sourceTxIds, hubTxIds } = useTxIds();
+  const { sensorTxIds, sourceTxIds, hubTxIds, unknownTxIds } = useTxIds();
 
   const totalDeviceCount =
-    hubTxIds.length + sourceTxIds.length + sensorTxIds.length;
+    hubTxIds.length + sourceTxIds.length + sensorTxIds.length + unknownTxIds.length;
 
   useEffect(() => {
     if (sensorTxIds.length === 0) return;
@@ -89,6 +90,7 @@ export default function SidebarUpper() {
   const showHubs = filter === "all" || filter === "hubs";
   const showSources = filter === "all" || filter === "sources";
   const showSensors = filter === "all" || filter === "sensors";
+  const showUnknown = filter === "all" || filter === "unknown";
 
   const dialogOpen = configDialogTxId !== null;
   const dialogMeta: DeviceMeta | undefined =
@@ -151,6 +153,12 @@ export default function SidebarUpper() {
                 >
                   Sensors
                 </SelectItem>
+                <SelectItem
+                  className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
+                  value="unknown"
+                >
+                  Unknown
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -194,6 +202,18 @@ export default function SidebarUpper() {
                   id={id}
                   frequency={frequency[id]}
                   configuration={deviceMeta[id]?.configuration ?? []}
+                  isSelected={false}
+                  onSelect={() => {}}
+                  onOpenSettings={() => setConfigDialogTxId(id)}
+                />
+              ))}
+
+            {showUnknown &&
+              unknownTxIds.map((id) => (
+                <UnknownRow
+                  key={`unknown-${id}`}
+                  id={id}
+                  frequency={frequency[id]}
                   isSelected={false}
                   onSelect={() => {}}
                   onOpenSettings={() => setConfigDialogTxId(id)}
