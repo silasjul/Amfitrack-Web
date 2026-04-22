@@ -1,0 +1,99 @@
+import { ITransport, DataCallback } from "../interfaces/ITransport";
+import { AMFITRACK_SERVICE_UUID } from "../../config";
+
+export class BLEConnection implements ITransport {
+  private device: BluetoothDevice;
+  private listeners = new Set<DataCallback>();
+  private notifyCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private writeCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private onCharValueChanged: ((event: Event) => void) | null = null;
+
+  constructor(device: BluetoothDevice) {
+    this.device = device;
+  }
+
+  public async startReading(): Promise<void> {
+    const gatt = this.device.gatt;
+    if (!gatt) throw new Error("GATT server not available on this device");
+
+    if (!gatt.connected) {
+      await gatt.connect();
+    }
+
+    const service = await gatt.getPrimaryService(AMFITRACK_SERVICE_UUID);
+    const characteristics = await service.getCharacteristics();
+
+    for (const char of characteristics) {
+      if (char.properties.notify && !this.notifyCharacteristic) {
+        this.notifyCharacteristic = char;
+      }
+      if (
+        (char.properties.write || char.properties.writeWithoutResponse) &&
+        !this.writeCharacteristic
+      ) {
+        this.writeCharacteristic = char;
+      }
+    }
+
+    if (!this.notifyCharacteristic) {
+      throw new Error(
+        "No notify characteristic found on AMFITRACK BLE service",
+      );
+    }
+
+    this.stopReading();
+
+    this.onCharValueChanged = (event: Event) => {
+      const char = event.target as BluetoothRemoteGATTCharacteristic;
+      if (char.value) {
+        const bytes = new Uint8Array(char.value.buffer);
+        for (const cb of this.listeners) cb(bytes);
+      }
+    };
+
+    this.notifyCharacteristic.addEventListener(
+      "characteristicvaluechanged",
+      this.onCharValueChanged,
+    );
+    await this.notifyCharacteristic.startNotifications();
+  }
+
+  public stopReading(): void {
+    if (this.notifyCharacteristic && this.onCharValueChanged) {
+      this.notifyCharacteristic.removeEventListener(
+        "characteristicvaluechanged",
+        this.onCharValueChanged,
+      );
+      this.onCharValueChanged = null;
+    }
+  }
+
+  public addListener(cb: DataCallback): void {
+    this.listeners.add(cb);
+  }
+
+  public removeListener(cb: DataCallback): void {
+    this.listeners.delete(cb);
+  }
+
+  public async writeToDevice(bytes: Uint8Array): Promise<void> {
+    if (!this.writeCharacteristic) {
+      throw new Error("No write characteristic available");
+    }
+
+    const payload = bytes.slice();
+    if (this.writeCharacteristic.properties.writeWithoutResponse) {
+      await this.writeCharacteristic.writeValueWithoutResponse(payload);
+    } else {
+      await this.writeCharacteristic.writeValueWithResponse(payload);
+    }
+  }
+
+  public getProductName(): string {
+    return this.device.name ?? "Unknown BLE Device";
+  }
+
+  public getProductId(): number {
+    return 0;
+  }
+}

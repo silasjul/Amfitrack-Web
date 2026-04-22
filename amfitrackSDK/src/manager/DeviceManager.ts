@@ -218,6 +218,7 @@ export class DeviceManager implements IDeviceManager {
     try {
       const configuration = await this.configurator.getConfiguration(device);
       const txId = this.configurator.extractDeviceId(configuration);
+      console.log(`configuration ID_${txId}`, configuration);
       if (txId === null) return;
 
       // Swap the temporary ID for the real one and attach the full config.
@@ -252,6 +253,7 @@ export class DeviceManager implements IDeviceManager {
     try {
       const configuration =
         await this.configurator.getConfiguration(deviceTxId);
+      console.log(`configuration ID_${deviceTxId}`, configuration);
       this.store.getState().updateConfiguration(deviceTxId, configuration);
     } catch (err) {
       console.error(`Failed to fetch config for device ${deviceTxId}`, err);

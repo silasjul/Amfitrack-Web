@@ -5,9 +5,12 @@ import {
   VENDOR_ID,
   DEVICE_ID_PARAM_NAME,
   CONFIG_MODE_PARAM_NAME,
+  AMFITRACK_SERVICE_UUID,
+  BLUETOOTH_NAME_FILTER,
 } from "./config";
 import { ITransport } from "./src/interfaces/ITransport";
 import { HIDConnection } from "./src/transport/HIDConnection";
+import { BLEConnection } from "./src/transport/BLEConnection";
 import { IReadPipeline } from "./src/interfaces/IReadPipeline";
 import { ReadPipeline } from "./src/pipeline/ReadPipeline";
 import { IDecoder } from "./src/interfaces/IDecoder";
@@ -79,8 +82,17 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     return true;
   }
 
-  public requestConnectionViaBLE(): Promise<boolean> {
-    throw new Error("Method not implemented.");
+  public async requestConnectionViaBLE(): Promise<boolean> {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [
+        { namePrefix: BLUETOOTH_NAME_FILTER },
+        { services: [AMFITRACK_SERVICE_UUID] },
+      ],
+      optionalServices: [AMFITRACK_SERVICE_UUID],
+    });
+    if (!device) return false;
+    await this.addTransport(new BLEConnection(device));
+    return true;
   }
 
   public async setParam(

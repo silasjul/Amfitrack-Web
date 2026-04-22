@@ -37,6 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/w3c-web-hid": "^1.0.6",
+    "@types/web-bluetooth": "^0.0.21",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "shadcn": "^4.1.0",
