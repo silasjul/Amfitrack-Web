@@ -49,7 +49,7 @@ export default function SidebarLower() {
                   <button
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center justify-center h-5 w-7 rounded-t-sm transition-colors",
+                      "flex items-center justify-center h-5 w-7 rounded-t-sm transition-[width,height,padding]",
                       "hover:bg-sidebar-accent hover:text-sidebar-foreground/80",
                       "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                       isActive

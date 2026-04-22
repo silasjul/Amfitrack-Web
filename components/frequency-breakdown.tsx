@@ -1,7 +1,6 @@
 "use client";
 
-import { type DeviceFrequency } from "@/amfitrackWebSDK/AmfitrackWeb";
-import { PayloadType } from "@/amfitrackWebSDK/packets/PacketDecoder";
+import { type DeviceFrequency, PayloadType } from "@/amfitrackSDK";
 import {
   HoverCard,
   HoverCardTrigger,

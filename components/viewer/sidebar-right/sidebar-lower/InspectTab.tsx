@@ -1,19 +1,18 @@
 "use client";
 
-import { useSensor } from "@/hooks/useSensor";
+import { useDeviceStore } from "@/amfitrackSDK";
+import type { EmfImuFrameIdData } from "@/amfitrackSDK";
+import { useViewerStore } from "@/stores/useViewerStore";
 import { useEffect, useState } from "react";
 import { Radio } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDistortionLevel } from "@/config/distortion";
-import { type EmfImuFrameIdData } from "@/amfitrackWebSDK/packets/decoders";
-import { useViewer } from "@/hooks/useViewer";
 
-const POSITION_SCALE = 100;
+const POSITION_SCALE = 1;
 
 export default function InspectTab() {
-  const { selectedSensorId } = useViewer();
-  const { sensorsDataRef } = useSensor();
+  const selectedSensorId = useViewerStore((s) => s.selectedSensorId);
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
 
   useEffect(() => {
@@ -23,29 +22,20 @@ export default function InspectTab() {
     }
 
     const readSensor = () => {
-      const entry = sensorsDataRef.current.get(selectedSensorId);
+      const entry =
+        useDeviceStore.getState().emfImuFrameId[selectedSensorId];
       if (!entry) return;
-      setData({
-        ...entry,
-        position: {
-          x: entry.position.x * POSITION_SCALE,
-          y: entry.position.y * POSITION_SCALE,
-          z: entry.position.z * POSITION_SCALE,
-        },
-        quaternion: {
-          x: entry.quaternion.x,
-          y: entry.quaternion.y,
-          z: entry.quaternion.z,
-          w: entry.quaternion.w,
-        },
-      });
+      setData(entry);
     };
 
     readSensor();
     const interval = setInterval(readSensor, 100);
 
     return () => clearInterval(interval);
-  }, [selectedSensorId, sensorsDataRef]);
+  }, [selectedSensorId]);
+
+  const distortion = data ? data.metalDistortion / 255 : 0;
+
   return (
     <div className="flex flex-col">
       {selectedSensorId === null ? (
@@ -56,47 +46,95 @@ export default function InspectTab() {
         <>
           <DetailHeader
             label={`SENSOR_ID: ${selectedSensorId}`}
-            distortion={data.metalDistortion}
+            distortion={distortion}
           />
           <div className="px-3 py-3 space-y-4">
             <Section title="Position">
               <div className="grid grid-cols-3 gap-1.5">
-                <ValueCell label="X" value={data.position.x.toFixed(2)} />
-                <ValueCell label="Y" value={data.position.y.toFixed(2)} />
-                <ValueCell label="Z" value={data.position.z.toFixed(2)} />
+                <ValueCell
+                  label="X"
+                  value={(data.position.x * POSITION_SCALE).toFixed(2)}
+                />
+                <ValueCell
+                  label="Y"
+                  value={(data.position.y * POSITION_SCALE).toFixed(2)}
+                />
+                <ValueCell
+                  label="Z"
+                  value={(data.position.z * POSITION_SCALE).toFixed(2)}
+                />
               </div>
             </Section>
 
             <Section title="Orientation">
               <div className="grid grid-cols-4 gap-1.5">
-                <ValueCell label="X" value={data.quaternion.x.toFixed(3)} />
-                <ValueCell label="Y" value={data.quaternion.y.toFixed(3)} />
-                <ValueCell label="Z" value={data.quaternion.z.toFixed(3)} />
-                <ValueCell label="W" value={data.quaternion.w.toFixed(3)} />
+                <ValueCell
+                  label="X"
+                  value={data.quaternion.x.toFixed(3)}
+                />
+                <ValueCell
+                  label="Y"
+                  value={data.quaternion.y.toFixed(3)}
+                />
+                <ValueCell
+                  label="Z"
+                  value={data.quaternion.z.toFixed(3)}
+                />
+                <ValueCell
+                  label="W"
+                  value={data.quaternion.w.toFixed(3)}
+                />
               </div>
             </Section>
 
             <Section title="Accelerometer" unit="g">
               <div className="grid grid-cols-3 gap-1.5">
-                <ValueCell label="X" value={data.imu.acc_x.toFixed(2)} />
-                <ValueCell label="Y" value={data.imu.acc_y.toFixed(2)} />
-                <ValueCell label="Z" value={data.imu.acc_z.toFixed(2)} />
+                <ValueCell
+                  label="X"
+                  value={data.imu.acc_x.toFixed(2)}
+                />
+                <ValueCell
+                  label="Y"
+                  value={data.imu.acc_y.toFixed(2)}
+                />
+                <ValueCell
+                  label="Z"
+                  value={data.imu.acc_z.toFixed(2)}
+                />
               </div>
             </Section>
 
             <Section title="Gyroscope" unit="°/s">
               <div className="grid grid-cols-3 gap-1.5">
-                <ValueCell label="X" value={data.imu.gyro_x.toFixed(1)} />
-                <ValueCell label="Y" value={data.imu.gyro_y.toFixed(1)} />
-                <ValueCell label="Z" value={data.imu.gyro_z.toFixed(1)} />
+                <ValueCell
+                  label="X"
+                  value={data.imu.gyro_x.toFixed(1)}
+                />
+                <ValueCell
+                  label="Y"
+                  value={data.imu.gyro_y.toFixed(1)}
+                />
+                <ValueCell
+                  label="Z"
+                  value={data.imu.gyro_z.toFixed(1)}
+                />
               </div>
             </Section>
 
             <Section title="Magnetometer">
               <div className="grid grid-cols-3 gap-1.5">
-                <ValueCell label="X" value={data.magneto.mag_x.toFixed(1)} />
-                <ValueCell label="Y" value={data.magneto.mag_y.toFixed(1)} />
-                <ValueCell label="Z" value={data.magneto.mag_z.toFixed(1)} />
+                <ValueCell
+                  label="X"
+                  value={data.magneto.mag_x.toFixed(1)}
+                />
+                <ValueCell
+                  label="Y"
+                  value={data.magneto.mag_y.toFixed(1)}
+                />
+                <ValueCell
+                  label="Z"
+                  value={data.magneto.mag_z.toFixed(1)}
+                />
               </div>
             </Section>
 
@@ -106,7 +144,7 @@ export default function InspectTab() {
                   label="Temp"
                   value={`${data.temperature.toFixed(1)}°C`}
                 />
-                <DistortionCell distortion={data.metalDistortion} />
+                <DistortionCell distortion={distortion} />
                 <ValueCell label="RSSI" value={String(data.rssi)} />
                 <ValueCell label="Frame" value={String(data.frameId)} />
               </div>
@@ -120,7 +158,9 @@ export default function InspectTab() {
                 />
                 <ValueCell
                   label="Charging"
-                  value={data.sensorStatus.batteryCharging ? "Yes" : "No"}
+                  value={
+                    data.sensorStatus.batteryCharging ? "Yes" : "No"
+                  }
                 />
                 <ValueCell
                   label="Source"
@@ -138,9 +178,18 @@ export default function InspectTab() {
                   label="Sync"
                   value={data.sensorStatus.sync ? "Yes" : "No"}
                 />
-                <ValueCell label="Coil" value={String(data.sourceCoilId)} />
-                <ValueCell label="Calc ID" value={String(data.calcId)} />
-                <ValueCell label="Source State" value={data.sensorState} />
+                <ValueCell
+                  label="Coil"
+                  value={String(data.sourceCoilId)}
+                />
+                <ValueCell
+                  label="Calc ID"
+                  value={String(data.calcId)}
+                />
+                <ValueCell
+                  label="Source State"
+                  value={data.sensorState}
+                />
               </div>
             </Section>
           </div>
@@ -226,7 +275,7 @@ function DistortionCell({ distortion }: { distortion: number }) {
       <div className="mt-1 h-1 rounded-full bg-sidebar-foreground/10 overflow-hidden">
         <div
           className={cn(
-            "h-full rounded-full transition-all duration-300",
+            "h-full rounded-full transition-[width,height,padding]",
             barColor,
           )}
           style={{ width: `${distortion * 100}%` }}
@@ -281,7 +330,9 @@ function EmptyState() {
           <Radio className="size-5 text-sidebar-foreground/20" />
         </div>
         <p className="text-xs text-sidebar-foreground/30">
-          <span className="text-[10.5px]">Select a sensor to view details</span>
+          <span className="text-[10.5px]">
+            Select a sensor to view details
+          </span>
         </p>
       </div>
     </div>

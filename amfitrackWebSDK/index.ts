@@ -1,1 +1,0 @@
-export { default as AmfitrackWeb } from "./AmfitrackWeb";

@@ -1,21 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { useConfigurations } from "@/hooks/useConfigurations";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import { ConfigItem } from "@/lib/configTooltipParser";
 import { ParameterConfigHoverCard } from "./ParameterConfigHoverCard";
 
+function formatStoreValue(value: number | boolean | string): string {
+  if (typeof value === "number")
+    return Number.isInteger(value) ? value.toString() : value.toFixed(4);
+  if (typeof value === "string") return value;
+  return "";
+}
+
 export default function ParameterCard({
   param,
-  deviceName,
+  txId,
   onValueChange,
   configurationTooltip = undefined,
 }: {
   param: { name: string; uid: number; value: number | boolean | string };
-  deviceName: string;
+  txId: number;
   configurationTooltip?: ConfigItem;
   onValueChange?: (
     uid: number,
@@ -24,9 +31,8 @@ export default function ParameterCard({
     newValue: number | boolean | string,
   ) => void;
 }) {
-  const { configurations } = useConfigurations();
-  const pending = configurations.find(
-    (c) => c.deviceName === deviceName && c.uid === param.uid,
+  const pending = usePendingConfigStore((s) =>
+    s.pending.find((c) => c.txId === txId && c.paramUid === param.uid),
   );
 
   const value = param.value;
@@ -39,19 +45,20 @@ export default function ParameterCard({
       : false,
   );
 
-  const pendingTextValue = pending?.valueToPush;
-  const formattedValue =
-    typeof value === "number"
-      ? pendingTextValue !== undefined
-        ? String(pendingTextValue)
-        : Number.isInteger(value)
-          ? value.toString()
-          : value.toFixed(4)
-      : typeof value === "string"
-        ? pendingTextValue !== undefined
-          ? String(pendingTextValue)
-          : value
-        : null;
+  const [localText, setLocalText] = useState<string | null>(
+    pending && typeof value !== "boolean" ? String(pending.valueToPush) : null,
+  );
+
+  // Sync local state to the device-confirmed value once a save completes
+  // (pending removed). useLayoutEffect avoids a visible flash of the stale
+  // value before the confirmed value paints.
+  useLayoutEffect(() => {
+    if (pending) return;
+    setLocalText(null);
+    if (typeof value === "boolean") setLocalBool(value);
+  }, [pending, value]);
+
+  const displayText = localText ?? formatStoreValue(value);
 
   function handleSwitchChange(checked: boolean) {
     setLocalBool(checked);
@@ -60,6 +67,7 @@ export default function ParameterCard({
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
+    setLocalText(raw);
     const newValue = typeof value === "number" ? Number(raw) : raw;
     onValueChange?.(param.uid, param.name, value, newValue);
   }
@@ -90,15 +98,12 @@ export default function ParameterCard({
           </div>
         ) : (
           <Input
-            defaultValue={formattedValue ?? ""}
+            value={displayText}
             onChange={handleInputChange}
             aria-label={param.name}
             className="font-mono text-sm font-medium h-8 px-2 opacity-80"
           />
         )}
-        {/* <span className="text-[10px] text-muted-foreground/60">
-          {param.uid.toString(16).toUpperCase().padStart(8, "0")}
-        </span> */}
       </CardContent>
     </Card>
   );

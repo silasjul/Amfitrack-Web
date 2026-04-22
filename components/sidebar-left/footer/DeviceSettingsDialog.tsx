@@ -11,25 +11,30 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Configuration } from "@/amfitrackWebSDK/Configurator";
-import { useConfigurations } from "@/hooks/useConfigurations";
+import type { Configuration } from "@/amfitrackSDK";
+import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import ParameterCard from "./ParameterCard";
 
 export default function DeviceSettingsDialog({
   open,
   onOpenChange,
+  txId,
   deviceName,
   configuration,
   loading = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  txId: number;
   deviceName: string;
   configuration: Configuration[];
   loading?: boolean;
 }) {
   const defaultTab = configuration[0]?.name ?? "";
-  const { updateConfiguration, configurationTooltips } = useConfigurations();
+  const updatePending = usePendingConfigStore((s) => s.updatePending);
+  const configurationTooltips = usePendingConfigStore(
+    (s) => s.configurationTooltips,
+  );
 
   const handleValueChange = useCallback(
     (
@@ -39,16 +44,16 @@ export default function DeviceSettingsDialog({
       currentValue: number | boolean | string,
       newValue: number | boolean | string,
     ) => {
-      updateConfiguration({
-        deviceName,
-        uid,
+      updatePending({
+        txId,
+        paramUid: uid,
         categoryName,
         parameterName,
         currentValue,
         valueToPush: newValue,
       });
     },
-    [deviceName, updateConfiguration],
+    [txId, updatePending],
   );
 
   return (
@@ -88,11 +93,11 @@ export default function DeviceSettingsDialog({
                   className="mt-0 p-1"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 pt-1">
-                    {category.parameters.map((param, idx) => (
+                    {category.parameters.map((param) => (
                       <ParameterCard
                         key={`${param.uid}-${param.value}`}
                         param={param}
-                        deviceName={deviceName}
+                        txId={txId}
                         configurationTooltip={
                           configurationTooltips[category.name]?.[param.name] ??
                           undefined
