@@ -28,8 +28,12 @@ export const TEXT_DISTANCE = 0.25;
 export const GIZMO_LABEL_COLOR = "#000000";
 
 // Sensor colors
-// We moved from Emerald 500 -> Emerald 400
-export const COLOR_CLEAN = "#34d399";
+const sensorColors = {
+  shadcn: { clean: "#34d399", distorted: "#f43f5e" },
+  regular: { clean: "rgb(3, 252, 44)", distorted: "rgb(255, 0, 0)" },
+};
 
-// We moved from Rose 600 -> Rose 500
-export const COLOR_DISTORTED = "#f43f5e";
+export const SENSOR_COLOR_CLEAN = sensorColors.regular.clean;
+export const SENSOR_COLOR_DISTORTED = sensorColors.regular.distorted;
+
+export const SOURCE_COLOR = sensorColors.regular.clean;

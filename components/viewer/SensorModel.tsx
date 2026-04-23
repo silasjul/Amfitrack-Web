@@ -9,16 +9,16 @@ import { useDeviceStore } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { DISTORTION_THRESHOLDS } from "@/config/distortion";
 import {
-  COLOR_CLEAN as COLOR_CLEAN_CONFIG,
-  COLOR_DISTORTED as COLOR_DISTORTED_CONFIG,
+  SENSOR_COLOR_CLEAN,
+  SENSOR_COLOR_DISTORTED,
 } from "./coordinateSystem/config";
 
 useFBX.preload("/models/viewer/sensor.fbx");
 
 const POSITION_SCALE = 0.01;
 
-export const COLOR_CLEAN = new THREE.Color(COLOR_CLEAN_CONFIG);
-const COLOR_DISTORTED = new THREE.Color(COLOR_DISTORTED_CONFIG);
+export const COLOR_CLEAN = new THREE.Color(SENSOR_COLOR_CLEAN);
+const COLOR_DISTORTED = new THREE.Color(SENSOR_COLOR_DISTORTED);
 
 const COLOR_HOVERED = new THREE.Color("rgb(255, 255, 255)");
 
