@@ -5,7 +5,7 @@ import { Grid, Text, GizmoHelper, Line } from "@react-three/drei";
 import { useRef } from "react";
 import * as THREE from "three";
 import MirroredGizmoViewport from "./MirroredGizmo";
-import { PRIMARY, AXIS_X, AXIS_Y, AXIS_Z, AXIS_LENGTH } from "./config";
+import { PRIMARY, AXIS_X, AXIS_Y, AXIS_Z, AXIS_LENGTH, TEXT_DISTANCE } from "./config";
 
 function AxisLine({
   start,
@@ -16,7 +16,14 @@ function AxisLine({
   end: [number, number, number];
   color: string;
 }) {
-  return <Line points={[start, end]} color={color} lineWidth={2} />;
+  return (
+    <Line
+      toneMapped={false}
+      points={[start, end]}
+      color={color}
+      lineWidth={4}
+    />
+  );
 }
 
 function AxisLabel({
@@ -36,9 +43,9 @@ function AxisLabel({
     <Text
       ref={ref}
       position={position}
-      fontSize={0.4}
+      fontSize={0.3}
+      font="/fonts/inter-semibold.ttf"
       color={color}
-      fontWeight={700}
       anchorX="center"
       anchorY="middle"
     >
@@ -54,7 +61,7 @@ export default function CoordinateSystem() {
         infiniteGrid
         cellSize={1}
         cellThickness={0.6}
-        cellColor="#ffffff"
+        cellColor={PRIMARY}
         sectionSize={5}
         sectionThickness={1.5}
         sectionColor={PRIMARY}
@@ -70,17 +77,17 @@ export default function CoordinateSystem() {
 
       {/* Axis labels */}
       <AxisLabel
-        position={[0, 0, -AXIS_LENGTH - 0.4]}
+        position={[0, 0, -AXIS_LENGTH - TEXT_DISTANCE]}
         label="X"
         color={AXIS_Z}
       />
       <AxisLabel
-        position={[0, AXIS_LENGTH + 0.4, 0]}
+        position={[0, AXIS_LENGTH + TEXT_DISTANCE, 0]}
         label="Z"
         color={AXIS_Y}
       />
       <AxisLabel
-        position={[-AXIS_LENGTH - 0.4, 0, 0]}
+        position={[-AXIS_LENGTH - TEXT_DISTANCE, 0, 0]}
         label="Y"
         color={AXIS_X}
       />

@@ -1,16 +1,12 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
-import {
-  Grid,
-  Text,
-  GizmoHelper,
-  Line,
-  useGizmoContext,
-} from "@react-three/drei";
-import { useRef, useState, useMemo } from "react";
+import { useThree } from "@react-three/fiber";
+import { useGizmoContext } from "@react-three/drei";
+import { useState, useMemo } from "react";
 import * as THREE from "three";
-import { AXIS_X, AXIS_Y, AXIS_Z } from "./config";
+import { AXIS_X, AXIS_Y, AXIS_Z, GIZMO_LABEL_COLOR } from "./config";
+
+const GIZMO_FONT = "bold 18px Inter var, Arial, sans-serif";
 
 export function GizmoAxisBar({
   color,
@@ -99,8 +95,6 @@ export function GizmoAxisHead({
   );
 }
 
-const GIZMO_FONT = "18px Inter var, Arial, sans-serif";
-
 const MIRRORED_AXES = [
   {
     label: "Y",
@@ -141,14 +135,14 @@ export default function MirroredGizmoViewport() {
             position={axis.headPos}
             color={axis.color}
             label={axis.label}
-            labelColor="white"
+            labelColor={GIZMO_LABEL_COLOR}
             font={GIZMO_FONT}
             direction={axis.dir}
           />
           <GizmoAxisHead
             position={axis.negPos}
             color={axis.color}
-            labelColor="white"
+            labelColor={GIZMO_LABEL_COLOR}
             font={GIZMO_FONT}
             direction={axis.negDir}
           />

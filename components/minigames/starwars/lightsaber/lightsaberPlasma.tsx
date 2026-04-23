@@ -40,7 +40,11 @@ export default function LightsaberPlasma({
     if (metalDistortionRef.current < 0.3) {
       materialRef.current.color.copy(COLOR_CLEAN);
     } else {
-      materialRef.current.color.lerpColors(COLOR_CLEAN, COLOR_DISTORTED, metalDistortionRef.current);
+      materialRef.current.color.lerpColors(
+        COLOR_CLEAN,
+        COLOR_DISTORTED,
+        metalDistortionRef.current,
+      );
     }
   });
 

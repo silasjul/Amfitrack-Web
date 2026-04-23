@@ -7,18 +7,13 @@ import Footer from "./footer";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Box, Gamepad2, Banana } from "lucide-react";
 import MainNavContent from "./main-nav-content";
-import { usePathname } from "next/navigation";
-import { Separator } from "../ui/separator";
+import TransportItems from "./transport-items";
 
 const data = {
   navMain: [
@@ -50,11 +45,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <Header />
       </SidebarHeader>
-      {/* <Separator /> */}
       <SidebarContent className="gap-0">
         <MainNavContent navMain={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>{/* <Footer /> */}</SidebarFooter>
+      <SidebarFooter>
+        <TransportItems />
+        <Footer />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
