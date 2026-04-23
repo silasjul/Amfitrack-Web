@@ -48,34 +48,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar {...props}>
       <SidebarHeader>{/* <Header /> */}</SidebarHeader>
       <SidebarContent className="gap-0">
-        <ViewerButton />
         <MainNavContent navMain={data.navMain} />
       </SidebarContent>
       <SidebarFooter>{/* <Footer /> */}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  );
-}
-
-function ViewerButton() {
-  const pathname = usePathname();
-
-  return (
-    <SidebarGroup className="light">
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            asChild
-            tooltip="Viewer"
-            isActive={pathname === "/viewer"}
-          >
-            <a href="/viewer">
-              <Box />
-              <span>Viewer</span>
-            </a>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarGroup>
   );
 }

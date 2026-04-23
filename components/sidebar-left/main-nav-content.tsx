@@ -8,11 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  Sidebar,
-  SidebarContent,
   SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,7 +16,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
-import { ChevronRight } from "lucide-react";
+import { Box, ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { MainNavContentData } from "./app-sidebar";
 
@@ -33,7 +29,7 @@ export default function MainNavContent({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <ViewerButton />
       <SidebarMenu>
         {navMain.map((item) => (
           <Collapsible
@@ -44,7 +40,10 @@ export default function MainNavContent({
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  isActive={item.items?.some((sub) => pathname === sub.url)}
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -71,5 +70,26 @@ export default function MainNavContent({
         ))}
       </SidebarMenu>
     </SidebarGroup>
+  );
+}
+
+function ViewerButton() {
+  const pathname = usePathname();
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          tooltip="Viewer"
+          isActive={pathname === "/viewer"}
+        >
+          <a href="/viewer">
+            <Box />
+            <span>Viewer</span>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
   );
 }
