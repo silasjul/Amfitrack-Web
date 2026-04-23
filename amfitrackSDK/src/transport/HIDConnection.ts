@@ -68,6 +68,15 @@ export class HIDConnection implements ITransport {
     this.listeners.delete(cb);
   }
 
+  public async disconnect(): Promise<void> {
+    this.stopReading();
+    if (this.device.opened) {
+      await this.device.close();
+    }
+    for (const cb of this.disconnectCallbacks) cb();
+    this.disconnectCallbacks.clear();
+  }
+
   public async writeToDevice(bytes: Uint8Array): Promise<void> {
     const reportData = new Uint8Array(HID_REPORT_DATA_SIZE);
     reportData.set(bytes);

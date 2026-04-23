@@ -23,6 +23,9 @@ export interface ITransport {
 
   removeListener(cb: DataCallback): void;
 
+  /** Programmatically close the physical link and release resources. */
+  disconnect(): Promise<void>;
+
   /** Register a one-shot callback fired when the physical link is lost. */
   onDisconnect(cb: DisconnectCallback): void;
 

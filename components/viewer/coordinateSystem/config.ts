@@ -24,7 +24,7 @@ export const AXIS_X = selectedTheme.x;
 export const AXIS_Y = selectedTheme.y;
 export const AXIS_Z = selectedTheme.z;
 export const AXIS_LENGTH = 2.25;
-export const TEXT_DISTANCE = 0.25;
+export const TEXT_DISTANCE = 0.2;
 export const GIZMO_LABEL_COLOR = "#000000";
 
 // Sensor colors

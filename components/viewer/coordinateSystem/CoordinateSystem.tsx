@@ -2,10 +2,32 @@
 
 import { useFrame } from "@react-three/fiber";
 import { Grid, Text, GizmoHelper, Line } from "@react-three/drei";
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
+import type { Line2 } from "three-stdlib";
 import MirroredGizmoViewport from "./MirroredGizmo";
-import { PRIMARY, AXIS_X, AXIS_Y, AXIS_Z, AXIS_LENGTH, TEXT_DISTANCE } from "./config";
+import {
+  PRIMARY,
+  AXIS_X,
+  AXIS_Y,
+  AXIS_Z,
+  AXIS_LENGTH,
+  TEXT_DISTANCE,
+} from "./config";
+
+function biasMaterialAboveGrid(
+  mat: THREE.Material | THREE.Material[] | undefined,
+) {
+  if (!mat) return;
+  const mats = Array.isArray(mat) ? mat : [mat];
+  for (const m of mats) {
+    if (m && "polygonOffset" in m) {
+      m.polygonOffset = true;
+      m.polygonOffsetFactor = -1;
+      m.polygonOffsetUnits = -1;
+    }
+  }
+}
 
 function AxisLine({
   start,
@@ -16,12 +38,18 @@ function AxisLine({
   end: [number, number, number];
   color: string;
 }) {
+  const lineRef = useRef<Line2>(null!);
+  useLayoutEffect(() => {
+    biasMaterialAboveGrid(lineRef.current?.material);
+  }, []);
   return (
     <Line
+      ref={lineRef}
       toneMapped={false}
       points={[start, end]}
       color={color}
-      lineWidth={4}
+      lineWidth={2}
+      renderOrder={1}
     />
   );
 }
@@ -43,11 +71,13 @@ function AxisLabel({
     <Text
       ref={ref}
       position={position}
-      fontSize={0.3}
+      fontSize={0.25}
       font="/fonts/inter-semibold.ttf"
       color={color}
       anchorX="center"
       anchorY="middle"
+      renderOrder={2}
+      onSync={(mesh) => biasMaterialAboveGrid(mesh.material)}
     >
       {label}
     </Text>
@@ -55,9 +85,20 @@ function AxisLabel({
 }
 
 export default function CoordinateSystem() {
+  const gridRef = useRef<THREE.Mesh>(null);
+  useLayoutEffect(() => {
+    const m = gridRef.current?.material;
+    if (m && !Array.isArray(m)) {
+      // Grid still depth-tests (models occlude it) but does not write depth, so axis
+      // labels can depth-test against the scene and sit visually above the grid.
+      m.depthWrite = false;
+    }
+  }, []);
+
   return (
     <group position={[0, -0.27, 0]}>
       <Grid
+        ref={gridRef}
         infiniteGrid
         cellSize={1}
         cellThickness={0.6}

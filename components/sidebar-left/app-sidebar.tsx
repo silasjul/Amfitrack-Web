@@ -47,9 +47,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <MainNavContent navMain={data.navMain} />
+        <TransportItems />
       </SidebarContent>
       <SidebarFooter>
-        <TransportItems />
         <Footer />
       </SidebarFooter>
       <SidebarRail />

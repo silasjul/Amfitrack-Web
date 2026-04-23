@@ -106,6 +106,11 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     return true;
   }
 
+  public async disconnectDevice(txId: number): Promise<void> {
+    const { transport } = this.deviceManager.resolveTransport(txId);
+    await transport.disconnect();
+  }
+
   public async setParam(
     deviceID: number,
     paramUID: number,

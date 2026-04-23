@@ -25,7 +25,7 @@ export default function Header() {
             />
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-medium">Amfitrack Web</span>
+            <span className="font-medium">Amfitrack</span>
           </div>
         </SidebarMenuButton>
       </a>
