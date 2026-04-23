@@ -240,6 +240,7 @@ export class DeviceManager implements IDeviceManager {
    */
   private async resolveDeviceConfig(device: ITransport, temporaryTxId: number) {
     try {
+      // Temporary hack for BLE devices
       if (device.getConnectionKind() === "ble") {
         const txId = 4;
         const kind = "sensor" as const;

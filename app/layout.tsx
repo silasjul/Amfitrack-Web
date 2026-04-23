@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Roboto_Mono } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/sidebar-left/sidebar";
 import Providers from "./providers";
 import PendingChangesBar from "@/components/PendingChangesBar";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interSans = Inter({
+  variable: "--font-inter-sans",
   subsets: ["latin"],
 });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${robotoMono.variable} h-full dark`}
+      className={`${interSans.variable} ${robotoMono.variable} h-full dark`}
     >
       <body className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased">
         <Providers>

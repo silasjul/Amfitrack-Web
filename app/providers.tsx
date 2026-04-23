@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect } from "react";
 import { AmfitrackContext, useAmfitrackProvider } from "@/amfitrackSDK";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 
 export default function Providers({ children }: { children: ReactNode }) {
@@ -13,7 +14,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   return (
     <AmfitrackContext.Provider value={sdk}>
-      {children}
+      <TooltipProvider>{children}</TooltipProvider>
     </AmfitrackContext.Provider>
   );
 }

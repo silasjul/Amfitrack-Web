@@ -3,19 +3,12 @@
 import * as React from "react";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { GalleryVerticalEndIcon } from "lucide-react";
 
-export function Header() {
+export default function Header() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
