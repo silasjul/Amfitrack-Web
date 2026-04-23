@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import DeviceSettingsDialog from "@/components/sidebar-left/footer/DeviceSettingsDialog";
+import DeviceSettingsDialog from "@/components/sidebar-left/footer-components/DeviceSettingsDialog";
 import { SensorRow } from "./sensor-row";
 import { HubRow } from "./hub-row";
 import { SourceRow } from "./source-row";
@@ -53,7 +53,10 @@ export default function SidebarUpper() {
   const { sensorTxIds, sourceTxIds, hubTxIds, unknownTxIds } = useTxIds();
 
   const totalDeviceCount =
-    hubTxIds.length + sourceTxIds.length + sensorTxIds.length + unknownTxIds.length;
+    hubTxIds.length +
+    sourceTxIds.length +
+    sensorTxIds.length +
+    unknownTxIds.length;
 
   useEffect(() => {
     if (sensorTxIds.length === 0) return;

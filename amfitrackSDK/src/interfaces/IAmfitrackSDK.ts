@@ -29,6 +29,9 @@ export interface IAmfitrackSDK {
     value: ParameterValue,
   ): Promise<SetParamResult>;
 
+  /** Disconnect a single device by its TX ID. */
+  disconnectDevice(txId: number): Promise<void>;
+
   /** Start polling for previously-granted HID and BLE devices. */
   initialize(): void;
 

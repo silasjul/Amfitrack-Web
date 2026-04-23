@@ -110,6 +110,15 @@ export class BLEConnection implements ITransport {
     this.listeners.delete(cb);
   }
 
+  public async disconnect(): Promise<void> {
+    this.stopReading();
+    if (this.device.gatt?.connected) {
+      this.device.gatt.disconnect();
+    }
+    for (const cb of this.disconnectCallbacks) cb();
+    this.disconnectCallbacks.clear();
+  }
+
   public async writeToDevice(bytes: Uint8Array): Promise<void> {
     if (!this.writeCharacteristic) {
       throw new Error("No write characteristic available");

@@ -29,8 +29,11 @@ export class ReadPipeline implements IReadPipeline {
     const readFromTxId =
       this.deviceManager.registerTransportOrGetTxId(transport);
 
+    const frameBytes =
+      transport.getConnectionKind() === "ble" ? bytes.subarray(3) : bytes;
+
     const { headerBytes, payloadBytes } =
-      this.decoder.sliceBytesToHeaderAndPayload(bytes);
+      this.decoder.sliceBytesToHeaderAndPayload(frameBytes);
 
     // Decode the header
     let decodedHeader: PacketHeader;

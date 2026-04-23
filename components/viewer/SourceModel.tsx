@@ -2,7 +2,7 @@ import { Center, useFBX, Image } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { COLOR_CLEAN } from "./SensorModel";
+import { SOURCE_COLOR } from "./coordinateSystem/config";
 
 useFBX.preload("/models/viewer/source.fbx");
 
@@ -19,7 +19,7 @@ export default function SourceModel() {
 
     const lightMatClone = lightMat.clone();
 
-    lightMatClone.color.set(COLOR_CLEAN);
+    lightMatClone.color.set(SOURCE_COLOR);
 
     lightMaterialRef.current = lightMatClone;
     (lightMesh.material as THREE.MeshPhongMaterial[])[0] = lightMatClone;

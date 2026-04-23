@@ -8,13 +8,17 @@ import gsap from "gsap";
 import { useDeviceStore } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { DISTORTION_THRESHOLDS } from "@/config/distortion";
+import {
+  SENSOR_COLOR_CLEAN,
+  SENSOR_COLOR_DISTORTED,
+} from "./coordinateSystem/config";
 
 useFBX.preload("/models/viewer/sensor.fbx");
 
 const POSITION_SCALE = 0.01;
 
-export const COLOR_CLEAN = new THREE.Color("rgb(3, 252, 44)");
-const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
+export const COLOR_CLEAN = new THREE.Color(SENSOR_COLOR_CLEAN);
+const COLOR_DISTORTED = new THREE.Color(SENSOR_COLOR_DISTORTED);
 
 const COLOR_HOVERED = new THREE.Color("rgb(255, 255, 255)");
 
@@ -41,6 +45,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     const bodyMat = bodyMesh.material as THREE.MeshPhongMaterial;
 
     const lightMatClone = lightMat.clone();
+    lightMatClone.toneMapped = false;
     const bodyMatClone = bodyMat.clone();
 
     originalBodyColorRef.current = bodyMat.color.clone();
@@ -56,13 +61,11 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     const data = useDeviceStore.getState().emfImuFrameId[sensorId];
     if (!data || !groupRef.current) return;
 
-    groupRef.current.position
-      .set(
-        -data.position.y * POSITION_SCALE,
-        data.position.z * POSITION_SCALE,
-        -data.position.x * POSITION_SCALE,
-      )
-      .y += MODEL_OFFSET_Y - 0.01;
+    groupRef.current.position.set(
+      -data.position.y * POSITION_SCALE,
+      data.position.z * POSITION_SCALE,
+      -data.position.x * POSITION_SCALE,
+    ).y += MODEL_OFFSET_Y - 0.01;
 
     groupRef.current.quaternion
       .set(
