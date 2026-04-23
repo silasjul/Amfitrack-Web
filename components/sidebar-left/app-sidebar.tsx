@@ -18,6 +18,7 @@ import {
 import { Box, Gamepad2, Banana } from "lucide-react";
 import MainNavContent from "./main-nav-content";
 import { usePathname } from "next/navigation";
+import { Separator } from "../ui/separator";
 
 const data = {
   navMain: [
@@ -46,7 +47,10 @@ export type MainNavContentData = typeof data.navMain;
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
-      <SidebarHeader>{/* <Header /> */}</SidebarHeader>
+      <SidebarHeader>
+        <Header />
+      </SidebarHeader>
+      {/* <Separator /> */}
       <SidebarContent className="gap-0">
         <MainNavContent navMain={data.navMain} />
       </SidebarContent>
