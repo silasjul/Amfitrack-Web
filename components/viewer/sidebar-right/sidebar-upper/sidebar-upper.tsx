@@ -146,7 +146,7 @@ export default function SidebarUpper() {
         </div>
 
         <ScrollArea className="min-h-0 flex-1">
-          <div className="space-y-0.5 px-1.5 py-1.5">
+          <div className="space-y-0.5 px-2 py-1.5">
             {totalDeviceCount === 0 && <SkeletonRows />}
 
             {showSensors &&
