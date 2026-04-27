@@ -43,6 +43,7 @@ export default function InspectTab() {
   const kind: DeviceKind = meta?.kind ?? "unknown";
   const freq = frequency[selectedDeviceId];
   const versions = meta?.versions;
+  const uuid = meta?.uuid;
 
   switch (kind) {
     case "sensor":
@@ -51,6 +52,7 @@ export default function InspectTab() {
           id={selectedDeviceId}
           frequency={freq}
           versions={versions}
+          uuid={uuid}
         />
       );
     case "source":
@@ -59,6 +61,7 @@ export default function InspectTab() {
           id={selectedDeviceId}
           frequency={freq}
           versions={versions}
+          uuid={uuid}
         />
       );
     case "hub":
@@ -67,6 +70,7 @@ export default function InspectTab() {
           id={selectedDeviceId}
           frequency={freq}
           versions={versions}
+          uuid={uuid}
         />
       );
     default:
@@ -75,6 +79,7 @@ export default function InspectTab() {
           id={selectedDeviceId}
           frequency={freq}
           versions={versions}
+          uuid={uuid}
         />
       );
   }
@@ -87,10 +92,12 @@ export default function InspectTab() {
 function SensorInspector({
   id,
   versions,
+  uuid,
 }: {
   id: number;
   frequency?: DeviceFrequency;
   versions?: DeviceVersions;
+  uuid?: string;
 }) {
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
 
@@ -189,7 +196,9 @@ function SensorInspector({
           </div>
         </Section>
 
-        {versions && <VersionsSection versions={versions} />}
+        {(versions || uuid) && (
+          <SpecificationsSection versions={versions} uuid={uuid} />
+        )}
       </div>
     </div>
   );
@@ -202,10 +211,12 @@ function SensorInspector({
 function SourceInspector({
   id,
   versions,
+  uuid,
 }: {
   id: number;
   frequency?: DeviceFrequency;
   versions?: DeviceVersions;
+  uuid?: string;
 }) {
   const [measurement, setMeasurement] = useState<SourceMeasurementData | null>(
     null,
@@ -335,7 +346,9 @@ function SourceInspector({
           <WaitingForData label="calibration" />
         )}
 
-        {versions && <VersionsSection versions={versions} />}
+        {(versions || uuid) && (
+          <SpecificationsSection versions={versions} uuid={uuid} />
+        )}
       </div>
     </div>
   );
@@ -348,31 +361,19 @@ function SourceInspector({
 function HubInspector({
   id,
   versions,
+  uuid,
 }: {
   id: number;
   frequency?: DeviceFrequency;
   versions?: DeviceVersions;
+  uuid?: string;
 }) {
   return (
     <div className="flex flex-col min-h-full">
       <DetailHeader label={`Hub ${id}`} imageSrc="/hub.png" />
-      <div className="flex flex-1 flex-col items-center justify-start gap-3 px-4 py-8 text-center">
-        <div className="size-10 rounded-full bg-zinc-500/10 flex items-center justify-center">
-          <Router className="size-5 text-zinc-400" />
-        </div>
-        <div className="space-y-1.5 max-w-[200px]">
-          <p className="text-xs font-medium text-sidebar-foreground/70">
-            RF Hub
-          </p>
-          <p className="text-[11px] leading-relaxed text-sidebar-foreground/40">
-            The hub receives messages via RF from nearby devices and
-            forwards them over USB as a HID device.
-          </p>
-        </div>
-      </div>
-      {versions && (
-        <div className="px-3 pb-3 mt-auto">
-          <VersionsSection versions={versions} />
+      {(versions || uuid) && (
+        <div className="px-3 py-3">
+          <SpecificationsSection versions={versions} uuid={uuid} />
         </div>
       )}
     </div>
@@ -386,14 +387,16 @@ function HubInspector({
 function UnknownInspector({
   id,
   versions,
+  uuid,
 }: {
   id: number;
   frequency?: DeviceFrequency;
   versions?: DeviceVersions;
+  uuid?: string;
 }) {
   return (
     <div className="flex flex-col min-h-full">
-      <DetailHeader label={`Unknown ${id}`} imageSrc="/amfitrack.svg" />
+      <DetailHeader label={`Unknown ${id}`} />
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
         <div className="size-10 rounded-full bg-zinc-500/10 flex items-center justify-center">
           <CircleHelp className="size-5 text-zinc-400" />
@@ -405,9 +408,9 @@ function UnknownInspector({
           <p className="text-[11px] text-sidebar-foreground/40">TX ID: {id}</p>
         </div>
       </div>
-      {versions && (
+      {(versions || uuid) && (
         <div className="px-3 pb-3 mt-auto">
-          <VersionsSection versions={versions} />
+          <SpecificationsSection versions={versions} uuid={uuid} />
         </div>
       )}
     </div>
@@ -423,25 +426,27 @@ function DetailHeader({
   imageSrc,
 }: {
   label: string;
-  imageSrc: string;
+  imageSrc?: string;
 }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/30 shrink-0">
       <span className="text-xs font-semibold text-sidebar-foreground">
         {label}
       </span>
-      <Badge
-        variant="link"
-        className="relative h-9 w-9 shrink-0 overflow-hidden"
-      >
-        <Image
-          src={imageSrc}
-          alt=""
-          fill
-          className="object-contain object-center p-0.5 brightness-150"
-          sizes="40px"
-        />
-      </Badge>
+      {imageSrc && (
+        <Badge
+          variant="link"
+          className="relative h-9 w-9 shrink-0 overflow-hidden"
+        >
+          <Image
+            src={imageSrc}
+            alt="device_icon"
+            fill
+            className="object-contain object-center p-0.5 brightness-150"
+            sizes="40px"
+          />
+        </Badge>
+      )}
     </div>
   );
 }
@@ -512,13 +517,24 @@ function DistortionCell({ distortion }: { distortion: number }) {
   );
 }
 
-function VersionsSection({ versions }: { versions: DeviceVersions }) {
+function SpecificationsSection({
+  versions,
+  uuid,
+}: {
+  versions?: DeviceVersions;
+  uuid?: string;
+}) {
   return (
-    <Section title="Versions">
+    <Section title="Specifications">
       <div className="grid grid-cols-1 gap-1.5">
-        <ValueCell label="Firmware" value={versions.firmware} />
-        <ValueCell label="Hardware" value={versions.hardware} />
-        <ValueCell label="RF" value={versions.RF} />
+        {uuid && <ValueCell label="UUID" value={uuid} />}
+        {versions && (
+          <>
+            <ValueCell label="Firmware" value={"v" + versions.firmware} />
+            <ValueCell label="RF" value={"v" + versions.RF} />
+            <ValueCell label="Hardware" value={versions.hardware} />
+          </>
+        )}
       </div>
     </Section>
   );
@@ -534,7 +550,7 @@ function WaitingForData({ label }: { label: string }) {
 
 function EmptyState() {
   return (
-    <div className="flex min-h-full items-center justify-center p-6">
+    <div className="flex min-h-full justify-center p-6">
       <div className="text-center space-y-2">
         <div className="mx-auto size-12 rounded-full bg-sidebar/60 flex items-center justify-center">
           <Radio className="size-5 text-sidebar-foreground/20" />

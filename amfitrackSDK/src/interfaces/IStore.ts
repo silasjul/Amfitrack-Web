@@ -33,6 +33,7 @@ export interface DeviceMeta {
   uplink: DeviceUplink;
   configuration?: Configuration[];
   versions?: DeviceVersions;
+  uuid?: string;
 }
 
 export interface IDeviceStoreState {
@@ -62,9 +63,17 @@ export interface IDeviceStoreActions {
     configuration: Configuration[],
     kind: DeviceKind,
     versions?: DeviceVersions,
+    uuid?: string,
   ) => void;
   updateConfiguration: (txId: number, configuration: Configuration[]) => void;
   updateVersions: (txId: number, versions: DeviceVersions) => void;
+  updateUUID: (txId: number, uuid: string) => void;
+  updateDeviceInfo: (
+    txId: number,
+    configuration: Configuration[],
+    versions: DeviceVersions,
+    uuid?: string,
+  ) => void;
   updateParameterValue: (
     txId: number,
     paramUid: number,

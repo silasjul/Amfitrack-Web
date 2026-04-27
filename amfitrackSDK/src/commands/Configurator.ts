@@ -114,6 +114,32 @@ export class Configurator implements IConfigurator {
     return { version: `${major}.${minor}.${patch}.${build}` };
   }
 
+  public async getDeviceUUID(device: DeviceOrTxId): Promise<string> {
+    const { bytes } = this.encoder.buildCommonPayload(
+      CommonPayloadId.REQUEST_DEVICE_ID,
+      1,
+    );
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
+      expectedCommonId: CommonPayloadId.REPLY_DEVICE_ID,
+    });
+
+    // Reply: [payloadId(1), txId(1), uuidBlock0(4), uuidBlock1(4), uuidBlock2(4)]
+    // Python reorders uint32 blocks: data[10:14] + data[6:10] + data[2:6],
+    // then reads the 12 concatenated bytes as one little-endian integer.
+    const reordered = new Uint8Array(12);
+    reordered.set(reply.subarray(10, 14), 0);
+    reordered.set(reply.subarray(6, 10), 4);
+    reordered.set(reply.subarray(2, 6), 8);
+
+    const rv = new DataView(reordered.buffer);
+    const lo = BigInt(rv.getUint32(0, LE));
+    const mid = BigInt(rv.getUint32(4, LE));
+    const hi = BigInt(rv.getUint32(8, LE));
+    const uuid = (hi << BigInt(64)) | (mid << BigInt(32)) | lo;
+
+    return uuid.toString(16).padStart(24, "0");
+  }
+
   public async getParameter(
     device: DeviceOrTxId,
     parameterUid: number,

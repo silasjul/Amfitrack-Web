@@ -84,8 +84,7 @@ export class DeviceManager implements IDeviceManager {
 
     registerDevice(deviceTxId, kind, uplink);
     if (uplink != null && uplink >= 0) {
-      this.updateDeviceConfig(deviceTxId);
-      this.updateDeviceVersions(deviceTxId);
+      this.refreshDeviceInfo(deviceTxId);
     } else {
       this.pendingConfigDevices.add(deviceTxId);
     }
@@ -170,13 +169,19 @@ export class DeviceManager implements IDeviceManager {
     }
   }
 
-  public async updateDeviceVersions(deviceTxId: number) {
+  public async refreshDeviceInfo(deviceTxId: number) {
     try {
-      const versions = await this.configurator.getVersions(deviceTxId);
+      const [configuration, versions, uuid] = await Promise.all([
+        this.configurator.getConfiguration(deviceTxId),
+        this.configurator.getVersions(deviceTxId),
+        this.configurator.getDeviceUUID(deviceTxId).catch(() => undefined),
+      ]);
+      console.log(`configuration ID_${deviceTxId}`, configuration);
       console.log(`versions ID_${deviceTxId}`, versions);
-      this.store.getState().updateVersions(deviceTxId, versions);
+      if (uuid) console.log(`uuid ID_${deviceTxId}`, uuid);
+      this.store.getState().updateDeviceInfo(deviceTxId, configuration, versions, uuid);
     } catch (err) {
-      console.error(`Failed to fetch versions for device ${deviceTxId}`, err);
+      console.error(`Failed to refresh device info for ${deviceTxId}`, err);
     }
   }
 
@@ -271,13 +276,17 @@ export class DeviceManager implements IDeviceManager {
         return;
       }
 
+      const [configuration, versions, uuid] = await Promise.all([
+        this.configurator.getConfiguration(device),
+        this.configurator.getVersions(device),
+        this.configurator.getDeviceUUID(device).catch(() => undefined),
+      ]);
       const kind = await this.classifyDevice(device);
-      const configuration = await this.configurator.getConfiguration(device);
       const txId = this.configurator.extractDeviceId(configuration);
       console.log(`configuration ID_${txId} (${kind})`, configuration);
       if (txId === null) return;
-      const versions = await this.configurator.getVersions(device);
       console.log(`versions ID_${txId}`, versions);
+      if (uuid) console.log(`uuid ID_${txId}`, uuid);
 
       this.store
         .getState()
@@ -287,6 +296,7 @@ export class DeviceManager implements IDeviceManager {
           configuration,
           kind,
           versions,
+          uuid,
         );
       this.transportTxIdMap.set(device, txId);
     } catch (err) {
@@ -294,7 +304,7 @@ export class DeviceManager implements IDeviceManager {
         `Could not resolve device config for temp ID ${temporaryTxId} — ` +
           `streaming data will still flow.`,
         err,
-      );
+      );  
     } finally {
       this.flushPendingConfigs();
     }
@@ -320,8 +330,7 @@ export class DeviceManager implements IDeviceManager {
       this.pendingConfigDevices.delete(deviceTxId);
       const meta = this.store.getState().deviceMeta[deviceTxId];
       if (!meta?.configuration) {
-        this.updateDeviceConfig(deviceTxId);
-        this.updateDeviceVersions(deviceTxId);
+        this.refreshDeviceInfo(deviceTxId);
       }
     }
   }
