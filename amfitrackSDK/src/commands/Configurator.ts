@@ -137,7 +137,7 @@ export class Configurator implements IConfigurator {
     const hi = BigInt(rv.getUint32(8, LE));
     const uuid = (hi << BigInt(64)) | (mid << BigInt(32)) | lo;
 
-    return uuid.toString(16).padStart(24, "0");
+    return uuid.toString(16).padStart(24, "0").toUpperCase();
   }
 
   public async getParameter(
