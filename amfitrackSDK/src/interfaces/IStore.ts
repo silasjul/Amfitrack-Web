@@ -21,11 +21,19 @@ export interface DeviceFrequency {
   byPayloadType: Partial<Record<PayloadType, number>>;
 }
 
+export interface DeviceVersions {
+  firmware: string;
+  hardware: string;
+  RF: string;
+}
+
 export interface DeviceMeta {
   kind: DeviceKind;
   lastSeen: number;
   uplink: DeviceUplink;
   configuration?: Configuration[];
+  versions?: DeviceVersions;
+  uuid?: string;
 }
 
 export interface IDeviceStoreState {
@@ -54,8 +62,18 @@ export interface IDeviceStoreActions {
     resolvedTxId: number,
     configuration: Configuration[],
     kind: DeviceKind,
+    versions?: DeviceVersions,
+    uuid?: string,
   ) => void;
   updateConfiguration: (txId: number, configuration: Configuration[]) => void;
+  updateVersions: (txId: number, versions: DeviceVersions) => void;
+  updateUUID: (txId: number, uuid: string) => void;
+  updateDeviceInfo: (
+    txId: number,
+    configuration: Configuration[],
+    versions: DeviceVersions,
+    uuid?: string,
+  ) => void;
   updateParameterValue: (
     txId: number,
     paramUid: number,

@@ -66,6 +66,80 @@ export class Configurator implements IConfigurator {
     return config;
   }
 
+  public async getVersions(
+    device: DeviceOrTxId,
+  ): Promise<{ firmware: string; hardware: string; RF: string }> {
+    const [firmware, RF, hardware] = await Promise.all([
+      this.getVersion(device, 0), // Firmware
+      this.getVersion(device, 1), // RF
+      this.getVersion(device, 255), // Hardware
+    ]);
+
+    // Hardware interpreted version
+    const nums = hardware.version.split(".");
+    const genVersion = nums[0];
+    const majorVersion = nums[1];
+    const minorVersion = nums[2];
+    const kiloHertz = nums[3];
+    const interpretedHardwareVersion = `Gen${genVersion} v${majorVersion}.${minorVersion}${Number(kiloHertz) && ` ${kiloHertz}kHz`}`;
+
+    return {
+      firmware: firmware.version,
+      hardware: interpretedHardwareVersion,
+      RF: RF.version,
+    };
+  }
+
+  private async getVersion(
+    device: DeviceOrTxId,
+    processorId: number,
+  ): Promise<{ version: string }> {
+    const { bytes, view } = this.encoder.buildCommonPayload(
+      CommonPayloadId.REQUEST_FIRMWARE_VERSION_PER_ID,
+      2,
+    );
+    view.setUint8(1, processorId);
+
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
+      expectedCommonId: CommonPayloadId.REPLY_FIRMWARE_VERSION_PER_ID,
+      validate: (p) => p[17] === processorId,
+    });
+
+    const rv = new DataView(reply.buffer, reply.byteOffset, reply.byteLength);
+    const major = rv.getUint32(1, LE);
+    const minor = rv.getUint32(5, LE);
+    const patch = rv.getUint32(9, LE);
+    const build = rv.getUint32(13, LE);
+
+    return { version: `${major}.${minor}.${patch}.${build}` };
+  }
+
+  public async getDeviceUUID(device: DeviceOrTxId): Promise<string> {
+    const { bytes } = this.encoder.buildCommonPayload(
+      CommonPayloadId.REQUEST_DEVICE_ID,
+      1,
+    );
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
+      expectedCommonId: CommonPayloadId.REPLY_DEVICE_ID,
+    });
+
+    // Reply: [payloadId(1), txId(1), uuidBlock0(4), uuidBlock1(4), uuidBlock2(4)]
+    // Python reorders uint32 blocks: data[10:14] + data[6:10] + data[2:6],
+    // then reads the 12 concatenated bytes as one little-endian integer.
+    const reordered = new Uint8Array(12);
+    reordered.set(reply.subarray(10, 14), 0);
+    reordered.set(reply.subarray(6, 10), 4);
+    reordered.set(reply.subarray(2, 6), 8);
+
+    const rv = new DataView(reordered.buffer);
+    const lo = BigInt(rv.getUint32(0, LE));
+    const mid = BigInt(rv.getUint32(4, LE));
+    const hi = BigInt(rv.getUint32(8, LE));
+    const uuid = (hi << BigInt(64)) | (mid << BigInt(32)) | lo;
+
+    return uuid.toString(16).padStart(24, "0").toUpperCase();
+  }
+
   public async getParameter(
     device: DeviceOrTxId,
     parameterUid: number,

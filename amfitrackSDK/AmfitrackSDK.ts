@@ -1,7 +1,4 @@
-import {
-  IAmfitrackSDK,
-  SetParamResult,
-} from "./src/interfaces/IAmfitrackSDK";
+import { IAmfitrackSDK, SetParamResult } from "./src/interfaces/IAmfitrackSDK";
 import {
   PRODUCT_ID_SENSOR,
   PRODUCT_ID_SOURCE,
@@ -144,8 +141,12 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         // The new TX ID already appeared in the store (a packet arrived before
         // the reply came back). Transfer the old configuration so the UI stays
         // populated instead of flashing a loading skeleton.
-        const oldConfig = this.store.getState().deviceMeta[deviceID]?.configuration;
-        if (oldConfig && !this.store.getState().deviceMeta[newTxId]?.configuration) {
+        const oldConfig =
+          this.store.getState().deviceMeta[deviceID]?.configuration;
+        if (
+          oldConfig &&
+          !this.store.getState().deviceMeta[newTxId]?.configuration
+        ) {
           this.store.getState().updateConfiguration(newTxId, oldConfig);
         }
         this.store.getState().removeDevice(deviceID);
@@ -157,7 +158,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       this.store.getState().updateParameterValue(newTxId, paramUID, confirmed);
       // Background refresh — the config tree itself hasn't changed, so we
       // don't need to block the caller waiting for it.
-      this.deviceManager.fetchDeviceConfig(newTxId);
+      this.deviceManager.updateDeviceConfig(newTxId);
 
       return { value: confirmed, txIdChanged: newTxId };
     }
@@ -170,7 +171,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       );
       // Config mode changes can add/remove parameter categories, so we need
       // to refresh the whole configuration tree.
-      await this.deviceManager.fetchDeviceConfig(deviceID);
+      await this.deviceManager.updateDeviceConfig(deviceID);
       return { value: confirmed, configInvalidated: true };
     }
 
