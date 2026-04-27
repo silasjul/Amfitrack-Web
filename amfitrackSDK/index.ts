@@ -14,6 +14,7 @@ export type {
   DeviceFrequency,
   DeviceMeta,
   DeviceKind,
+  DeviceVersions,
   IDeviceStoreState,
 } from "./src/interfaces/IStore";
 export type { EmfImuFrameIdData } from "./src/protocol/payloads";

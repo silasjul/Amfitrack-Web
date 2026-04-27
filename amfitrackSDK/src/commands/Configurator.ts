@@ -66,6 +66,54 @@ export class Configurator implements IConfigurator {
     return config;
   }
 
+  public async getVersions(
+    device: DeviceOrTxId,
+  ): Promise<{ firmware: string; hardware: string; RF: string }> {
+    const [firmware, RF, hardware] = await Promise.all([
+      this.getVersion(device, 0), // Firmware
+      this.getVersion(device, 1), // RF
+      this.getVersion(device, 255), // Hardware
+    ]);
+
+    // Hardware interpreted version
+    const nums = hardware.version.split(".");
+    const genVersion = nums[0];
+    const majorVersion = nums[1];
+    const minorVersion = nums[2];
+    const kiloHertz = nums[3];
+    const interpretedHardwareVersion = `Gen${genVersion} v${majorVersion}.${minorVersion}${Number(kiloHertz) && ` ${kiloHertz}kHz`}`;
+
+    return {
+      firmware: firmware.version,
+      hardware: interpretedHardwareVersion,
+      RF: RF.version,
+    };
+  }
+
+  private async getVersion(
+    device: DeviceOrTxId,
+    processorId: number,
+  ): Promise<{ version: string }> {
+    const { bytes, view } = this.encoder.buildCommonPayload(
+      CommonPayloadId.REQUEST_FIRMWARE_VERSION_PER_ID,
+      2,
+    );
+    view.setUint8(1, processorId);
+
+    const reply = await this.sendPipeline.sendAndAwaitReply(device, bytes, {
+      expectedCommonId: CommonPayloadId.REPLY_FIRMWARE_VERSION_PER_ID,
+      validate: (p) => p[17] === processorId,
+    });
+
+    const rv = new DataView(reply.buffer, reply.byteOffset, reply.byteLength);
+    const major = rv.getUint32(1, LE);
+    const minor = rv.getUint32(5, LE);
+    const patch = rv.getUint32(9, LE);
+    const build = rv.getUint32(13, LE);
+
+    return { version: `${major}.${minor}.${patch}.${build}` };
+  }
+
   public async getParameter(
     device: DeviceOrTxId,
     parameterUid: number,

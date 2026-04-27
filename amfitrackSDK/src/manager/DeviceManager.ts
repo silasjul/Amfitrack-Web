@@ -84,7 +84,8 @@ export class DeviceManager implements IDeviceManager {
 
     registerDevice(deviceTxId, kind, uplink);
     if (uplink != null && uplink >= 0) {
-      this.fetchDeviceConfig(deviceTxId);
+      this.updateDeviceConfig(deviceTxId);
+      this.updateDeviceVersions(deviceTxId);
     } else {
       this.pendingConfigDevices.add(deviceTxId);
     }
@@ -158,7 +159,7 @@ export class DeviceManager implements IDeviceManager {
   // Configuration
   // ---------------------------------------------------------------------------
 
-  public async fetchDeviceConfig(deviceTxId: number) {
+  public async updateDeviceConfig(deviceTxId: number) {
     try {
       const configuration =
         await this.configurator.getConfiguration(deviceTxId);
@@ -166,6 +167,16 @@ export class DeviceManager implements IDeviceManager {
       this.store.getState().updateConfiguration(deviceTxId, configuration);
     } catch (err) {
       console.error(`Failed to fetch config for device ${deviceTxId}`, err);
+    }
+  }
+
+  public async updateDeviceVersions(deviceTxId: number) {
+    try {
+      const versions = await this.configurator.getVersions(deviceTxId);
+      console.log(`versions ID_${deviceTxId}`, versions);
+      this.store.getState().updateVersions(deviceTxId, versions);
+    } catch (err) {
+      console.error(`Failed to fetch versions for device ${deviceTxId}`, err);
     }
   }
 
@@ -265,6 +276,8 @@ export class DeviceManager implements IDeviceManager {
       const txId = this.configurator.extractDeviceId(configuration);
       console.log(`configuration ID_${txId} (${kind})`, configuration);
       if (txId === null) return;
+      const versions = await this.configurator.getVersions(device);
+      console.log(`versions ID_${txId}`, versions);
 
       this.store
         .getState()
@@ -273,8 +286,8 @@ export class DeviceManager implements IDeviceManager {
           txId,
           configuration,
           kind,
+          versions,
         );
-
       this.transportTxIdMap.set(device, txId);
     } catch (err) {
       console.warn(
@@ -307,7 +320,8 @@ export class DeviceManager implements IDeviceManager {
       this.pendingConfigDevices.delete(deviceTxId);
       const meta = this.store.getState().deviceMeta[deviceTxId];
       if (!meta?.configuration) {
-        this.fetchDeviceConfig(deviceTxId);
+        this.updateDeviceConfig(deviceTxId);
+        this.updateDeviceVersions(deviceTxId);
       }
     }
   }

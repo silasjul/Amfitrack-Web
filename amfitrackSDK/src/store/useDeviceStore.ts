@@ -83,6 +83,7 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
     resolvedTxId,
     configuration,
     kind,
+    versions,
   ) =>
     set((state) => {
       const { [temporaryTxId]: tempMeta, ...restMeta } = state.deviceMeta;
@@ -101,6 +102,7 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
           kind,
           configuration,
           uplink: tempMeta?.uplink ?? existingMeta?.uplink,
+          ...(versions !== undefined ? { versions } : {}),
         },
       };
 
@@ -135,6 +137,18 @@ export const useDeviceStore = create<IDeviceStore>((set, get) => ({
         deviceMeta: {
           ...state.deviceMeta,
           [txId]: { ...meta, configuration },
+        },
+      };
+    }),
+
+  updateVersions: (txId, versions) =>
+    set((state) => {
+      const meta = state.deviceMeta[txId];
+      if (!meta) return state;
+      return {
+        deviceMeta: {
+          ...state.deviceMeta,
+          [txId]: { ...meta, versions },
         },
       };
     }),

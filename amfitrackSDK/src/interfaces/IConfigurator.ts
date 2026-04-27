@@ -34,4 +34,5 @@ export interface IConfigurator {
     options?: SetParameterOptions,
   ): Promise<ParameterValue>;
   extractDeviceId(configuration: Configuration[]): number | null;
+  getVersions(device: DeviceOrTxId): Promise<{ firmware: string; hardware: string, RF: string }>;
 }

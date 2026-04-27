@@ -7,6 +7,7 @@ import type {
   SourceCalibrationData,
   DeviceKind,
   DeviceFrequency,
+  DeviceVersions,
 } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
 import useTxIds from "@/hooks/useTxIds";
@@ -41,16 +42,41 @@ export default function InspectTab() {
   const meta = deviceMeta[selectedDeviceId];
   const kind: DeviceKind = meta?.kind ?? "unknown";
   const freq = frequency[selectedDeviceId];
+  const versions = meta?.versions;
 
   switch (kind) {
     case "sensor":
-      return <SensorInspector id={selectedDeviceId} frequency={freq} />;
+      return (
+        <SensorInspector
+          id={selectedDeviceId}
+          frequency={freq}
+          versions={versions}
+        />
+      );
     case "source":
-      return <SourceInspector id={selectedDeviceId} frequency={freq} />;
+      return (
+        <SourceInspector
+          id={selectedDeviceId}
+          frequency={freq}
+          versions={versions}
+        />
+      );
     case "hub":
-      return <HubInspector id={selectedDeviceId} frequency={freq} />;
+      return (
+        <HubInspector
+          id={selectedDeviceId}
+          frequency={freq}
+          versions={versions}
+        />
+      );
     default:
-      return <UnknownInspector id={selectedDeviceId} frequency={freq} />;
+      return (
+        <UnknownInspector
+          id={selectedDeviceId}
+          frequency={freq}
+          versions={versions}
+        />
+      );
   }
 }
 
@@ -58,7 +84,14 @@ export default function InspectTab() {
 // Sensor Inspector
 // ---------------------------------------------------------------------------
 
-function SensorInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
+function SensorInspector({
+  id,
+  versions,
+}: {
+  id: number;
+  frequency?: DeviceFrequency;
+  versions?: DeviceVersions;
+}) {
   const [data, setData] = useState<EmfImuFrameIdData | null>(null);
 
   useEffect(() => {
@@ -155,6 +188,8 @@ function SensorInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
             <ValueCell label="Source State" value={data.sensorState} />
           </div>
         </Section>
+
+        {versions && <VersionsSection versions={versions} />}
       </div>
     </div>
   );
@@ -164,7 +199,14 @@ function SensorInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
 // Source Inspector
 // ---------------------------------------------------------------------------
 
-function SourceInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
+function SourceInspector({
+  id,
+  versions,
+}: {
+  id: number;
+  frequency?: DeviceFrequency;
+  versions?: DeviceVersions;
+}) {
   const [measurement, setMeasurement] = useState<SourceMeasurementData | null>(
     null,
   );
@@ -292,6 +334,8 @@ function SourceInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
         ) : (
           <WaitingForData label="calibration" />
         )}
+
+        {versions && <VersionsSection versions={versions} />}
       </div>
     </div>
   );
@@ -301,11 +345,18 @@ function SourceInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
 // Hub Inspector
 // ---------------------------------------------------------------------------
 
-function HubInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
+function HubInspector({
+  id,
+  versions,
+}: {
+  id: number;
+  frequency?: DeviceFrequency;
+  versions?: DeviceVersions;
+}) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-full">
       <DetailHeader label={`Hub ${id}`} imageSrc="/hub.png" />
-      <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+      <div className="flex flex-1 flex-col items-center justify-start gap-3 px-4 py-8 text-center">
         <div className="size-10 rounded-full bg-zinc-500/10 flex items-center justify-center">
           <Router className="size-5 text-zinc-400" />
         </div>
@@ -314,11 +365,16 @@ function HubInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
             RF Hub
           </p>
           <p className="text-[11px] leading-relaxed text-sidebar-foreground/40">
-            This hub receives all messages via RF from nearby devices and
+            The hub receives messages via RF from nearby devices and
             forwards them over USB as a HID device.
           </p>
         </div>
       </div>
+      {versions && (
+        <div className="px-3 pb-3 mt-auto">
+          <VersionsSection versions={versions} />
+        </div>
+      )}
     </div>
   );
 }
@@ -327,11 +383,18 @@ function HubInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
 // Unknown Inspector
 // ---------------------------------------------------------------------------
 
-function UnknownInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
+function UnknownInspector({
+  id,
+  versions,
+}: {
+  id: number;
+  frequency?: DeviceFrequency;
+  versions?: DeviceVersions;
+}) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-full">
       <DetailHeader label={`Unknown ${id}`} imageSrc="/amfitrack.svg" />
-      <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
         <div className="size-10 rounded-full bg-zinc-500/10 flex items-center justify-center">
           <CircleHelp className="size-5 text-zinc-400" />
         </div>
@@ -342,6 +405,11 @@ function UnknownInspector({ id }: { id: number; frequency?: DeviceFrequency }) {
           <p className="text-[11px] text-sidebar-foreground/40">TX ID: {id}</p>
         </div>
       </div>
+      {versions && (
+        <div className="px-3 pb-3 mt-auto">
+          <VersionsSection versions={versions} />
+        </div>
+      )}
     </div>
   );
 }
@@ -441,6 +509,18 @@ function DistortionCell({ distortion }: { distortion: number }) {
         />
       </div>
     </div>
+  );
+}
+
+function VersionsSection({ versions }: { versions: DeviceVersions }) {
+  return (
+    <Section title="Versions">
+      <div className="grid grid-cols-1 gap-1.5">
+        <ValueCell label="Firmware" value={versions.firmware} />
+        <ValueCell label="Hardware" value={versions.hardware} />
+        <ValueCell label="RF" value={versions.RF} />
+      </div>
+    </Section>
   );
 }
 
