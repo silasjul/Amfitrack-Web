@@ -118,9 +118,9 @@ export default function SidebarUpper() {
                 </SelectItem>
                 <SelectItem
                   className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
-                  value="hubs"
+                  value="sensors"
                 >
-                  Hubs
+                  Sensors
                 </SelectItem>
                 <SelectItem
                   className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
@@ -130,9 +130,9 @@ export default function SidebarUpper() {
                 </SelectItem>
                 <SelectItem
                   className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"
-                  value="sensors"
+                  value="hubs"
                 >
-                  Sensors
+                  Hubs
                 </SelectItem>
                 <SelectItem
                   className="font-roboto-mono text-[10px] font-medium uppercase tracking-widest"

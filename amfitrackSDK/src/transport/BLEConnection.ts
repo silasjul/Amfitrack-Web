@@ -119,6 +119,10 @@ export class BLEConnection implements ITransport {
     this.disconnectCallbacks.clear();
   }
 
+  public async forget(): Promise<void> {
+    await this.device.forget?.();
+  }
+
   public async writeToDevice(bytes: Uint8Array): Promise<void> {
     if (!this.writeCharacteristic) {
       throw new Error("No write characteristic available");

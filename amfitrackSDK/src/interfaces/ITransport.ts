@@ -26,6 +26,13 @@ export interface ITransport {
   /** Programmatically close the physical link and release resources. */
   disconnect(): Promise<void>;
 
+  /**
+   * Revoke the browser's permission grant for this device so it is no longer
+   * returned by getDevices() / getDevices() and cannot be auto-reconnected by
+   * the poll interval. Call this only on user-initiated disconnects.
+   */
+  forget(): Promise<void>;
+
   /** Register a one-shot callback fired when the physical link is lost. */
   onDisconnect(cb: DisconnectCallback): void;
 
