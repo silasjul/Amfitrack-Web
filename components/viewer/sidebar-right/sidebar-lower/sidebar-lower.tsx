@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import InspectTab from "./InspectTab";
+import InspectTab from "./inspector-tab/InspectTab";
 import RecordTab from "./RecordTab";
 import Viewtab from "./Viewtab";
 
@@ -39,7 +39,7 @@ export default function SidebarLower() {
   return (
     <div className="flex flex-col w-full h-full pt-0.5">
       <TooltipProvider>
-        <nav className="flex items-center gap-px px-1 shrink-0">
+        <nav className="flex items-center gap-px shrink-0">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = tab.id === activeTab;
@@ -72,13 +72,8 @@ export default function SidebarLower() {
         </nav>
       </TooltipProvider>
 
-      <div className="min-h-0 flex-1 px-1">
-        <ScrollArea
-          className={cn(
-            "h-full min-h-0 w-full rounded-t-sm bg-sidebar",
-            activeTab === "inspect" && "rounded-tl-none",
-          )}
-        >
+      <div className="min-h-0 flex-1">
+        <ScrollArea className={cn("h-full min-h-0 w-full bg-sidebar")}>
           {current.content}
         </ScrollArea>
       </div>

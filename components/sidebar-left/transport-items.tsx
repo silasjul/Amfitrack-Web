@@ -126,7 +126,7 @@ function TransportItem({
                   alt={kind}
                   width={16}
                   height={16}
-                  className="size-4 object-contain"
+                  className="size-4 object-contain brightness-125"
                 />
               </span>
             ) : (

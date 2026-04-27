@@ -29,7 +29,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   const lightMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const bodyMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
   const originalBodyColorRef = useRef<THREE.Color | null>(null);
-  const setSelectedSensorId = useViewerStore((s) => s.setSelectedSensorId);
+  const setSelectedDeviceId = useViewerStore((s) => s.setSelectedDeviceId);
   const hoveredSensorId = useViewerStore((s) => s.hoveredSensorId);
   const setHoveredSensorId = useViewerStore((s) => s.setHoveredSensorId);
   const fbx = useFBX("/models/viewer/sensor.fbx");
@@ -121,7 +121,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   }, [isHovered]);
 
   function handleClick() {
-    setSelectedSensorId(sensorId);
+    setSelectedDeviceId(sensorId);
   }
 
   return (

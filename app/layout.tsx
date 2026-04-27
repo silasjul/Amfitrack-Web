@@ -17,8 +17,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Amfitrack Web",
-  description: "USB device connection manager",
+  title: "Amfitrack Viewer",
+  description: "Amfitrack Viewer",
   icons: {
     icon: "/logo.svg",
   },

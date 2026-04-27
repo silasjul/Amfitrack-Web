@@ -1,15 +1,15 @@
 import { create } from "zustand";
 
 interface ViewerState {
-  selectedSensorId: number | null;
+  selectedDeviceId: number | null;
   hoveredSensorId: number | null;
-  setSelectedSensorId: (id: number | null) => void;
+  setSelectedDeviceId: (id: number | null) => void;
   setHoveredSensorId: (id: number | null) => void;
 }
 
 export const useViewerStore = create<ViewerState>((set) => ({
-  selectedSensorId: null,
+  selectedDeviceId: null,
   hoveredSensorId: null,
-  setSelectedSensorId: (id) => set({ selectedSensorId: id }),
+  setSelectedDeviceId: (id) => set({ selectedDeviceId: id }),
   setHoveredSensorId: (id) => set({ hoveredSensorId: id }),
 }));

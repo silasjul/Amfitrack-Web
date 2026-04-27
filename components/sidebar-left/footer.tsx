@@ -20,7 +20,7 @@ export default function Footer() {
         </CardTitle>
       </CardHeader>
       <CardContent className="min-h-0">
-        <div className="flex gap-1 opacity-100">
+        <div className="flex gap-1">
           <Button
             className="flex-1 flex items-center gap-1 justify-center"
             onClick={() => sdk?.requestConnectionViaUSB()}
