@@ -1,5 +1,9 @@
+"use client";
+
 import * as React from "react";
 import { ArrowLeftRight, Bug } from "lucide-react";
+import ConfigTransferDialog from "@/components/sidebar-left/nav-secondary-components/ConfigTransferDialog";
+import RecordDialog from "@/components/sidebar-left/nav-secondary-components/RecordDialog";
 
 import {
   SidebarGroup,
@@ -10,28 +14,48 @@ import {
 } from "@/components/ui/sidebar";
 
 export default function NavSecondary() {
+  const [isConfigTransferDialogOpen, setIsConfigTransferDialogOpen] =
+    React.useState(false);
+  const [isRecordDialogOpen, setIsRecordDialogOpen] = React.useState(false);
+
   return (
-    <SidebarGroup>
-      <SidebarGroupContent>
-        <SidebarMenu>
-        <SidebarMenuItem>
-            <SidebarMenuButton asChild size="sm">
-              <div>
-                <Bug />
-                <span>Record/Logging</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild size="sm">
-              <div>
+    <>
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                size="sm"
+                onClick={() => setIsRecordDialogOpen(true)}
+              >
+                <div>
+                  <Bug />
+                  <span>Record/Logging</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="sm"
+                onClick={() => setIsConfigTransferDialogOpen(true)}
+              >
                 <ArrowLeftRight />
                 <span>Config transfer</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      <ConfigTransferDialog
+        open={isConfigTransferDialogOpen}
+        onOpenChange={setIsConfigTransferDialogOpen}
+      />
+      <RecordDialog
+        open={isRecordDialogOpen}
+        onOpenChange={setIsRecordDialogOpen}
+      />
+    </>
   );
 }
