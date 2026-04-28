@@ -20,9 +20,9 @@ export default function NavSecondary() {
 
   return (
     <>
-      <SidebarGroup>
+      <SidebarGroup className="pb-0">
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="">
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
