@@ -45,10 +45,10 @@ export default function DeviceTableRow({
       <TableCell className="text-sm">
         {meta?.versions?.firmware ?? "—"}
       </TableCell>
-      <TableCell className="text-sm">
+      <TableCell className="text-sm">{meta?.versions?.RF ?? "—"}</TableCell>
+      <TableCell className="text-sm max-w-[115px]">
         {meta?.versions?.hardware ?? "—"}
       </TableCell>
-      <TableCell className="text-sm">{meta?.versions?.RF ?? "—"}</TableCell>
     </TableRow>
   );
 }

@@ -116,26 +116,11 @@ export default function ConfigTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Config Transfer</DialogTitle>
-          <DialogDescription>
-            Export or import configurations between devices.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm">
-            {selectedIds.size > 0
-              ? `${selectedIds.size} of ${allIds.length} device${allIds.length !== 1 ? "s" : ""} selected`
-              : `${allIds.length} device${allIds.length !== 1 ? "s" : ""} connected`}
-          </span>
-          <Button className="leading-0" variant="outline" size="sm">
-            <Upload className="mr-1 h-4 w-4" />
-            Import CSV
-          </Button>
-        </div>
-
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-5xl flex flex-col"
+      >
+        <Header />
         <DeviceTable
           allIds={allIds}
           deviceMeta={deviceMeta}
@@ -165,5 +150,26 @@ export default function ConfigTransferDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Header() {
+  return (
+    <DialogHeader>
+      <div className="flex items-end justify-between">
+        <div className="flex flex-col gap-1">
+          <DialogTitle>Config Transfer</DialogTitle>
+          <DialogDescription>
+            Export or import configurations between devices.
+          </DialogDescription>
+        </div>
+        <div className="flex justify-end">
+          <Button className="leading-0" variant="outline" size="sm">
+            <Upload className="mr-1 h-4 w-4" />
+            Import CSV
+          </Button>
+        </div>
+      </div>
+    </DialogHeader>
   );
 }

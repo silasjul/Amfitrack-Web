@@ -46,8 +46,8 @@ export default function DeviceTable({
             <TableHead>Uplink</TableHead>
             <TableHead>UUID</TableHead>
             <TableHead>Firmware</TableHead>
-            <TableHead>Hardware</TableHead>
             <TableHead>RF</TableHead>
+            <TableHead>Hardware</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

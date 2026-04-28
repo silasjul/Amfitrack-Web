@@ -90,7 +90,7 @@ export function DeviceRow({
       onPointerOver={isSensor ? () => setHoveredSensorId(id) : undefined}
       onPointerOut={isSensor ? () => setHoveredSensorId(null) : undefined}
       className={cn(
-        "w-full flex items-center gap-2 px-2 py-1 text-left rounded-md transition-colors",
+        "w-full flex items-center gap-2 px-2 py-1 text-left rounded-sm transition-colors",
         isSelected
           ? "bg-sidebar-foreground/8 ring-1 ring-sidebar-foreground/10"
           : "ring-1 ring-transparent",
@@ -102,7 +102,7 @@ export function DeviceRow({
 
       <span
         className={cn(
-          "text-[11px] font-medium truncate min-w-0",
+          "text-[11px] font-medium truncate min-w-0 leading-none",
           isSelected ? "text-sidebar-foreground" : "text-sidebar-foreground/70",
         )}
       >
