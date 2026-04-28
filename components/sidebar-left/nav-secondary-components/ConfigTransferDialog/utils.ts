@@ -46,11 +46,41 @@ export function configurationsToCSV(devices: DeviceExportData[]): string {
 
   const lines: string[] = [];
 
-  lines.push(csvRow("Name", 0, devices.map((d) => escape(d.name))));
-  lines.push(csvRow("UUID", 1, devices.map((d) => escape(`#${d.uuid}`))));
-  lines.push(csvRow("FW", 2, devices.map((d) => escape(d.firmware))));
-  lines.push(csvRow("RFFW", 3, devices.map((d) => escape(d.rfFirmware))));
-  lines.push(csvRow("HW", 4, devices.map((d) => escape(d.hardware))));
+  lines.push(
+    csvRow(
+      "UUID",
+      0,
+      devices.map((d) => escape(`#${d.uuid}`)),
+    ),
+  );
+  lines.push(
+    csvRow(
+      "Name",
+      1,
+      devices.map((d) => escape(d.name)),
+    ),
+  );
+  lines.push(
+    csvRow(
+      "FW",
+      2,
+      devices.map((d) => escape(d.firmware)),
+    ),
+  );
+  lines.push(
+    csvRow(
+      "RFFW",
+      3,
+      devices.map((d) => escape(d.rfFirmware)),
+    ),
+  );
+  lines.push(
+    csvRow(
+      "HW",
+      4,
+      devices.map((d) => escape(d.hardware)),
+    ),
+  );
 
   for (const { name, uid } of paramOrder) {
     const values = devices.map((_, di) => {

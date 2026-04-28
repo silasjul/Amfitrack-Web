@@ -61,13 +61,25 @@ export default function ConfigTransferDialog({
     async (txIds: number[]) => {
       if (!sdk || txIds.length === 0) return;
 
-      setExportProgress({ current: 0, total: txIds.length });
+      const kindOrder: Record<string, number> = {
+        sensor: 0,
+        hub: 1,
+        source: 2,
+        unknown: 3,
+      };
+      const sorted = [...txIds].sort(
+        (a, b) =>
+          (kindOrder[deviceMeta[a]?.kind ?? "unknown"] ?? 3) -
+          (kindOrder[deviceMeta[b]?.kind ?? "unknown"] ?? 3),
+      );
+
+      setExportProgress({ current: 0, total: sorted.length });
 
       try {
         const devices: DeviceExportData[] = [];
 
-        for (let i = 0; i < txIds.length; i++) {
-          const txId = txIds[i];
+        for (let i = 0; i < sorted.length; i++) {
+          const txId = sorted[i];
           const meta = deviceMeta[txId];
 
           const configs = await sdk.getAllDeviceConfigurations(txId);
@@ -81,7 +93,7 @@ export default function ConfigTransferDialog({
             parameters: configs.flatMap((c) => c.parameters),
           });
 
-          setExportProgress({ current: i + 1, total: txIds.length });
+          setExportProgress({ current: i + 1, total: sorted.length });
         }
 
         const csv = configurationsToCSV(devices);
