@@ -14,6 +14,7 @@ import {
 import { Box, Gamepad2, Banana } from "lucide-react";
 import MainNavContent from "./main-nav-content";
 import TransportItems from "./transport-items";
+import NavSecondary from "./nav-secondary";
 
 const data = {
   navMain: [
@@ -50,6 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TransportItems />
       </SidebarContent>
       <SidebarFooter>
+        <NavSecondary />
         <Footer />
       </SidebarFooter>
       <SidebarRail />

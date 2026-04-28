@@ -9,7 +9,10 @@ export default function Footer() {
   const { sdk } = useAmfitrack();
 
   return (
-    <Card size="sm" className="light opacity-95">
+    <Card
+      size="sm"
+      className="border-sidebar-border bg-sidebar-accent shadow-sm"
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-1 leading-none">
           Connect device
@@ -22,7 +25,7 @@ export default function Footer() {
       <CardContent className="min-h-0">
         <div className="flex gap-1">
           <Button
-            className="flex-1 flex items-center gap-1 justify-center"
+            className="flex-1 flex items-center gap-1 justify-center border-sidebar-border/90 bg-sidebar-accent/60 hover:bg-sidebar-accent/80"
             onClick={() => sdk?.requestConnectionViaUSB()}
             variant="outline"
             size="icon"
@@ -33,8 +36,8 @@ export default function Footer() {
             </span>
           </Button>
           <Button
-            className="flex-1 flex items-center gap-1 justify-center"
-            onClick={() => sdk?.requestConnectionViaBLE()}
+            className="flex-1 flex items-center gap-1 justify-center border-sidebar-border/90 bg-sidebar-accent/60 hover:bg-sidebar-accent/80"
+              onClick={() => sdk?.requestConnectionViaBLE()}
             variant="outline"
             size="icon"
           >

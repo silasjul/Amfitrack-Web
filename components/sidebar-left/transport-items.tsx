@@ -116,8 +116,9 @@ function TransportItem({
       <SidebarMenuItem>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
+            isActive={false}
             type="button"
-            className="opacity-100 transition-colors ease-linear data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            className="transition-colors ease-linear"
           >
             {kind !== "unknown" && KIND_IMAGE[kind] ? (
               <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-md">
@@ -126,7 +127,7 @@ function TransportItem({
                   alt={kind}
                   width={16}
                   height={16}
-                  className="size-4 object-contain brightness-125"
+                  className="size-4 object-contain brightness-150"
                 />
               </span>
             ) : (
