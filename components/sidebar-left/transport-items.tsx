@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CircleHelp, MoreHorizontal, Settings, Unplug } from "lucide-react";
 import { useDeviceStore, useAmfitrack } from "@/amfitrackSDK";
 import type { Configuration } from "@/amfitrackSDK";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +20,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import type { DeviceKind, DeviceMeta } from "@/amfitrackSDK/src/interfaces/IStore";
+import type {
+  DeviceKind,
+  DeviceMeta,
+} from "@/amfitrackSDK/src/interfaces/IStore";
 import DeviceSettingsDialog from "@/components/sidebar-left/footer-components/DeviceSettingsDialog";
 import useTxIds from "@/hooks/useTxIds";
 
-const KIND_IMAGE: Partial<Record<DeviceKind, string>> = {
+export const KIND_IMAGE: Partial<Record<DeviceKind, string>> = {
   hub: "/hub.png",
   source: "/source.png",
   sensor: "/sensor.png",
@@ -120,19 +124,7 @@ function TransportItem({
             type="button"
             className="transition-colors ease-linear"
           >
-            {kind !== "unknown" && KIND_IMAGE[kind] ? (
-              <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-md">
-                <Image
-                  src={KIND_IMAGE[kind]}
-                  alt={kind}
-                  width={16}
-                  height={16}
-                  className="size-4 object-contain brightness-150"
-                />
-              </span>
-            ) : (
-              <CircleHelp className="text-sidebar-foreground/70" />
-            )}
+            <DeviceIcon kind={kind} />
             <span className="min-w-0 flex-1 truncate">{Label(kind)}</span>
             <span className="flex shrink-0 items-center gap-1 text-sidebar-foreground/50">
               <MoreHorizontal className="size-4" />
@@ -163,4 +155,20 @@ function TransportItem({
 
 function Label(kind: DeviceKind) {
   return String(kind).charAt(0).toUpperCase() + String(kind).slice(1);
+}
+
+export function DeviceIcon({ kind }: { kind: DeviceKind }) {
+  return kind !== "unknown" && KIND_IMAGE[kind] ? (
+    <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-md">
+      <Image
+        src={KIND_IMAGE[kind]}
+        alt={kind}
+        width={16}
+        height={16}
+        className={cn("size-4 object-contain", kind === "sensor" ? "brightness-200" : "brightness-150")}
+      />
+    </span>
+  ) : (
+    <CircleHelp className="text-sidebar-foreground/70 size-4" />
+  );
 }
