@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,17 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import useTxIds from "@/hooks/useTxIds";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
-import DeviceTable from "./DeviceTable";
 import { useAmfitrack } from "@/amfitrackSDK";
-import {
-  configurationsToCSV,
-  downloadCSV,
-  type DeviceExportData,
-} from "./utils";
+import DeviceTable from "./DeviceTable";
+import { useExport } from "./useExport";
+import { useFileDragDrop } from "./useFileDragDrop";
 
 export default function ConfigTransferDialog({
   open,
@@ -38,12 +35,6 @@ export default function ConfigTransferDialog({
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [exportProgress, setExportProgress] = useState<{
-    current: number;
-    total: number;
-  } | null>(null);
-
-  const isExporting = exportProgress !== null;
 
   function toggleAll(checked: boolean) {
     setSelectedIds(checked ? new Set(allIds) : new Set());
@@ -57,97 +48,52 @@ export default function ConfigTransferDialog({
     });
   }
 
-  const handleDownload = useCallback(
-    async (txIds: number[]) => {
-      if (!sdk || txIds.length === 0) return;
-
-      const kindOrder: Record<string, number> = {
-        sensor: 0,
-        hub: 1,
-        source: 2,
-        unknown: 3,
-      };
-      const sorted = [...txIds].sort(
-        (a, b) =>
-          (kindOrder[deviceMeta[a]?.kind ?? "unknown"] ?? 3) -
-          (kindOrder[deviceMeta[b]?.kind ?? "unknown"] ?? 3),
-      );
-
-      setExportProgress({ current: 0, total: sorted.length });
-
-      try {
-        const devices: DeviceExportData[] = [];
-
-        for (let i = 0; i < sorted.length; i++) {
-          const txId = sorted[i];
-          const meta = deviceMeta[txId];
-
-          const configs = await sdk.getAllDeviceConfigurations(txId);
-
-          devices.push({
-            uuid: meta?.uuid ?? "unknown",
-            firmware: meta?.versions?.firmware ?? "unknown",
-            rfFirmware: meta?.versions?.RF ?? "unknown",
-            hardware: meta?.versions?.hardware ?? "unknown",
-            name: meta?.kind ?? "unknown",
-            parameters: configs.flatMap((c) => c.parameters),
-          });
-
-          setExportProgress({ current: i + 1, total: sorted.length });
-        }
-
-        const csv = configurationsToCSV(devices);
-        const timestamp = new Date()
-          .toISOString()
-          .slice(0, 10)
-          .replace(/[T:]/g, "-");
-        downloadCSV(csv, `amfitrack-${timestamp}.config.csv`);
-        toast.success("Configurations exported successfully");
-      } catch (err) {
-        toast.error("Export failed", {
-          description: err instanceof Error ? err.message : "Unknown error",
-        });
-      } finally {
-        setExportProgress(null);
-      }
-    },
-    [sdk, deviceMeta],
-  );
+  const { exportProgress, isExporting, handleDownload } = useExport(sdk, deviceMeta);
+  const { isDragging, onDialogDrop } = useFileDragDrop(open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-5xl flex flex-col"
+        className="sm:max-w-5xl flex flex-col overflow-hidden"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDialogDrop}
       >
-        <Header />
-        <DeviceTable
-          allIds={allIds}
-          deviceMeta={deviceMeta}
-          selectedIds={selectedIds}
-          onToggleAll={toggleAll}
-          onToggleRow={toggleRow}
-        />
-
-        <div className="flex justify-end pt-2">
-          <Button
-            className="leading-0"
-            disabled={selectedIds.size === 0 || isExporting}
-            onClick={() => handleDownload(Array.from(selectedIds))}
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Exporting {exportProgress.current}/{exportProgress.total}...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                Export Configurations
-              </>
-            )}
-          </Button>
+        <div
+          className="flex flex-col gap-4 transition-[filter] duration-200"
+          style={{ filter: isDragging ? "blur(4px)" : "none" }}
+          aria-hidden={isDragging}
+        >
+          <Header />
+          <DeviceTable
+            allIds={allIds}
+            deviceMeta={deviceMeta}
+            selectedIds={selectedIds}
+            onToggleAll={toggleAll}
+            onToggleRow={toggleRow}
+          />
+          <div className="flex justify-end pt-2">
+            <Button
+              className="leading-0"
+              disabled={selectedIds.size === 0 || isExporting}
+              onClick={() => handleDownload(Array.from(selectedIds))}
+            >
+              {isExporting && exportProgress ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Exporting {exportProgress.current}/{exportProgress.total}...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Export Configurations
+                </>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {isDragging && <DropOverlay />}
       </DialogContent>
     </Dialog>
   );
@@ -163,13 +109,23 @@ function Header() {
             Export or import configurations between devices.
           </DialogDescription>
         </div>
-        <div className="flex justify-end">
-          <Button className="leading-0" variant="outline" size="sm">
-            <Upload className="mr-1 h-4 w-4" />
-            Import CSV
-          </Button>
-        </div>
+        <Button className="leading-0" variant="outline" size="sm">
+          <Upload className="mr-1 h-4 w-4" />
+          Import CSV
+        </Button>
       </div>
     </DialogHeader>
+  );
+}
+
+function DropOverlay() {
+  return (
+    <Card className="border-dashed border-2 border-primary absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-background/60">
+      <CardHeader className="items-center">
+        <Upload className="h-10 w-10 text-primary" />
+        <CardTitle>Drop CSV to import</CardTitle>
+        <CardDescription>Release to import configuration file</CardDescription>
+      </CardHeader>
+    </Card>
   );
 }
