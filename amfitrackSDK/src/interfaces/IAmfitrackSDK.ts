@@ -1,4 +1,4 @@
-import { ParameterValue } from "./IConfigurator";
+import { Configuration, DeviceOrTxId, ParameterValue } from "./IConfigurator";
 
 export interface SetParamResult {
   value: ParameterValue;
@@ -37,4 +37,9 @@ export interface IAmfitrackSDK {
 
   /** Disconnect and release resources (listeners, transports, etc.). */
   destroy(): Promise<void>;
+
+  /** Used for csv export/import */
+  getAllDeviceConfigurations(
+    deviceOrTxId: DeviceOrTxId,
+  ): Promise<Configuration[]>;
 }

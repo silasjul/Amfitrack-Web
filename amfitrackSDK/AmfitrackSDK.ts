@@ -18,7 +18,11 @@ import { IDecoder } from "./src/interfaces/IDecoder";
 import { AmfitrackDecoder } from "./src/protocol/AmfitrackDecoder";
 import { IDeviceManager } from "./src/interfaces/IDeviceManager";
 import { DeviceManager } from "./src/manager/DeviceManager";
-import { IConfigurator } from "./src/interfaces/IConfigurator";
+import {
+  Configuration,
+  DeviceOrTxId,
+  IConfigurator,
+} from "./src/interfaces/IConfigurator";
 import { Configurator } from "./src/commands/Configurator";
 import { ISendPipeline } from "./src/interfaces/ISendPipeline";
 import { SendPipeline } from "./src/pipeline/SendPipeline";
@@ -279,5 +283,11 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     this.deviceManager.registerTransportOrGetTxId(transport);
 
     this.frequencyTracker.start();
+  }
+
+  public async getAllDeviceConfigurations(
+    deviceOrTxId: DeviceOrTxId,
+  ): Promise<Configuration[]> {
+    return this.configurator.getAllDeviceConfigurations(deviceOrTxId);
   }
 }

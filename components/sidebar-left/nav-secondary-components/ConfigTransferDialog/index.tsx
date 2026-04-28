@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, Download } from "lucide-react";
+import { Upload, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import useTxIds from "@/hooks/useTxIds";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
 import DeviceTable from "./DeviceTable";
+import { useAmfitrack } from "@/amfitrackSDK";
+import {
+  configurationsToCSV,
+  downloadCSV,
+  type DeviceExportData,
+} from "./utils";
 
 export default function ConfigTransferDialog({
   open,
@@ -23,6 +30,7 @@ export default function ConfigTransferDialog({
 }) {
   const { sensorTxIds, sourceTxIds, hubTxIds, unknownTxIds } = useTxIds();
   const deviceMeta = useDeviceStore((s) => s.deviceMeta);
+  const { sdk } = useAmfitrack();
 
   const allIds = useMemo(
     () => [...sensorTxIds, ...sourceTxIds, ...hubTxIds, ...unknownTxIds],
@@ -30,6 +38,12 @@ export default function ConfigTransferDialog({
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [exportProgress, setExportProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+
+  const isExporting = exportProgress !== null;
 
   function toggleAll(checked: boolean) {
     setSelectedIds(checked ? new Set(allIds) : new Set());
@@ -42,6 +56,51 @@ export default function ConfigTransferDialog({
       return next;
     });
   }
+
+  const handleDownload = useCallback(
+    async (txIds: number[]) => {
+      if (!sdk || txIds.length === 0) return;
+
+      setExportProgress({ current: 0, total: txIds.length });
+
+      try {
+        const devices: DeviceExportData[] = [];
+
+        for (let i = 0; i < txIds.length; i++) {
+          const txId = txIds[i];
+          const meta = deviceMeta[txId];
+
+          const configs = await sdk.getAllDeviceConfigurations(txId);
+
+          devices.push({
+            uuid: meta?.uuid ?? "unknown",
+            firmware: meta?.versions?.firmware ?? "unknown",
+            rfFirmware: meta?.versions?.RF ?? "unknown",
+            hardware: meta?.versions?.hardware ?? "unknown",
+            name: meta?.kind ?? "unknown",
+            parameters: configs.flatMap((c) => c.parameters),
+          });
+
+          setExportProgress({ current: i + 1, total: txIds.length });
+        }
+
+        const csv = configurationsToCSV(devices);
+        const timestamp = new Date()
+          .toISOString()
+          .slice(0, 10)
+          .replace(/[T:]/g, "-");
+        downloadCSV(csv, `amfitrack-${timestamp}.config.csv`);
+        toast.success("Configurations exported successfully");
+      } catch (err) {
+        toast.error("Export failed", {
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      } finally {
+        setExportProgress(null);
+      }
+    },
+    [sdk, deviceMeta],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,10 +132,23 @@ export default function ConfigTransferDialog({
           onToggleRow={toggleRow}
         />
 
-        <div className="flex justify-end pt-2 mt-auto">
-          <Button className="leading-0" disabled={selectedIds.size === 0}>
-            <Download className="h-4 w-4" />
-            Export Configurations
+        <div className="flex justify-end pt-2">
+          <Button
+            className="leading-0"
+            disabled={selectedIds.size === 0 || isExporting}
+            onClick={() => handleDownload(Array.from(selectedIds))}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Exporting {exportProgress.current}/{exportProgress.total}...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Export Configurations
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>

@@ -37,8 +37,10 @@ export default function DeviceTableRow({
       <TableCell className="text-sm">
         {meta ? formatUplink(meta.uplink) : "—"}
       </TableCell>
-      <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[160px]">
-        {meta?.uuid ?? "—"}
+      <TableCell className="font-mono text-xs text-muted-foreground max-w-[160px]">
+        <span className="block truncate" title={meta?.uuid}>
+          {meta?.uuid ?? "—"}
+        </span>
       </TableCell>
       <TableCell className="text-sm">
         {meta?.versions?.firmware ?? "—"}
