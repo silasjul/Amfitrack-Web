@@ -34,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={`${interSans.variable} ${robotoMono.variable} h-full dark`}
     >
-      <body className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased">
+      <body className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased" suppressHydrationWarning>
         <Providers>
           <Sidebar>{children}</Sidebar>
           <PendingChangesBar />

@@ -11,7 +11,7 @@ export default function Footer() {
   return (
     <Card
       size="sm"
-      className="border-sidebar-border bg-sidebar-accent shadow-sm"
+      className="border-sidebar-border bg-sidebar-accent shadow-sm m-2"
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-1 leading-none">

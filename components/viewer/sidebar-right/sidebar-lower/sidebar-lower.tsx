@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import InspectTab from "./inspector-tab/InspectTab";
-import RecordTab from "./RecordTab";
 import Viewtab from "./Viewtab";
 
 type Tab = {
@@ -29,7 +28,6 @@ const tabs: Tab[] = [
     content: <InspectTab />,
   },
   { id: "view", label: "View", icon: Palette, content: <Viewtab /> },
-  { id: "record", label: "Record", icon: Video, content: <RecordTab /> },
 ];
 
 export default function SidebarLower() {

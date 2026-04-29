@@ -117,7 +117,7 @@ function SensorInspector({
 
   return (
     <div className="flex flex-col">
-      <DetailHeader label={`Sensor ${id}`} imageSrc="/sensor.png" />
+      <DetailHeader label={`SENSOR_${id}`} />
       <div className="px-3 py-3 space-y-4">
         <Section title="Position">
           <div className="grid grid-cols-3 gap-1.5">
@@ -240,7 +240,7 @@ function SourceInspector({
 
   return (
     <div className="flex flex-col">
-      <DetailHeader label={`Source ${id}`} imageSrc="/source.png" />
+      <DetailHeader label={`SOURCE_${id}`} />
       <div className="px-3 py-3 space-y-4">
         {measurement ? (
           <>
@@ -370,7 +370,7 @@ function HubInspector({
 }) {
   return (
     <div className="flex flex-col min-h-full">
-      <DetailHeader label={`Hub ${id}`} imageSrc="/hub.png" />
+      <DetailHeader label={`HUB_${id}`} />
       {(versions || uuid) && (
         <div className="px-3 py-3">
           <SpecificationsSection versions={versions} uuid={uuid} />
@@ -396,7 +396,7 @@ function UnknownInspector({
 }) {
   return (
     <div className="flex flex-col min-h-full">
-      <DetailHeader label={`Unknown ${id}`} />
+      <DetailHeader label={`UNKNOWN_${id}`} />
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
         <div className="size-10 rounded-full bg-zinc-500/10 flex items-center justify-center">
           <CircleHelp className="size-5 text-zinc-400" />
@@ -421,32 +421,12 @@ function UnknownInspector({
 // Shared components
 // ---------------------------------------------------------------------------
 
-function DetailHeader({
-  label,
-  imageSrc,
-}: {
-  label: string;
-  imageSrc?: string;
-}) {
+function DetailHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/30 shrink-0">
+    <div className="flex items-center justify-between px-3 pt-4 pb-2 border-b border-sidebar-border/30 shrink-0">
       <span className="text-xs font-semibold text-sidebar-foreground">
         {label}
       </span>
-      {imageSrc && (
-        <Badge
-          variant="link"
-          className="relative h-9 w-9 shrink-0 overflow-hidden"
-        >
-          <Image
-            src={imageSrc}
-            alt="device_icon"
-            fill
-            className="object-contain object-center p-0.5 brightness-150"
-            sizes="40px"
-          />
-        </Badge>
-      )}
     </div>
   );
 }

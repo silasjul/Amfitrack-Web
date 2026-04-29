@@ -43,14 +43,14 @@ export type MainNavContentData = typeof data.navMain;
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
-      <SidebarHeader>
+      <SidebarHeader >
         <Header />
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <MainNavContent navMain={data.navMain} />
         <TransportItems />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="p-0 gap-0">
         <NavSecondary />
         <Footer />
       </SidebarFooter>

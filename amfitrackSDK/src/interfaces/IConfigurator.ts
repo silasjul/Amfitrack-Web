@@ -22,6 +22,7 @@ export interface SetParameterOptions {
 
 export interface IConfigurator {
   getConfiguration(device: DeviceOrTxId): Promise<Configuration[]>;
+  getAllDeviceConfigurations(device: DeviceOrTxId): Promise<Configuration[]>;
   getDeviceName(device: DeviceOrTxId): Promise<string>;
   getParameter(
     device: DeviceOrTxId,

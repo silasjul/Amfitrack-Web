@@ -66,6 +66,39 @@ export class Configurator implements IConfigurator {
     return config;
   }
 
+  public async getAllDeviceConfigurations(
+    device: DeviceOrTxId,
+  ): Promise<Configuration[]> {
+    const ALL_COUNT_CATEGORY = 254;
+    const ALL_NAME_CATEGORY = 255;
+
+    const parameterCount = await this.getParameterCount(
+      device,
+      ALL_COUNT_CATEGORY,
+    );
+
+    const parameters: Parameter[] = [];
+    for (let pIdx = 0; pIdx < parameterCount; pIdx++) {
+      const { name, uid } = await this.getParameterNameAndUid(
+        device,
+        ALL_NAME_CATEGORY,
+        pIdx,
+      );
+
+      let value: ParameterValue;
+      try {
+        ({ value } = await this.getParameterValueAndDataType(device, uid));
+      } catch {
+        await new Promise((r) => setTimeout(r, 30));
+        ({ value } = await this.getParameterValueAndDataType(device, uid));
+      }
+
+      parameters.push({ name, uid, value });
+    }
+
+    return [{ name: "ALL TABS", parameters }];
+  }
+
   public async getVersions(
     device: DeviceOrTxId,
   ): Promise<{ firmware: string; hardware: string; RF: string }> {
