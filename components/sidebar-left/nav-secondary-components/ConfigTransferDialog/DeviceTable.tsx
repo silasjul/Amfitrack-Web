@@ -30,7 +30,7 @@ export default function DeviceTable({
   const someSelected = selectedIds.size > 0 && selectedIds.size < allIds.length;
 
   return (
-    <ScrollArea className="rounded-md border">
+    <ScrollArea className="h-full min-h-0 rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>

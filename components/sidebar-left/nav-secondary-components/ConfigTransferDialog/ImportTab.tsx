@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ImportFileUpload from "@/components/file-upload-dropzone-1";
 import ImportDeviceRow from "./ImportDeviceRow";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, RefreshCcw, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDeviceStore } from "@/amfitrackSDK";
 import useTxIds from "@/hooks/useTxIds";
@@ -58,9 +59,7 @@ export default function ImportTab() {
         for (const txId of allTxIds) {
           const deviceUuid = deviceMeta[txId]?.uuid;
           if (!deviceUuid) continue;
-          const matchIdx = parsed.findIndex(
-            (c) => c.uuid === deviceUuid,
-          );
+          const matchIdx = parsed.findIndex((c) => c.uuid === deviceUuid);
           if (matchIdx !== -1) {
             initial[txId] = String(matchIdx);
           }
@@ -111,6 +110,7 @@ export default function ImportTab() {
   const handleApply = useCallback(async () => {
     const assignments = new Map<number, DeviceExportData>();
     for (const [txIdStr, configIdx] of Object.entries(selections)) {
+      if (configIdx === "") continue;
       const idx = Number(configIdx);
       if (Number.isNaN(idx) || !configs[idx]) continue;
       assignments.set(Number(txIdStr), configs[idx]);
@@ -125,13 +125,10 @@ export default function ImportTab() {
       : 0;
 
   return (
-    <TabsContent value="Import">
-      <div className="flex flex-col gap-4">
+    <TabsContent value="Import" className="flex min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
         {phase === "idle" && (
-          <ImportFileUpload
-            accept=".csv"
-            onFileAccepted={handleFileAccepted}
-          />
+          <ImportFileUpload accept=".csv" onFileAccepted={handleFileAccepted} />
         )}
 
         {phase === "decoding" && (
@@ -145,10 +142,7 @@ export default function ImportTab() {
 
         {phase === "ready" && (
           <>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {configs.length} config(s) loaded — assign to connected devices
-              </p>
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -158,50 +152,64 @@ export default function ImportTab() {
                   setSelections({});
                 }}
                 disabled={isImporting}
+                className="-ml-2 leading-0"
               >
-                <Upload className="h-4 w-4 mr-1" />
-                New file
+                <X className="h-4 w-4" />
+                Change file
               </Button>
+              <span className="text-sm text-muted-foreground">
+                Assign loaded configs — {" "}
+                {configs.map((c, i) => (
+                  <span key={i}>
+                    <Badge variant="secondary" className="font-normal">
+                      {c.name || "Unnamed"}
+                    </Badge>
+                    {i < configs.length - 1 ? " " : ""}
+                  </span>
+                ))}
+              </span>
             </div>
 
-            <ScrollArea className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>TX ID</TableHead>
-                    <TableHead>Kind</TableHead>
-                    <TableHead>UUID</TableHead>
-                    <TableHead>Config</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allTxIds.length === 0 ? (
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ScrollArea className="h-full min-h-0 rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-center text-muted-foreground py-10"
-                      >
-                        No devices connected
-                      </TableCell>
+                      <TableHead>TX ID</TableHead>
+                      <TableHead>Kind</TableHead>
+                      <TableHead>UUID</TableHead>
+                      <TableHead>Config</TableHead>
                     </TableRow>
-                  ) : (
-                    allTxIds.map((txId) => (
-                      <ImportDeviceRow
-                        key={txId}
-                        txId={txId}
-                        meta={deviceMeta[txId]}
-                        configs={configs}
-                        selectedConfigIndex={selections[txId]}
-                        onSelectConfig={handleSelectConfig}
-                        disabled={isImporting}
-                      />
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+                  </TableHeader>
+                  <TableBody>
+                    {allTxIds.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-center text-muted-foreground py-10"
+                        >
+                          No devices connected
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      allTxIds.map((txId) => (
+                        <ImportDeviceRow
+                          key={txId}
+                          txId={txId}
+                          meta={deviceMeta[txId]}
+                          configs={configs}
+                          selectedConfigIndex={selections[txId]}
+                          onSelectConfig={handleSelectConfig}
+                          disabled={isImporting}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
 
-            <div className="flex flex-col gap-3 pt-2">
+            <div className="flex shrink-0 flex-col gap-3 pt-2">
               {isImporting && progress && (
                 <div className="flex flex-col gap-1.5">
                   <Progress value={progressPercent} className="h-2" />
@@ -220,7 +228,7 @@ export default function ImportTab() {
                   {isImporting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Importing {progress?.current}/{progress?.total}…
+                      Applying Configurations…
                     </>
                   ) : (
                     <>

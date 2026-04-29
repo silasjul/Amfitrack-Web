@@ -31,18 +31,20 @@ export default function ExportTab() {
   );
 
   return (
-    <TabsContent value="Export">
-      <div className="flex flex-col gap-4 transition-[filter] duration-200">
-        <DeviceTable
-          allIds={allTxIds}
-          deviceMeta={deviceMeta}
-          selectedIds={selectedIds}
-          onToggleAll={toggleAll}
-          onToggleRow={toggleRow}
-        />
-        <div className="flex justify-end pt-2">
+    <TabsContent value="Export" className="flex min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 transition-[filter] duration-200">
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <DeviceTable
+            allIds={allTxIds}
+            deviceMeta={deviceMeta}
+            selectedIds={selectedIds}
+            onToggleAll={toggleAll}
+            onToggleRow={toggleRow}
+          />
+        </div>
+        <div className="flex shrink-0 justify-end pt-2">
           <Button
-            className="leading-0"
+            className="leading-0 flex"
             disabled={selectedIds.size === 0 || isExporting}
             onClick={() => handleDownload(Array.from(selectedIds))}
           >

@@ -22,7 +22,7 @@ export default function ConfigTransferDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-5xl flex flex-col overflow-hidden"
+        className="sm:max-w-5xl min-h-[40vh] flex flex-col overflow-hidden"
       >
         <Header />
         <Tabs

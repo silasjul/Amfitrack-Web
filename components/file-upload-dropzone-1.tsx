@@ -43,14 +43,14 @@ export default function ImportFileUpload({
       maxFiles={1}
       maxSize={1 * 1024 * 1024}
       accept={accept}
-      className="w-full flex-1"
+      className="w-full flex-1 h-full"
       value={files}
       onValueChange={handleValueChange}
       onFileReject={onFileReject}
     >
-      <FileUploadDropzone>
+      <FileUploadDropzone className="h-full w-full flex-1">
         <div className="flex flex-col items-center gap-1 text-center">
-          <div className="flex items-center justify-center rounded-full border p-2.5">
+          <div className="flex items-center justify-center rounded-full border p-2.5 h-full">
             <Upload className="size-6 text-muted-foreground" />
           </div>
           <p className="text-sm font-medium">Drag & drop config here</p>
