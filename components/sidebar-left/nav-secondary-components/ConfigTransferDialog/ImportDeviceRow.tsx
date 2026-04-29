@@ -45,13 +45,18 @@ export default function ImportDeviceRow({
       <TableCell>
         <Select
           value={selectedConfigIndex ?? ""}
-          onValueChange={(v) => onSelectConfig(txId, v)}
+          onValueChange={(v) =>
+            onSelectConfig(txId, v === "__clear__" ? "" : v)
+          }
           disabled={disabled}
         >
           <SelectTrigger size="sm" className="w-[200px]">
             <SelectValue placeholder="Select config…" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__clear__" className="text-muted-foreground">
+              None
+            </SelectItem>
             {configs.map((cfg, i) => (
               <SelectItem key={i} value={String(i)}>
                 {cfg.name} ({truncateUuid(cfg.uuid)})

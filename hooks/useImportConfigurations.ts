@@ -58,7 +58,11 @@ export function useImportConfigurations() {
             }
 
             try {
-              const result = await sdk.setParam(currentTxId, param.uid, param.value);
+              const result = await sdk.setParam(
+                currentTxId,
+                param.uid,
+                param.value,
+              );
 
               const activeTxId = result.txIdChanged ?? currentTxId;
               useDeviceStore.getState().pingDevice(activeTxId);
@@ -71,6 +75,9 @@ export function useImportConfigurations() {
                 `Import: failed ${param.name} (uid ${param.uid}) on device ${currentTxId}:`,
                 err,
               );
+              toast.error(`Import failed: ${param.name}`, {
+                description: `UID ${param.uid} on device ${currentTxId}. ${err instanceof Error ? err.message : "Unknown error"}`,
+              });
               skippedDevices.add(origTxId);
               failedDevices.push(origTxId);
               done++;
@@ -87,7 +94,7 @@ export function useImportConfigurations() {
           toast.success("Configurations applied successfully");
         } else {
           toast.error(`Import failed for ${failedDevices.length} device(s)`, {
-            description: `Device(s) ${failedDevices.join(", ")} failed or disconnected. Other devices were applied successfully.`,
+            description: `Device(s) ${failedDevices.join(", ")} failed or disconnected.`,
           });
         }
       } catch (err) {

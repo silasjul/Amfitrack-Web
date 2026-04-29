@@ -97,7 +97,13 @@ export default function ImportTab() {
 
   const handleSelectConfig = useCallback(
     (txId: number, configIndex: string) => {
-      setSelections((prev) => ({ ...prev, [txId]: configIndex }));
+      setSelections((prev) => {
+        if (configIndex === "") {
+          const { [txId]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [txId]: configIndex };
+      });
     },
     [],
   );
