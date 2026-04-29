@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import type { DeviceMeta } from "@/amfitrackSDK/src/interfaces/IStore";
-import { formatUplink } from "./utils";
+import { formatUplink } from "../../../../lib/csv";
 
 interface DeviceTableRowProps {
   id: number;

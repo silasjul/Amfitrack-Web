@@ -9,14 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Download, Loader2 } from "lucide-react";
 import useTxIds from "@/hooks/useTxIds";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
 import { useAmfitrack } from "@/amfitrackSDK";
 import DeviceTable from "./DeviceTable";
-import { useExport } from "./useExport";
-import { useFileDragDrop } from "./useFileDragDrop";
+import { useExport } from "@/hooks/useExport";
+import { useFileDragDrop } from "@/hooks/useFileDragDrop";
+import DropOverlay from "./DropOverlay";
 
 export default function ConfigTransferDialog({
   open,
@@ -48,7 +48,10 @@ export default function ConfigTransferDialog({
     });
   }
 
-  const { exportProgress, isExporting, handleDownload } = useExport(sdk, deviceMeta);
+  const { exportProgress, isExporting, handleDownload } = useExport(
+    sdk,
+    deviceMeta,
+  );
   const { isDragging, onDialogDrop } = useFileDragDrop(open);
 
   return (
@@ -106,7 +109,7 @@ function Header() {
         <div className="flex flex-col gap-1">
           <DialogTitle>Config Transfer</DialogTitle>
           <DialogDescription>
-            Export or import configurations between devices.
+            Export or import device configurations from Amfitrack products.
           </DialogDescription>
         </div>
         <Button className="leading-0" variant="outline" size="sm">
@@ -115,17 +118,5 @@ function Header() {
         </Button>
       </div>
     </DialogHeader>
-  );
-}
-
-function DropOverlay() {
-  return (
-    <Card className="border-dashed border-2 border-primary absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-background/60">
-      <CardHeader className="items-center">
-        <Upload className="h-10 w-10 text-primary" />
-        <CardTitle>Drop CSV to import</CardTitle>
-        <CardDescription>Release to import configuration file</CardDescription>
-      </CardHeader>
-    </Card>
   );
 }

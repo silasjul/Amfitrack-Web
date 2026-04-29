@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import type { AmfitrackSDK } from "@/amfitrackSDK";
 import type { DeviceMeta } from "@/amfitrackSDK/src/interfaces/IStore";
-import { configurationsToCSV, downloadCSV, type DeviceExportData } from "./utils";
+import { configurationsToCSV, downloadCSV, type DeviceExportData } from "../lib/csv";
 
 const KIND_ORDER: Record<string, number> = {
   sensor: 0,
