@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import ImportFileUpload from "@/components/file-upload-dropzone-1";
 import ImportDeviceRow from "./ImportDeviceRow";
 import { Loader2, Upload } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDeviceStore } from "@/amfitrackSDK";
 import useTxIds from "@/hooks/useTxIds";
 import { parseConfigCSV, type DeviceExportData } from "@/lib/csv";
@@ -33,8 +33,12 @@ export default function ImportTab() {
   const { isImporting, progress, applyConfigurations } =
     useImportConfigurations();
 
+  const processingRef = useRef(false);
+
   const handleFileAccepted = useCallback(
     async (file: File) => {
+      if (processingRef.current) return;
+      processingRef.current = true;
       setPhase("decoding");
       try {
         const text = await file.text();
@@ -44,6 +48,7 @@ export default function ImportTab() {
             description: "No device configurations found in the file.",
           });
           setPhase("idle");
+          processingRef.current = false;
           return;
         }
 
@@ -65,6 +70,8 @@ export default function ImportTab() {
       } catch {
         toast.error("Failed to read config file");
         setPhase("idle");
+      } finally {
+        processingRef.current = false;
       }
     },
     [allTxIds, deviceMeta],
@@ -87,7 +94,6 @@ export default function ImportTab() {
     }
     setSelections(updated);
     // Only re-run when the connected device list changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allTxIds]);
 
   const handleSelectConfig = useCallback(

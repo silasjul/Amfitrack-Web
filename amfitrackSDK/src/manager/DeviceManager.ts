@@ -176,10 +176,12 @@ export class DeviceManager implements IDeviceManager {
         this.configurator.getVersions(deviceTxId),
         this.configurator.getDeviceUUID(deviceTxId).catch(() => undefined),
       ]);
+      // if (uuid) console.log(`uuid ID_${deviceTxId}`, uuid);
       console.log(`configuration ID_${deviceTxId}`, configuration);
-      console.log(`versions ID_${deviceTxId}`, versions);
-      if (uuid) console.log(`uuid ID_${deviceTxId}`, uuid);
-      this.store.getState().updateDeviceInfo(deviceTxId, configuration, versions, uuid);
+      // console.log(`versions ID_${deviceTxId}`, versions);
+      this.store
+        .getState()
+        .updateDeviceInfo(deviceTxId, configuration, versions, uuid);
     } catch (err) {
       console.error(`Failed to refresh device info for ${deviceTxId}`, err);
     }
@@ -285,8 +287,8 @@ export class DeviceManager implements IDeviceManager {
       const txId = this.configurator.extractDeviceId(configuration);
       console.log(`configuration ID_${txId} (${kind})`, configuration);
       if (txId === null) return;
-      console.log(`versions ID_${txId}`, versions);
-      if (uuid) console.log(`uuid ID_${txId}`, uuid);
+      // console.log(`versions ID_${txId}`, versions);
+      // if (uuid) console.log(`uuid ID_${txId}`, uuid);
 
       this.store
         .getState()
@@ -304,7 +306,7 @@ export class DeviceManager implements IDeviceManager {
         `Could not resolve device config for temp ID ${temporaryTxId} — ` +
           `streaming data will still flow.`,
         err,
-      );  
+      );
     } finally {
       this.flushPendingConfigs();
     }

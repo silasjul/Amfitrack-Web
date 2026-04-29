@@ -135,6 +135,14 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       );
       const newTxId = confirmed as number;
 
+      if (newTxId === deviceID) {
+        // Value unchanged — nothing to remap / tombstone.
+        this.store
+          .getState()
+          .updateParameterValue(deviceID, paramUID, confirmed);
+        return { value: confirmed };
+      }
+
       // Tombstone the old ID for 3 seconds so straggler packets that still
       // carry the old TX ID don't resurrect a ghost entry in the store.
       this.deviceManager.retireTxId(kind, deviceID, 3000);
@@ -160,8 +168,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       }
 
       this.store.getState().updateParameterValue(newTxId, paramUID, confirmed);
-      // Background refresh — the config tree itself hasn't changed, so we
-      // don't need to block the caller waiting for it.
+
       this.deviceManager.updateDeviceConfig(newTxId);
 
       return { value: confirmed, txIdChanged: newTxId };
@@ -173,9 +180,9 @@ export class AmfitrackSDK implements IAmfitrackSDK {
         paramUID,
         value,
       );
-      // Config mode changes can add/remove parameter categories, so we need
-      // to refresh the whole configuration tree.
+
       await this.deviceManager.updateDeviceConfig(deviceID);
+
       return { value: confirmed, configInvalidated: true };
     }
 

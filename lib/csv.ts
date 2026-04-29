@@ -158,7 +158,12 @@ export function parseConfigCSV(csv: string): DeviceExportData[] {
   const metaRows = lines.slice(0, META_ROW_COUNT).map(splitCsvRow);
   const paramRows = lines.slice(META_ROW_COUNT).map(splitCsvRow);
 
-  const deviceCount = metaRows[0].length - 2;
+  const firstRow = metaRows[0];
+  let lastNonEmpty = firstRow.length - 1;
+  while (lastNonEmpty >= 2 && firstRow[lastNonEmpty].trim() === "") {
+    lastNonEmpty--;
+  }
+  const deviceCount = lastNonEmpty - 1;
   if (deviceCount <= 0) return [];
 
   const devices: DeviceExportData[] = [];
