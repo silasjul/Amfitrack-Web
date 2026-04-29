@@ -110,6 +110,87 @@ function csvRow(label: string, id: number, values: string[]): string {
   return [label, id, ...values, ""].join(DELIMITER);
 }
 
+function parseValue(raw: string): ParameterValue {
+  if (raw === "True") return true;
+  if (raw === "False") return false;
+  const num = Number(raw);
+  if (raw !== "" && !Number.isNaN(num)) return num;
+  return raw;
+}
+
+function splitCsvRow(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        current += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === DELIMITER) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current);
+  return cells;
+}
+
+const META_ROW_COUNT = 5;
+
+export function parseConfigCSV(csv: string): DeviceExportData[] {
+  const content = csv.startsWith(UTF8_BOM) ? csv.slice(1) : csv;
+  const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+
+  if (lines.length < META_ROW_COUNT) return [];
+
+  const metaRows = lines.slice(0, META_ROW_COUNT).map(splitCsvRow);
+  const paramRows = lines.slice(META_ROW_COUNT).map(splitCsvRow);
+
+  const deviceCount = metaRows[0].length - 2;
+  if (deviceCount <= 0) return [];
+
+  const devices: DeviceExportData[] = [];
+
+  for (let di = 0; di < deviceCount; di++) {
+    const col = di + 2;
+    const uuidRaw = metaRows[0][col] ?? "";
+    devices.push({
+      uuid: uuidRaw.startsWith("#") ? uuidRaw.slice(1) : uuidRaw,
+      name: metaRows[1][col] ?? "unknown",
+      firmware: metaRows[2][col] ?? "unknown",
+      rfFirmware: metaRows[3][col] ?? "unknown",
+      hardware: metaRows[4][col] ?? "unknown",
+      parameters: [],
+    });
+  }
+
+  for (const row of paramRows) {
+    const name = row[0] ?? "";
+    const uid = Number(row[1]);
+    if (!name || Number.isNaN(uid)) continue;
+
+    for (let di = 0; di < deviceCount; di++) {
+      const raw = row[di + 2];
+      if (raw === undefined || raw === "NA" || raw.trim() === "") continue;
+      devices[di].parameters.push({ name, uid, value: parseValue(raw) });
+    }
+  }
+
+  return devices;
+}
+
 export function downloadCSV(csv: string, filename: string): void {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

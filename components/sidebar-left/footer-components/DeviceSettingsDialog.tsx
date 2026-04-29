@@ -75,7 +75,7 @@ export default function DeviceSettingsDialog({
         ) : (
           <Tabs
             defaultValue={defaultTab}
-            className="flex-1 min-h-0 flex flex-col"
+            className="flex-1 min-h-0 flex flex-col gap-3"
           >
             <TabsList className="w-full shrink-0 h-10">
               {configuration.map((category) => (
@@ -90,9 +90,9 @@ export default function DeviceSettingsDialog({
                 <TabsContent
                   key={category.name}
                   value={category.name}
-                  className="mt-0 p-1"
+                  className="mt-0"
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
                     {category.parameters.map((param) => (
                       <ParameterCard
                         key={`${param.uid}-${param.value}`}

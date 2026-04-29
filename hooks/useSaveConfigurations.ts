@@ -10,12 +10,8 @@ export function useSaveConfigurations() {
   const [saving, setSaving] = useState(false);
 
   const save = useCallback(async () => {
-    const {
-      pending,
-      removePending,
-      removePendingForDevice,
-      remapDeviceTxId,
-    } = usePendingConfigStore.getState();
+    const { pending, removePending, removePendingForDevice, remapDeviceTxId } =
+      usePendingConfigStore.getState();
 
     if (!sdk || pending.length === 0) return;
     setSaving(true);
