@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "@/components/sidebar-left/sidebar";
 import Providers from "./providers";
 import PendingChangesBar from "@/components/PendingChangesBar";
+import FloatingRecordingBar from "@/components/recording/FloatingRecordingBar";
 import { Toaster } from "@/components/ui/sonner";
 
 const interSans = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Providers>
           <Sidebar>{children}</Sidebar>
           <PendingChangesBar />
+          <FloatingRecordingBar />
           <Toaster />
         </Providers>
       </body>

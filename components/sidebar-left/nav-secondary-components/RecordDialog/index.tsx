@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useRecordingStore } from "@/stores/useRecordingStore";
 import RecordingTable from "./RecordingTable";
 
 export default function RecordDialog({
@@ -21,6 +22,7 @@ export default function RecordDialog({
 }) {
   const [selection, setSelection] = useState<Record<number, string[]>>({});
   const hasSelection = Object.values(selection).some((s) => s.length > 0);
+  const startRecording = useRecordingStore((s) => s.startRecording);
 
   const handleToggle = useCallback((txId: number, section: string) => {
     setSelection((prev) => {
@@ -32,12 +34,14 @@ export default function RecordDialog({
     });
   }, []);
 
-  const handleSetSections = useCallback(
-    (txId: number, sections: string[]) => {
-      setSelection((prev) => ({ ...prev, [txId]: sections }));
-    },
-    [],
-  );
+  const handleSetSections = useCallback((txId: number, sections: string[]) => {
+    setSelection((prev) => ({ ...prev, [txId]: sections }));
+  }, []);
+
+  const handleStart = useCallback(() => {
+    startRecording(selection);
+    onOpenChange(false);
+  }, [selection, startRecording, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +61,9 @@ export default function RecordDialog({
           />
         </div>
         <DialogFooter>
-          <Button disabled={!hasSelection}>Start Recording</Button>
+          <Button disabled={!hasSelection} onClick={handleStart}>
+            Start Recording
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

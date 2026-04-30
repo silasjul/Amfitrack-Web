@@ -9,14 +9,18 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { cn } from "@/lib/utils";
 import SidebarUpper from "./sidebar-upper/sidebar-upper";
 import SidebarLower from "./sidebar-lower/sidebar-lower";
+import { SidebarOverlay } from "@/components/recording/SidebarOverlay";
 
 export function AppSidebar({
+  className,
   ...props
 }: React.ComponentProps<typeof RightSidebar>) {
   return (
-    <RightSidebar {...props} className="font-roboto-mono">
+    <RightSidebar {...props}>
+      <SidebarOverlay side="right" />
       <SidebarContent className="gap-0 bg-black/30">
         <ResizablePanelGroup
           orientation="vertical"
