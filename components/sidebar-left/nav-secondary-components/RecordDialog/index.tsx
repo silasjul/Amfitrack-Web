@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import DeviceCards from "./DeviceCards";
 
 export default function RecordDialog({
   open,
@@ -20,11 +21,14 @@ export default function RecordDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[75vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Record/Logging</DialogTitle>
+          <DialogTitle>New Recording Session</DialogTitle>
           <DialogDescription>
-            Record or log data from selected device(s).
+            Start a new recording session to capture data from your devices.
           </DialogDescription>
         </DialogHeader>
+        <div className="flex-1 flex flex-col">
+          <DeviceCards />
+        </div>
       </DialogContent>
     </Dialog>
   );

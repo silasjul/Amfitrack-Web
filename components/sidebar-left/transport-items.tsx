@@ -26,12 +26,7 @@ import type {
 } from "@/amfitrackSDK/src/interfaces/IStore";
 import DeviceSettingsDialog from "@/components/sidebar-left/footer-components/DeviceSettingsDialog";
 import useTxIds from "@/hooks/useTxIds";
-
-export const KIND_IMAGE: Partial<Record<DeviceKind, string>> = {
-  hub: "/hub.png",
-  source: "/source.png",
-  sensor: "/sensor.png",
-};
+import { KindIconMap } from "@/lib/utils";
 
 export default function TransportItems() {
   const { BLETxIds, USBTxIds } = useTxIds();
@@ -158,10 +153,10 @@ function Label(kind: DeviceKind) {
 }
 
 export function DeviceIcon({ kind }: { kind: DeviceKind }) {
-  return kind !== "unknown" && KIND_IMAGE[kind] ? (
+  return kind !== "unknown" && KindIconMap[kind] ? (
     <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-md">
       <Image
-        src={KIND_IMAGE[kind]}
+        src={KindIconMap[kind]}
         alt={kind}
         width={16}
         height={16}
