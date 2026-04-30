@@ -15,6 +15,7 @@ export default function Viewer() {
     <div className="h-full w-full">
       {/* <Leva collapsed /> */}
       <Canvas
+        frameloop="demand"
         camera={{
           position: [
             -1.3 * cameraStartScale,
