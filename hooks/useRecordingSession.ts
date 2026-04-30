@@ -1,14 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
 import { useRecordingStore } from "@/stores/useRecordingStore";
 import { downloadCSV } from "@/lib/csv";
-import {
-  extractSectionFields,
-  framesToCSV,
-  type RecordingFrame,
-} from "@/lib/recordingCsv";
+import { extractSectionFields, framesToCSV } from "@/lib/recordingCsv";
+import { recordingSession } from "@/lib/recordingEmitter";
 
 const MEAS_SECTIONS = new Set([
   "accelerometer",
@@ -24,18 +21,16 @@ export function useRecordingSession() {
   const isPaused = useRecordingStore((s) => s.isPaused);
   const selection = useRecordingStore((s) => s.selection);
 
-  const framesRef = useRef<RecordingFrame[]>([]);
-
-  // Clear accumulated frames whenever a new recording starts
+  // Clear frame buffer whenever a new recording starts
   useEffect(() => {
-    if (isRecording) framesRef.current = [];
+    if (isRecording) recordingSession.clear();
   }, [isRecording]);
 
-  // Subscribe to the device store while actively recording (not paused)
+  // Subscribe to device store while actively recording (not paused)
   useEffect(() => {
     if (!isRecording || isPaused) return;
 
-    const unsubscribe = useDeviceStore.subscribe((state, prev) => {
+    return useDeviceStore.subscribe((state, prev) => {
       const { deviceMeta, emfImuFrameId, sourceMeasurement, sourceCalibration } =
         state;
 
@@ -51,7 +46,7 @@ export function useRecordingSession() {
         if (kind === "sensor") {
           const curr = emfImuFrameId[txId];
           if (curr && curr !== prev.emfImuFrameId[txId]) {
-            framesRef.current.push({
+            recordingSession.push({
               timestamp: Date.now(),
               deviceKey,
               frameId: curr.frameId,
@@ -64,7 +59,7 @@ export function useRecordingSession() {
           if (hasMeasSection) {
             const curr = sourceMeasurement[txId];
             if (curr && curr !== prev.sourceMeasurement[txId]) {
-              framesRef.current.push({
+              recordingSession.push({
                 timestamp: Date.now(),
                 deviceKey,
                 frameId: curr.frameId,
@@ -76,7 +71,7 @@ export function useRecordingSession() {
           if (sections.includes("calibration")) {
             const curr = sourceCalibration[txId];
             if (curr && curr !== prev.sourceCalibration[txId]) {
-              framesRef.current.push({
+              recordingSession.push({
                 timestamp: Date.now(),
                 deviceKey: `${deviceKey}_cal`,
                 frameId: 0,
@@ -93,12 +88,10 @@ export function useRecordingSession() {
         }
       }
     });
-
-    return unsubscribe;
   }, [isRecording, isPaused, selection]);
 
   const downloadRecording = useCallback(() => {
-    const frames = framesRef.current;
+    const frames = recordingSession.getFrames();
     if (frames.length === 0) return;
 
     const deviceMeta = useDeviceStore.getState().deviceMeta;
