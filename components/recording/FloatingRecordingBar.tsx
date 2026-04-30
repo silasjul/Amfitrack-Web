@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { BarChart2, Download, Pause, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRecordingStore } from "@/stores/useRecordingStore";
+import { useRecordingSession } from "@/hooks/useRecordingSession";
 import { cn } from "@/lib/utils";
 import RecordingTimer from "./RecordingTimer";
 import RecordingChartDialog from "./RecordingChartDialog";
@@ -17,6 +18,7 @@ export default function FloatingRecordingBar() {
   const pauseRecording = useRecordingStore((s) => s.pauseRecording);
   const resumeRecording = useRecordingStore((s) => s.resumeRecording);
   const stopRecording = useRecordingStore((s) => s.stopRecording);
+  const { downloadRecording } = useRecordingSession();
   const [mounted, setMounted] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
 
@@ -60,7 +62,7 @@ export default function FloatingRecordingBar() {
             variant="ghost"
             size="icon"
             className="size-8"
-            onClick={() => setChartOpen(true)}
+            onClick={() => setChartOpen(!chartOpen)}
             title="View chart"
           >
             <BarChart2 className="size-4" />
@@ -71,7 +73,8 @@ export default function FloatingRecordingBar() {
             size="icon"
             className="size-8"
             disabled={!isPaused}
-            title="Download"
+            onClick={downloadRecording}
+            title="Download CSV"
           >
             <Download className="size-4" />
           </Button>
