@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FLOATING_RECORDING_BAR_ATTR } from "./FloatingRecordingBar";
 
 export default function RecordingChartDialog({
   open,
@@ -17,7 +18,14 @@ export default function RecordingChartDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent
+        className="sm:max-w-2xl"
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest(`[${FLOATING_RECORDING_BAR_ATTR}]`))
+            e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Recording Data</DialogTitle>
           <DialogDescription>Live chart will appear here.</DialogDescription>

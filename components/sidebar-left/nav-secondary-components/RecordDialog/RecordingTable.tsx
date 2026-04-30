@@ -73,7 +73,7 @@ export default function RecordingTable({
   if (allTxIds.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center rounded-lg border border-dashed">
-        <p className="text-sm text-muted-foreground">No devices connected.</p>
+        <p className="text-sm text-muted-foreground">No devices avalible for recording.</p>
       </div>
     );
   }
@@ -111,154 +111,157 @@ export default function RecordingTable({
   };
 
   return (
-    <ScrollAreaPrimitive.Root type="always" className="flex-1 relative overflow-hidden rounded-lg border">
+    <ScrollAreaPrimitive.Root
+      type="always"
+      className="flex-1 relative overflow-hidden rounded-lg border"
+    >
       <ScrollAreaPrimitive.Viewport className="size-full rounded-[inherit]">
-      <table className="w-full caption-bottom text-sm">
-        <thead className="sticky top-0 z-10 bg-background [&_tr]:border-b">
-          {/* Group label row */}
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="border-r" />
-            {hasSensors && (
-              <TableHead
-                colSpan={SENSOR_ONLY.length}
-                className="border-r bg-muted/40 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                Sensor
-              </TableHead>
-            )}
-            <TableHead
-              colSpan={SHARED.length}
-              className={cn(
-                "text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
-                hasSources && "border-r",
+        <table className="w-full caption-bottom text-sm">
+          <thead className="sticky top-0 z-10 bg-background [&_tr]:border-b">
+            {/* Group label row */}
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="border-r" />
+              {hasSensors && (
+                <TableHead
+                  colSpan={SENSOR_ONLY.length}
+                  className="border-r bg-muted/40 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Sensor
+                </TableHead>
               )}
-            >
-              Shared
-            </TableHead>
-            {hasSources && (
               <TableHead
-                colSpan={SOURCE_ONLY.length}
-                className="bg-muted/40 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                Source
-              </TableHead>
-            )}
-          </TableRow>
-
-          {/* Column name + select-all checkbox row */}
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[220px] border-r pl-4">Device</TableHead>
-            {visibleColumns.map((col, i) => (
-              <TableHead
-                key={col.key}
+                colSpan={SHARED.length}
                 className={cn(
-                  "min-w-[84px] px-2",
-                  groupBorderIndices.has(i) && "border-r",
+                  "text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
+                  hasSources && "border-r",
                 )}
               >
-                <div className="flex flex-col items-center gap-2 pt-2 pb-4">
-                  <span className="whitespace-nowrap text-xs font-medium">
-                    {col.label}
-                  </span>
-                  <Checkbox
-                    checked={getColumnState(col)}
-                    onCheckedChange={() => handleColumnSelectAll(col)}
-                  />
-                </div>
+                Shared
               </TableHead>
-            ))}
-          </TableRow>
-        </thead>
+              {hasSources && (
+                <TableHead
+                  colSpan={SOURCE_ONLY.length}
+                  className="bg-muted/40 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Source
+                </TableHead>
+              )}
+            </TableRow>
 
-        <tbody className="[&_tr:last-child]:border-0">
-          {allTxIds.map((txId) => {
-            const meta = deviceMeta[txId];
-            const kind = meta?.kind;
-            const iconSrc = kind ? KindIconMap[kind] : undefined;
-            const label = `${kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : "Device"} #${txId}`;
-
-            const applicableSections =
-              kind === "sensor"
-                ? [...SENSOR_ONLY, ...SHARED]
-                : kind === "source"
-                  ? [...SHARED, ...SOURCE_ONLY]
-                  : [];
-
-            const currSelected = selection[txId] ?? [];
-            const allSelected =
-              applicableSections.length > 0 &&
-              applicableSections.every((s) => currSelected.includes(s.key));
-
-            return (
-              <TableRow key={txId}>
-                <TableCell className="border-r pl-4 pr-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/75">
-                      {iconSrc ? (
-                        <Image
-                          src={iconSrc}
-                          alt={kind ?? "device"}
-                          width={24}
-                          height={24}
-                          className="object-contain brightness-150"
-                        />
-                      ) : (
-                        <CircleHelp className="size-4 text-muted-foreground" />
-                      )}
+            {/* Column name + select-all checkbox row */}
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[220px] border-r pl-4">Device</TableHead>
+              {visibleColumns.map((col, i) => (
+                <TableHead
+                  key={col.key}
+                  className={cn(
+                    "min-w-[84px] px-2",
+                    groupBorderIndices.has(i) && "border-r",
+                  )}
+                >
+                  <div className="flex flex-col items-center gap-2 pt-2 pb-4">
+                    <span className="whitespace-nowrap text-xs font-medium">
+                      {col.label}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {currSelected.length > 0
-                          ? `${currSelected.length} selected`
-                          : "None selected"}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={allSelected}
-                      onCheckedChange={() =>
-                        onSetSections(
-                          txId,
-                          allSelected
-                            ? []
-                            : applicableSections.map((s) => s.key),
-                        )
-                      }
+                    <Checkbox
+                      checked={getColumnState(col)}
+                      onCheckedChange={() => handleColumnSelectAll(col)}
                     />
                   </div>
-                </TableCell>
+                </TableHead>
+              ))}
+            </TableRow>
+          </thead>
 
-                {visibleColumns.map((col, i) => {
-                  const applicable = col.kinds.includes(kind as DeviceKind);
-                  return (
-                    <TableCell
-                      key={col.key}
-                      className={cn(
-                        "px-2",
-                        groupBorderIndices.has(i) && "border-r",
-                        !applicable && "bg-muted/30",
-                      )}
-                    >
-                      <div className="flex items-center justify-center">
-                        {applicable ? (
-                          <Checkbox
-                            checked={currSelected.includes(col.key)}
-                            onCheckedChange={() => onToggle(txId, col.key)}
+          <tbody className="[&_tr:last-child]:border-0">
+            {allTxIds.map((txId) => {
+              const meta = deviceMeta[txId];
+              const kind = meta?.kind;
+              const iconSrc = kind ? KindIconMap[kind] : undefined;
+              const label = `${kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : "Device"} #${txId}`;
+
+              const applicableSections =
+                kind === "sensor"
+                  ? [...SENSOR_ONLY, ...SHARED]
+                  : kind === "source"
+                    ? [...SHARED, ...SOURCE_ONLY]
+                    : [];
+
+              const currSelected = selection[txId] ?? [];
+              const allSelected =
+                applicableSections.length > 0 &&
+                applicableSections.every((s) => currSelected.includes(s.key));
+
+              return (
+                <TableRow key={txId}>
+                  <TableCell className="border-r pl-4 pr-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/75">
+                        {iconSrc ? (
+                          <Image
+                            src={iconSrc}
+                            alt={kind ?? "device"}
+                            width={24}
+                            height={24}
+                            className="object-contain brightness-150"
                           />
                         ) : (
-                          <span className="select-none text-sm text-muted-foreground/25">
-                            —
-                          </span>
+                          <CircleHelp className="size-4 text-muted-foreground" />
                         )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {currSelected.length > 0
+                            ? `${currSelected.length} selected`
+                            : "None selected"}
+                        </p>
                       </div>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            );
-          })}
-        </tbody>
-      </table>
+                      <Switch
+                        checked={allSelected}
+                        onCheckedChange={() =>
+                          onSetSections(
+                            txId,
+                            allSelected
+                              ? []
+                              : applicableSections.map((s) => s.key),
+                          )
+                        }
+                      />
+                    </div>
+                  </TableCell>
+
+                  {visibleColumns.map((col, i) => {
+                    const applicable = col.kinds.includes(kind as DeviceKind);
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={cn(
+                          "px-2",
+                          groupBorderIndices.has(i) && "border-r",
+                          !applicable && "bg-muted/30",
+                        )}
+                      >
+                        <div className="flex items-center justify-center">
+                          {applicable ? (
+                            <Checkbox
+                              checked={currSelected.includes(col.key)}
+                              onCheckedChange={() => onToggle(txId, col.key)}
+                            />
+                          ) : (
+                            <span className="select-none text-sm text-muted-foreground/25">
+                              —
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
+          </tbody>
+        </table>
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar orientation="vertical" />
       <ScrollBar orientation="horizontal" />

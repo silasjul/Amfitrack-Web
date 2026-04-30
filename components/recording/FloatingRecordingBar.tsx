@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import RecordingTimer from "./RecordingTimer";
 import RecordingChartDialog from "./RecordingChartDialog";
 
+export const FLOATING_RECORDING_BAR_ATTR = "data-floating-recording-bar";
+
 export default function FloatingRecordingBar() {
   const isRecording = useRecordingStore((s) => s.isRecording);
   const isPaused = useRecordingStore((s) => s.isPaused);
@@ -24,7 +26,10 @@ export default function FloatingRecordingBar() {
 
   return createPortal(
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in duration-300">
+      <div
+        {...{ [FLOATING_RECORDING_BAR_ATTR]: "" }}
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in duration-300"
+      >
         <div className="flex items-center gap-2 rounded-xl border border-border bg-background/80 backdrop-blur-lg shadow-lg px-4 py-2.5">
           <div
             className={cn(
@@ -60,7 +65,7 @@ export default function FloatingRecordingBar() {
           >
             <BarChart2 className="size-4" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
