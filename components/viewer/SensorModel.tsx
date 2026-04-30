@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useMemo, useEffect, useState } from "react";
-import { ThreeEvent, useFrame } from "@react-three/fiber";
+import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
@@ -32,10 +32,22 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
   const setSelectedDeviceId = useViewerStore((s) => s.setSelectedDeviceId);
   const hoveredSensorId = useViewerStore((s) => s.hoveredSensorId);
   const setHoveredSensorId = useViewerStore((s) => s.setHoveredSensorId);
+  const { invalidate } = useThree();
   const fbx = useFBX("/models/viewer/sensor.fbx");
   const clone = useMemo(() => fbx.clone(), [fbx]);
 
   const isHovered = hoveredSensorId === sensorId;
+
+  useEffect(() => {
+    let prev = useDeviceStore.getState().emfImuFrameId[sensorId];
+    return useDeviceStore.subscribe((state) => {
+      const next = state.emfImuFrameId[sensorId];
+      if (next !== prev) {
+        prev = next;
+        invalidate();
+      }
+    });
+  }, [sensorId, invalidate]);
 
   useEffect(() => {
     const bodyMesh = clone.children[0] as THREE.Mesh;
@@ -106,6 +118,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
         b: targetColor.b,
         duration: 0.2,
         ease: "power2.out",
+        onUpdate: invalidate,
       });
     }
 
@@ -116,6 +129,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
         z: targetScale,
         duration: 0.2,
         ease: "power2.out",
+        onUpdate: invalidate,
       });
     }
   }, [isHovered]);
