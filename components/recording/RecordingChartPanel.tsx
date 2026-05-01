@@ -9,6 +9,7 @@ import RecordingChart from "./RecordingChart";
 import { Check } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
+import { DialogTitle } from "../ui/dialog";
 
 const MAX_VISIBLE = 3;
 
@@ -47,7 +48,7 @@ export default function RecordingChartPanel() {
   }, [selection, deviceMeta]);
 
   const [hiddenCharts, setHiddenCharts] = useState<Set<string>>(
-    () => new Set(items.slice(MAX_VISIBLE).map((i) => i.id)),
+    () => new Set(items.slice(1).map((i) => i.id)),
   );
 
   const visibleCount = items.filter((i) => !hiddenCharts.has(i.id)).length;
@@ -76,7 +77,7 @@ export default function RecordingChartPanel() {
     <div className="flex h-full min-h-0">
       {/* Sidebar */}
       <div className="w-52 shrink-0 flex flex-col border-r border-border">
-        <div className="px-4 pt-4 pb-3 flex flex-col gap-1">
+        <DialogTitle className="px-4 pt-4 pb-3 flex flex-col gap-1">
           <p className="text-xs font-semibold uppercase tracking-wider">
             Live Recording Data
           </p>
@@ -89,7 +90,7 @@ export default function RecordingChartPanel() {
               {visibleCount} / {MAX_VISIBLE}
             </Badge>
           </div>
-        </div>
+        </DialogTitle>
 
         <Separator />
 

@@ -30,10 +30,22 @@ export default function RecordingChart({
   const seriesMap = useRef(new Map<string, any>());
   const [hiddenFields, setHiddenFields] = useState<Set<string>>(new Set());
 
+  const startTimeSecRef = useRef<number | null>(null);
+
   // Create chart once on mount, resize via ResizeObserver
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+
+    const fmtElapsed = (timeSec: number) => {
+      const start = startTimeSecRef.current ?? timeSec;
+      const elapsedMs = Math.max(0, Math.round((timeSec - start) * 1000));
+      const ms = elapsedMs % 1000;
+      const totalSec = Math.floor(elapsedMs / 1000);
+      const sec = totalSec % 60;
+      const min = Math.floor(totalSec / 60);
+      return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+    };
 
     const chart = createChart(el, {
       layout: {
@@ -48,13 +60,25 @@ export default function RecordingChart({
       width: el.clientWidth,
       height: el.clientHeight || 200,
       timeScale: {
-        timeVisible: true,
-        secondsVisible: true,
         borderColor: "#3f3f46",
+        tickMarkFormatter: (timeSec: number) => {
+          const start = startTimeSecRef.current ?? timeSec;
+          const elapsedSec = Math.max(0, timeSec - start);
+          const totalSec = Math.floor(elapsedSec);
+          const sec = totalSec % 60;
+          const min = Math.floor(totalSec / 60);
+          return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+        },
+      },
+      localization: {
+        timeFormatter: fmtElapsed,
       },
       rightPriceScale: { borderColor: "#3f3f46" },
       crosshair: { mode: 1 },
     });
+
+    const priceFormatter = (price: number) =>
+      price % 1 === 0 ? price.toFixed(0) : price.toFixed(3);
 
     for (const { field, color } of fields) {
       const series = chart.addSeries(LineSeries, {
@@ -62,6 +86,7 @@ export default function RecordingChart({
         lineWidth: 2,
         priceLineVisible: false,
         lastValueVisible: true,
+        priceFormat: { type: "custom", formatter: priceFormatter, minMove: 0.01 },
       });
       seriesMap.current.set(field, series);
     }
@@ -69,6 +94,10 @@ export default function RecordingChart({
     const existing = recordingSession
       .getFrames()
       .filter((f) => f.deviceKey === deviceKey);
+
+    if (existing.length > 0) {
+      startTimeSecRef.current = existing[0].timestamp / 1000;
+    }
 
     for (const { field } of fields) {
       const series = seriesMap.current.get(field);
@@ -106,6 +135,9 @@ export default function RecordingChart({
   useEffect(() => {
     return recordingSession.subscribe((frame) => {
       if (frame.deviceKey !== deviceKey) return;
+      if (startTimeSecRef.current === null) {
+        startTimeSecRef.current = frame.timestamp / 1000;
+      }
       for (const { field } of fields) {
         const v = toValue(frame.data[field]);
         if (v === null) continue;

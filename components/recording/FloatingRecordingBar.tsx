@@ -24,6 +24,25 @@ export default function FloatingRecordingBar() {
 
   useEffect(() => setMounted(true), []);
 
+  // chart closed by default
+  useEffect(() => {
+    if (isRecording) setChartOpen(false);
+  }, [isRecording]);
+
+  // pause/resume recording with space key
+  useEffect(() => {
+    if (!isRecording) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault();
+      isPaused ? resumeRecording() : pauseRecording();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isRecording, isPaused, pauseRecording, resumeRecording]);
+
   if (!isRecording || !mounted) return null;
 
   return createPortal(

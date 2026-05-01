@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import { CircleHelp } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -31,7 +32,6 @@ const SOURCE_ONLY: SectionDef[] = [
   { key: "current", label: "Current", kinds: ["source"] },
   { key: "voltage", label: "Voltage", kinds: ["source"] },
   { key: "status", label: "Status", kinds: ["source"] },
-  { key: "calibration", label: "Calibration", kinds: ["source"] },
 ];
 
 interface RecordingTableProps {
@@ -48,6 +48,20 @@ export default function RecordingTable({
   const { sensorTxIds, sourceTxIds } = useTxIds();
   const deviceMeta = useDeviceStore((s) => s.deviceMeta);
   const allTxIds = [...sensorTxIds, ...sourceTxIds];
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  // Horizontal scrolling
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const hasSensors = sensorTxIds.length > 0;
   const hasSources = sourceTxIds.length > 0;
@@ -73,7 +87,9 @@ export default function RecordingTable({
   if (allTxIds.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center rounded-lg border border-dashed">
-        <p className="text-sm text-muted-foreground">No devices avalible for recording.</p>
+        <p className="text-sm text-muted-foreground">
+          No devices avalible for recording.
+        </p>
       </div>
     );
   }
@@ -115,7 +131,10 @@ export default function RecordingTable({
       type="always"
       className="flex-1 relative overflow-hidden rounded-lg border"
     >
-      <ScrollAreaPrimitive.Viewport className="size-full rounded-[inherit]">
+      <ScrollAreaPrimitive.Viewport
+        ref={viewportRef}
+        className="size-full rounded-[inherit]"
+      >
         <table className="w-full caption-bottom text-sm">
           <thead className="sticky top-0 z-10 bg-background [&_tr]:border-b">
             {/* Group label row */}
