@@ -19,7 +19,8 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: "Amfitrack Viewer",
-  description: "Amfitrack Viewer",
+  description:
+    "The Amfitrack Viewer is a tool for viewing, testing, configuring and analyzing data from Amfitrack devices. Play games from our demos or go to the viewer to explore device data.",
   icons: {
     icon: "/logo.svg",
   },
@@ -35,7 +36,10 @@ export default function RootLayout({
       lang="en"
       className={`${interSans.variable} ${robotoMono.variable} h-full dark`}
     >
-      <body className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased" suppressHydrationWarning>
+      <body
+        className="h-full overflow-hidden flex flex-col bg-black/10 font-sans antialiased"
+        suppressHydrationWarning
+      >
         <Providers>
           <Sidebar>{children}</Sidebar>
           <PendingChangesBar />
