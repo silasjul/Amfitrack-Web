@@ -1,3 +1,4 @@
+import { strToU8, zip } from "fflate";
 import type { DeviceUplink } from "@/amfitrackSDK/src/interfaces/IStore";
 import type { ParameterValue } from "@/amfitrackSDK/src/interfaces/IConfigurator";
 
@@ -194,6 +195,28 @@ export function parseConfigCSV(csv: string): DeviceExportData[] {
   }
 
   return devices;
+}
+
+export function downloadZip(
+  files: Map<string, string>,
+  zipFilename: string,
+): void {
+  const zipInput: Record<string, Uint8Array> = {};
+  for (const [name, content] of files) {
+    zipInput[`${name}.csv`] = strToU8(content);
+  }
+  zip(zipInput, (_err, data) => {
+    if (_err) return;
+    const blob = new Blob([new Uint8Array(data)], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = zipFilename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
 }
 
 export function downloadCSV(csv: string, filename: string): void {

@@ -31,7 +31,7 @@ export default function NavSecondary() {
               >
                 <div>
                   <Bug />
-                  <span>Record/Logging</span>
+                  <span>Recording</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
