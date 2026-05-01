@@ -86,9 +86,11 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       })),
     });
     if (devices.length === 0) return false;
-    await this.addTransport(
-      new HIDConnection(devices[0], this.allocateTransportId()),
-    );
+    const device = devices[0];
+    this.knownHIDDevices.add(device);
+    const connection = new HIDConnection(device, this.allocateTransportId());
+    connection.onDisconnect(() => this.knownHIDDevices.delete(device));
+    await this.addTransport(connection);
     return true;
   }
 
@@ -229,16 +231,19 @@ export class AmfitrackSDK implements IAmfitrackSDK {
       for (const device of relevant) {
         if (this.knownHIDDevices.has(device)) continue;
         this.knownHIDDevices.add(device);
-        try {
-          // Wait for 500ms to allow the device to be fully initialized
-          setTimeout(async () => {
-            await this.addTransport(
-              new HIDConnection(device, this.allocateTransportId()),
+        // Wait for 500ms to allow the device to be fully initialized
+        setTimeout(async () => {
+          try {
+            const connection = new HIDConnection(
+              device,
+              this.allocateTransportId(),
             );
-          }, 500);
-        } catch {
-          this.knownHIDDevices.delete(device);
-        }
+            connection.onDisconnect(() => this.knownHIDDevices.delete(device));
+            await this.addTransport(connection);
+          } catch {
+            this.knownHIDDevices.delete(device);
+          }
+        }, 500);
       }
     } catch {
       // HID API unavailable or permission revoked -- nothing to do.
