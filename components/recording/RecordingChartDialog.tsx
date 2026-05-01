@@ -19,7 +19,8 @@ export default function RecordingChartDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-6xl h-[80vh] flex flex-col overflow-hidden"
+        showCloseButton={false}
+        className="sm:max-w-7xl h-[80vh] flex flex-col overflow-hidden p-0"
         aria-describedby={undefined}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
@@ -27,12 +28,7 @@ export default function RecordingChartDialog({
             e.preventDefault();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>Live Recording Data</DialogTitle>
-        </DialogHeader>
-        <div className="flex-1 min-h-0">
-          <RecordingChartPanel />
-        </div>
+        <RecordingChartPanel />
       </DialogContent>
     </Dialog>
   );
