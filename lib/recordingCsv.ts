@@ -134,49 +134,51 @@ function formatValue(val: number | string | boolean): string {
   return escape(val);
 }
 
-export function framesToCSV(
+export function framesToCSVPerDevice(
   frames: RecordingFrame[],
   selection: Record<number, string[]>,
   deviceMeta: Record<number, { kind: DeviceKind }>,
-): string {
-  if (frames.length === 0) return UTF8_BOM;
-
-  // Build ordered data columns from selection (stable, deterministic order)
-  const seenCols = new Set<string>();
-  const allDataCols: string[] = [];
-
-  for (const [txIdStr, sections] of Object.entries(selection)) {
-    const txId = Number(txIdStr);
-    if (!deviceMeta[txId] || sections.length === 0) continue;
-    for (const section of sections) {
-      for (const col of SECTION_COLUMNS[section] ?? []) {
-        if (!seenCols.has(col)) {
-          seenCols.add(col);
-          allDataCols.push(col);
-        }
-      }
-    }
-  }
-
-  const header = ["timestamp_ms", "device", "frame_id", ...allDataCols].join(
-    DELIMITER,
-  );
-  const rows: string[] = [header];
+): Map<string, string> {
+  const result = new Map<string, string>();
+  if (frames.length === 0) return result;
 
   const t0 = frames[0].timestamp;
 
+  const grouped = new Map<string, RecordingFrame[]>();
   for (const frame of frames) {
-    const row: string[] = [
-      (frame.timestamp - t0).toString(),
-      frame.deviceKey,
-      frame.frameId.toString(),
-    ];
-    for (const col of allDataCols) {
-      const val = frame.data[col];
-      row.push(val !== undefined ? formatValue(val) : "");
-    }
-    rows.push(row.join(DELIMITER));
+    let arr = grouped.get(frame.deviceKey);
+    if (!arr) { arr = []; grouped.set(frame.deviceKey, arr); }
+    arr.push(frame);
   }
 
-  return UTF8_BOM + rows.join("\n");
+  for (const [deviceKey, deviceFrames] of grouped) {
+    const isCalibration = deviceKey.endsWith("_cal");
+    const baseKey = isCalibration ? deviceKey.slice(0, -4) : deviceKey;
+    const txId = Number(baseKey.split("_").pop());
+    const sections = isCalibration ? ["calibration"] : (selection[txId] ?? []);
+
+    const cols: string[] = [];
+    const seen = new Set<string>();
+    for (const section of sections) {
+      for (const col of SECTION_COLUMNS[section] ?? []) {
+        if (!seen.has(col)) { seen.add(col); cols.push(col); }
+      }
+    }
+
+    const header = ["timestamp_ms", "frame_id", ...cols].join(DELIMITER);
+    const rows: string[] = [header];
+
+    for (const frame of deviceFrames) {
+      const row = [(frame.timestamp - t0).toString(), frame.frameId.toString()];
+      for (const col of cols) {
+        const val = frame.data[col];
+        row.push(val !== undefined ? formatValue(val) : "");
+      }
+      rows.push(row.join(DELIMITER));
+    }
+
+    result.set(deviceKey, UTF8_BOM + rows.join("\n"));
+  }
+
+  return result;
 }

@@ -3,8 +3,8 @@
 import { useCallback, useEffect } from "react";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
 import { useRecordingStore } from "@/stores/useRecordingStore";
-import { downloadCSV } from "@/lib/csv";
-import { extractSectionFields, framesToCSV } from "@/lib/recordingCsv";
+import { downloadZip } from "@/lib/csv";
+import { extractSectionFields, framesToCSVPerDevice } from "@/lib/recordingCsv";
 import { recordingSession } from "@/lib/recordingEmitter";
 
 const MEAS_SECTIONS = new Set([
@@ -95,9 +95,9 @@ export function useRecordingSession() {
     if (frames.length === 0) return;
 
     const deviceMeta = useDeviceStore.getState().deviceMeta;
-    const csv = framesToCSV(frames, selection, deviceMeta);
+    const csvMap = framesToCSVPerDevice(frames, selection, deviceMeta);
     const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    downloadCSV(csv, `amfitrack-recording-${ts}.csv`);
+    downloadZip(csvMap, `amfitrack-recording-${ts}.zip`);
   }, [selection]);
 
   return { downloadRecording };
