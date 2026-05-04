@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
-import DeviceSettingsDialog from "@/components/sidebar-left/footer-components/DeviceSettingsDialog";
+import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
 import { DeviceRow } from "./device-row";
 import useTxIds from "@/hooks/useTxIds";
 

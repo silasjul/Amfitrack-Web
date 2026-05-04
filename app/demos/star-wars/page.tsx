@@ -9,8 +9,8 @@ import {
   Center,
 } from "@react-three/drei";
 import { useControls, folder, button, Leva } from "leva";
-import Lightsaber from "@/components/minigames/starwars/lightsaber/lightsaber";
-import Light from "@/components/minigames/starwars/light";
+import Lightsaber from "@/components/starwars/lightsaber/lightsaber";
+import Light from "@/components/starwars/light";
 import { useRef, useState } from "react";
 import { useDeviceStore } from "@/amfitrackSDK";
 
@@ -102,17 +102,15 @@ export default function Home() {
     }),
     environment: folder({
       files: {
-        value: "/environmentMaps/Deathstar_Hanger_4k.hdr",
+        value: "/star-wars/Deathstar_Hanger_4k.hdr",
         options: {
-          "Crashed Star Destroyer":
-            "/environmentMaps/CrashedStarDestroyer_4k.hdr",
-          "Death Star Hangar": "/environmentMaps/Deathstar_Hanger_4k.hdr",
-          "Death Star Tractor Beam":
-            "/environmentMaps/DeathStar_TractorBeam_4k.hdr",
-          "Jabba's Throne Room": "/environmentMaps/JabbaTHroneRoom_4k.hdr",
-          "Maz's Castle": "/environmentMaps/MazCastle_4k.hdr",
-          "Mos Eisley Cantina": "/environmentMaps/MosEisleyCanteen_4k.hdr",
-          "Rebel Base": "/environmentMaps/RebelBase_4k.hdr",
+          "Crashed Star Destroyer": "/star-wars/CrashedStarDestroyer_4k.hdr",
+          "Death Star Hangar": "/star-wars/Deathstar_Hanger_4k.hdr",
+          "Death Star Tractor Beam": "/star-wars/DeathStar_TractorBeam_4k.hdr",
+          "Jabba's Throne Room": "/star-wars/JabbaTHroneRoom_4k.hdr",
+          "Maz's Castle": "/star-wars/MazCastle_4k.hdr",
+          "Mos Eisley Cantina": "/star-wars/MosEisleyCanteen_4k.hdr",
+          "Rebel Base": "/star-wars/RebelBase_4k.hdr",
         },
       },
     }),

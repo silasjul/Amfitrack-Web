@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { useDeviceStore } from "@/amfitrackSDK";
 import type { DeviceFrequency, DeviceKind } from "@/amfitrackSDK";
 import { getDistortionLevel } from "@/config/distortion";
-import { FrequencyHoverCard } from "@/components/frequency-breakdown";
+import { FrequencyHoverCard } from "@/components/general/frequency-breakdown";
 import { useViewerStore } from "@/stores/useViewerStore";
-import { DeviceIcon } from "@/components/sidebar-left/transport-items";
+import { DeviceIcon } from "@/components/general/sidebar-left/transport-items";
 import Image from "next/image";
 import {
   BatteryFull,
