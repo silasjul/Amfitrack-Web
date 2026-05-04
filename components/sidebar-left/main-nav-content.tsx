@@ -19,6 +19,7 @@ import {
 import { Box, ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { MainNavContentData } from "./app-sidebar";
+import Link from "next/link";
 
 export default function MainNavContent({
   navMain,
@@ -57,9 +58,10 @@ export default function MainNavContent({
                         isActive={pathname === subItem.url}
                         asChild
                       >
-                        <a href={subItem.url}>
+                        <Link href={subItem.url}>
+                          {subItem.icon && <subItem.icon />}
                           <span>{subItem.title}</span>
-                        </a>
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   ))}
