@@ -1,75 +1,23 @@
 "use client";
 
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
   Environment,
   PivotControls,
-  Center,
 } from "@react-three/drei";
 import { useControls, folder, button, Leva } from "leva";
 import Lightsaber from "@/components/starwars/lightsaber/lightsaber";
 import Light from "@/components/starwars/light";
 import { useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 import { useDeviceStore } from "@/amfitrackSDK";
-
-const POSITION_SCALE = 0.01;
-
-function SensorSync({
-  modelRef,
-  metalDistortionRef,
-  centerOffsetRef,
-}: {
-  modelRef: React.RefObject<THREE.Group | null>;
-  metalDistortionRef: React.RefObject<number>;
-  centerOffsetRef: React.RefObject<THREE.Vector3>;
-}) {
-  useFrame(() => {
-    const emfData = useDeviceStore.getState().emfImuFrameId;
-    const firstKey = Object.keys(emfData)[0];
-    if (!firstKey || !modelRef.current) return;
-    const first = emfData[Number(firstKey)];
-
-    const pos = new THREE.Vector3(
-      -first.position.y * POSITION_SCALE,
-      first.position.z * POSITION_SCALE,
-      -first.position.x * POSITION_SCALE,
-    );
-
-    modelRef.current.position.copy(pos).sub(centerOffsetRef.current);
-    modelRef.current.quaternion
-      .set(
-        -first.quaternion.y,
-        first.quaternion.z,
-        -first.quaternion.x,
-        first.quaternion.w,
-      )
-      .normalize();
-    metalDistortionRef.current = first.metalDistortion / 255;
-  });
-
-  return null;
-}
+import { useSensorSync } from "@/hooks/useSensorSync";
+import useTxIds from "@/hooks/useTxIds";
 
 export default function Home() {
-  const [isDragging, setIsDragging] = useState(false);
-  const modelRef = useRef<THREE.Group>(null);
-  const metalDistortionRef = useRef<number>(0);
-  const centerOffsetRef = useRef(new THREE.Vector3());
-
-  const resetCenter = () => {
-    const emfData = useDeviceStore.getState().emfImuFrameId;
-    const firstKey = Object.keys(emfData)[0];
-    if (firstKey) {
-      const first = emfData[Number(firstKey)];
-      centerOffsetRef.current.set(
-        -first.position.y * POSITION_SCALE,
-        first.position.z * POSITION_SCALE,
-        -first.position.x * POSITION_SCALE,
-      );
-    }
-  };
+  const resetCenterRef = useRef<() => void>(() => {});
 
   const { mode, exposure, enabled, pivotOffsetY, files } = useControls({
     toneMapping: folder({
@@ -115,9 +63,7 @@ export default function Home() {
       },
     }),
     calibration: folder({
-      resetCenter: button(() => {
-        resetCenter();
-      }),
+      resetCenter: button(() => resetCenterRef.current()),
     }),
   });
 
@@ -129,27 +75,57 @@ export default function Home() {
         camera={{ position: [0, 0.25, 2], near: 0.1, far: 1000 }}
         gl={{ toneMapping: mode, toneMappingExposure: exposure }}
       >
-        <SensorSync
-          modelRef={modelRef}
-          metalDistortionRef={metalDistortionRef}
-          centerOffsetRef={centerOffsetRef}
-        />
-        <OrbitControls enabled={!isDragging} />
         <Environment files={files} background />
         <Light />
-        <group ref={modelRef}>
-          <PivotControls
-            enabled={enabled}
-            scale={0.6}
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={() => setIsDragging(false)}
-          >
-            <group position-z={pivotOffsetY}>
-              <Lightsaber metalDistortionRef={metalDistortionRef} />
-            </group>
-          </PivotControls>
-        </group>
+        <LightsaberScene
+          enabled={enabled}
+          pivotOffsetY={pivotOffsetY}
+          resetCenterRef={resetCenterRef}
+        />
       </Canvas>
     </div>
+  );
+}
+
+function LightsaberScene({
+  enabled,
+  pivotOffsetY,
+  resetCenterRef,
+}: {
+  enabled: boolean;
+  pivotOffsetY: number;
+  resetCenterRef: React.RefObject<() => void>;
+}) {
+  const { sensorTxIds } = useTxIds();
+  const txId = sensorTxIds[0];
+  const modelRef = useRef<THREE.Group>(null);
+  const metalDistortionRef = useRef<number>(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const { resetCenter } = useSensorSync(modelRef, txId);
+
+  resetCenterRef.current = resetCenter;
+
+  useFrame(() => {
+    if (txId === undefined) return;
+    const data = useDeviceStore.getState().emfImuFrameId[txId];
+    if (data) metalDistortionRef.current = data.metalDistortion / 255;
+  });
+
+  return (
+    <>
+      <OrbitControls enabled={!isDragging} />
+      <group ref={modelRef}>
+        <PivotControls
+          enabled={enabled}
+          scale={0.6}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setIsDragging(false)}
+        >
+          <group position-z={pivotOffsetY}>
+            <Lightsaber metalDistortionRef={metalDistortionRef} />
+          </group>
+        </PivotControls>
+      </group>
+    </>
   );
 }

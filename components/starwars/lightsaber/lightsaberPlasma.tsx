@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useRef } from "react";
 import { useControls, folder } from "leva";
 import { useFrame } from "@react-three/fiber";
+import { applyDistortionColor } from "@/lib/distortionColorLerp";
 
 const COLOR_CLEAN = new THREE.Color("rgb(0, 255, 0)");
 const COLOR_DISTORTED = new THREE.Color("rgb(255, 0, 0)");
@@ -37,15 +38,13 @@ export default function LightsaberPlasma({
 
   useFrame(() => {
     if (!materialRef.current) return;
-    if (metalDistortionRef.current < 0.3) {
-      materialRef.current.color.copy(COLOR_CLEAN);
-    } else {
-      materialRef.current.color.lerpColors(
-        COLOR_CLEAN,
-        COLOR_DISTORTED,
-        metalDistortionRef.current,
-      );
-    }
+    applyDistortionColor(
+      materialRef.current,
+      metalDistortionRef.current,
+      COLOR_CLEAN,
+      COLOR_DISTORTED,
+      0.3,
+    );
   });
 
   return (
