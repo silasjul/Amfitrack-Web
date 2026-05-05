@@ -1,5 +1,6 @@
 "use client";
 
+import { Physics } from "@react-three/cannon";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import React, { useEffect, useRef } from "react";
@@ -34,10 +35,10 @@ export default function Home() {
       step: 1,
     },
     drumHeight: {
-      value: 4.5,
+      value: 0.23,
       min: 0,
-      max: 15,
-      step: 0.01,
+      max: 1,
+      step: 0.001,
     },
     Environment: folder({
       environment: {
@@ -99,11 +100,7 @@ export default function Home() {
   return (
     <div className="relative h-full w-full">
       <Leva collapsed />
-      <Canvas
-        shadows
-        gl={GL_PROPS}
-        camera={{ fov, position: CAMERA_POSITION }}
-      >
+      <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
         <Environment
           files={environment}
           background
@@ -116,15 +113,32 @@ export default function Home() {
         />
         <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
         <OrbitControls
-          target={[0, drumHeight, 0]}
+          target={[0, drumHeight + 3.8, 0]}
           minPolarAngle={0}
-          maxPolarAngle={Math.PI * 0.7}
+          maxPolarAngle={Math.PI * 0.6}
+          maxDistance={10}
         />
         <CameraRig fov={fov} />
         <Light />
-        <Drumset drumHeight={drumHeight} />
-        {sensorTxIds[0] && <Drumstick sensorId={sensorTxIds[0]} onRegisterReset={(fn) => { resetRefs.current[0] = fn; }} />}
-        {sensorTxIds[1] && <Drumstick sensorId={sensorTxIds[1]} onRegisterReset={(fn) => { resetRefs.current[1] = fn; }} />}
+        <Physics gravity={[0, -9.81, 0]}>
+          <Drumset drumHeight={drumHeight} />
+          {sensorTxIds[0] && (
+            <Drumstick
+              sensorId={sensorTxIds[0]}
+              onRegisterReset={(fn) => {
+                resetRefs.current[0] = fn;
+              }}
+            />
+          )}
+          {sensorTxIds[1] && (
+            <Drumstick
+              sensorId={sensorTxIds[1]}
+              onRegisterReset={(fn) => {
+                resetRefs.current[1] = fn;
+              }}
+            />
+          )}
+        </Physics>
       </Canvas>
     </div>
   );
