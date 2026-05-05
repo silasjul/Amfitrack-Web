@@ -2,13 +2,20 @@
 
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
-import { folder, Leva, useControls } from "leva";
+import { button, folder, Leva, useControls } from "leva";
 import Drumstick from "@/components/drum-demo/Drumstick";
+import useTxIds from "@/hooks/useTxIds";
+
+const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
+const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
 
 export default function Home() {
+  const { sensorTxIds } = useTxIds();
+  const resetRefs = useRef<Array<() => void>>([]);
+
   const {
     fov,
     drumHeight,
@@ -86,6 +93,7 @@ export default function Home() {
         label: "Far",
       },
     }),
+    resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
   });
 
   return (
@@ -93,8 +101,8 @@ export default function Home() {
       <Leva collapsed />
       <Canvas
         shadows
-        gl={{ toneMapping: THREE.ReinhardToneMapping }}
-        camera={{ fov, position: [0.2, 7.3, -4.6] }}
+        gl={GL_PROPS}
+        camera={{ fov, position: CAMERA_POSITION }}
       >
         <Environment
           files={environment}
@@ -104,6 +112,7 @@ export default function Home() {
             radius: environmentRadius,
             scale: environmentScale,
           }}
+          rotation-y={Math.PI}
         />
         <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
         <OrbitControls
@@ -111,10 +120,11 @@ export default function Home() {
           minPolarAngle={0}
           maxPolarAngle={Math.PI * 0.7}
         />
-        <CameraRig />
+        <CameraRig fov={fov} />
         <Light />
         <Drumset drumHeight={drumHeight} />
-        <Drumstick />
+        {sensorTxIds[0] && <Drumstick sensorId={sensorTxIds[0]} onRegisterReset={(fn) => { resetRefs.current[0] = fn; }} />}
+        {sensorTxIds[1] && <Drumstick sensorId={sensorTxIds[1]} onRegisterReset={(fn) => { resetRefs.current[1] = fn; }} />}
       </Canvas>
     </div>
   );
@@ -128,11 +138,8 @@ function Light() {
   );
 }
 
-function CameraRig() {
+function CameraRig({ fov }: { fov: number }) {
   const { camera } = useThree();
-  const { fov } = useControls({
-    fov: { value: 70, min: 10, max: 180, step: 1 },
-  });
 
   useEffect(() => {
     (camera as THREE.PerspectiveCamera).fov = fov;

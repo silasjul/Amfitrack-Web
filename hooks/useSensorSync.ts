@@ -35,15 +35,15 @@ export function useSensorSync(
       .normalize();
   });
 
-  const resetCenter = useCallback(() => {
+  const resetCenter = useCallback((offset: [number, number, number] = [0, 0, 0]) => {
     if (txId === undefined) return;
     const emfData = useDeviceStore.getState().emfImuFrameId;
     const data = emfData[txId];
     if (data) {
       centerOffsetRef.current.set(
-        -data.position.y * POSITION_SCALE,
-        data.position.z * POSITION_SCALE,
-        -data.position.x * POSITION_SCALE,
+        -data.position.y * POSITION_SCALE + offset[0],
+        data.position.z * POSITION_SCALE + offset[1],
+        -data.position.x * POSITION_SCALE + offset[2],
       );
     }
   }, [txId]);

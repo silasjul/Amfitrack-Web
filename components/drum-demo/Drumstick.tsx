@@ -1,25 +1,39 @@
 import useEnableModelShadow from "@/hooks/useEnableModelShadow";
 import { useSensorSync } from "@/hooks/useSensorSync";
-import useTxIds from "@/hooks/useTxIds";
 import { Center, useGLTF } from "@react-three/drei";
 import { folder, useControls } from "leva";
-import React, { useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-export default function Drumstick() {
-  const { sensorTxIds } = useTxIds();
+useGLTF.preload("/drum-kit/drumstick.glb");
+
+interface DrumstickProps {
+  sensorId: number;
+  onRegisterReset?: (fn: () => void) => void;
+}
+
+export default function Drumstick({
+  sensorId,
+  onRegisterReset,
+}: DrumstickProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
-  useEnableModelShadow(scene);
-  useSensorSync(groupRef, sensorTxIds[0]);
+  const clone = useMemo(() => scene.clone(), [scene]);
+  useEnableModelShadow(clone);
+  const { resetCenter } = useSensorSync(groupRef, sensorId);
 
-  const { positionY, scale } = useControls({
+  useEffect(() => {
+    onRegisterReset?.(() => resetCenter([0, -4.5, 0]));
+  }, [resetCenter, onRegisterReset]);
+
+  const { positionZ, scale } = useControls({
     drumstick: folder({
-      positionY: {
+      positionZ: {
         value: 0,
         min: -2,
         max: 2,
         step: 0.001,
+        label: "rotationPoint",
       },
       scale: {
         value: 0.025,
@@ -33,7 +47,12 @@ export default function Drumstick() {
   return (
     <group ref={groupRef}>
       <Center>
-        <primitive object={scene} position-y={positionY} scale={scale} />
+        <primitive
+          object={clone}
+          scale={scale}
+          rotation-y={-Math.PI / 2}
+          position-z={positionZ}
+        />
       </Center>
     </group>
   );
