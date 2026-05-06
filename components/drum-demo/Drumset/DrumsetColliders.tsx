@@ -1,24 +1,21 @@
 import React from "react";
-import FloorTom from "./Colliders/FloorTom";
+import DrumCollider from "./Colliders/DrumCollider";
 import { Debug } from "@react-three/cannon";
-
-const IS_DEBUGGING = true;
-
-function DrumsetCollidersGroup() {
-  return (
-    <group>
-      <FloorTom />
-    </group>
-  );
-}
+import FloorTom from "./Colliders/FloorTom";
+import { folder, useControls } from "leva";
 
 export default function DrumsetColliders() {
-  if (IS_DEBUGGING)
-    return (
-      <Debug>
-        <DrumsetCollidersGroup />
-      </Debug>
-    );
+  const { isDebug } = useControls({
+    colliders: folder({
+      isDebug: {
+        value: true,
+      },
+    }),
+  });
 
-  return <DrumsetColliders />;
+  return (
+    <group>
+      <FloorTom isDebug={isDebug} />
+    </group>
+  );
 }

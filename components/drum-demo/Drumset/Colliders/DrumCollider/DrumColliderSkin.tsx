@@ -2,20 +2,20 @@ import { useCylinder } from "@react-three/cannon";
 
 interface Props {
   position: [number, number, number];
-  rotation: [number, number, number];
   radius: number;
   bodyHeight: number;
   heightAbove: number;
   thickness: number;
+  isDebug?: boolean;
 }
 
-export default function FloorTomSkin({
+export default function DrumColliderSkin({
   position,
-  rotation,
   radius,
   bodyHeight,
   heightAbove,
   thickness,
+  isDebug = false,
 }: Props) {
   const skinY = position[1] + bodyHeight / 2 + heightAbove + thickness / 2;
 
@@ -23,7 +23,16 @@ export default function FloorTomSkin({
     type: "Static",
     args: [radius, radius, thickness, 32],
     position: [position[0], skinY, position[2]],
-    rotation,
   }));
-  return <group ref={ref} />;
+  return (
+    <>
+      <group ref={ref} />
+      {isDebug && (
+        <mesh position={[position[0], skinY, position[2]]}>
+          <cylinderGeometry args={[radius, radius, thickness, 32]} />
+          <meshBasicMaterial color="cyan" wireframe />
+        </mesh>
+      )}
+    </>
+  );
 }
