@@ -55,8 +55,8 @@ export default function DrumCollider({
             pz: { value: propPz, min: -200, max: 200, step: 0.001, label: "Z" },
             rx: {
               value: propRx,
-              min: -Math.PI / 4,
-              max: Math.PI / 4,
+              min: -Math.PI / 3,
+              max: Math.PI / 3,
               step: 0.001,
               label: "Rotation X",
             },
@@ -69,8 +69,8 @@ export default function DrumCollider({
             },
             rz: {
               value: propRz,
-              min: -Math.PI / 4,
-              max: Math.PI / 4,
+              min: -Math.PI / 3,
+              max: Math.PI / 3,
               step: 0.001,
               label: "Rotation Z",
             },
