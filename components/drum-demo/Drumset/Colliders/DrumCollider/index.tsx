@@ -45,110 +45,132 @@ export default function DrumCollider({
   rimBoxH: propRimBoxH = 2.5,
   rimBoxD: propRimBoxD = 1,
 }: DrumColliderProps) {
-  const levaValues = useControls("DrumCollider", {
-    Position: folder({
-      px: { value: propPx, min: -200, max: 200, step: 0.001, label: "X" },
-      py: { value: propPy, min: -100, max: 200, step: 0.001, label: "Y" },
-      pz: { value: propPz, min: -200, max: 200, step: 0.001, label: "Z" },
-      rx: {
-        value: propRx,
-        min: -Math.PI,
-        max: Math.PI,
-        step: 0.001,
-        label: "Rotation X",
-      },
-      ry: {
-        value: propRy,
-        min: -Math.PI,
-        max: Math.PI,
-        step: 0.001,
-        label: "Rotation Y",
-      },
-      rz: {
-        value: propRz,
-        min: -Math.PI,
-        max: Math.PI,
-        step: 0.001,
-        label: "Rotation Z",
-      },
-    }),
-    Body: folder({
-      bodyRadius: {
-        value: propBodyRadius,
-        min: 15,
-        max: 60,
-        step: 0.001,
-        label: "Radius",
-      },
-      bodyHeight: {
-        value: propBodyHeight,
-        min: 0.01,
-        max: 100,
-        step: 0.001,
-        label: "Height",
-      },
-    }),
-    Skin: folder({
-      skinRadiusOffset: {
-        value: propSkinRadiusOffset,
-        min: -5,
-        max: 0,
-        step: 0.001,
-        label: "Radius Offset",
-      },
-      skinHeightAbove: {
-        value: propSkinHeightAbove,
-        min: -2,
-        max: 0,
-        step: 0.001,
-        label: "Y-Offset",
-      },
-      skinThickness: {
-        value: propSkinThickness,
-        min: 0.002,
-        max: 10,
-        step: 0.001,
-        label: "Height",
-      },
-    }),
-    Rim: folder({
-      rimCount: {
-        value: propRimCount,
-        min: 3,
-        max: 30,
-        step: 1,
-        label: "Count",
-      },
-      rimRadiusOffset: {
-        value: propRimRadiusOffset,
-        min: -8,
-        max: 8,
-        step: 0.001,
-        label: "Radius Offset",
-      },
-      rimBoxW: {
-        value: propRimBoxW,
-        min: 0,
-        max: 30,
-        step: 0.001,
-        label: "Box Width (tangent)",
-      },
-      rimBoxH: {
-        value: propRimBoxH,
-        min: 0,
-        max: 5,
-        step: 0.001,
-        label: "Box Height",
-      },
-      rimBoxD: {
-        value: propRimBoxD,
-        min: 0,
-        max: 2,
-        step: 0.001,
-        label: "Box Depth (radial)",
-      },
-    }),
-  });
+  const levaValues = useControls(
+    "DrumCollider",
+    showLeva
+      ? {
+          Position: folder({
+            px: { value: propPx, min: -200, max: 200, step: 0.001, label: "X" },
+            py: { value: propPy, min: -100, max: 200, step: 0.001, label: "Y" },
+            pz: { value: propPz, min: -200, max: 200, step: 0.001, label: "Z" },
+            rx: {
+              value: propRx,
+              min: -Math.PI / 4,
+              max: Math.PI / 4,
+              step: 0.001,
+              label: "Rotation X",
+            },
+            ry: {
+              value: propRy,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.001,
+              label: "Rotation Y",
+            },
+            rz: {
+              value: propRz,
+              min: -Math.PI / 4,
+              max: Math.PI / 4,
+              step: 0.001,
+              label: "Rotation Z",
+            },
+          }),
+          Body: folder({
+            bodyRadius: {
+              value: propBodyRadius,
+              min: 15,
+              max: 60,
+              step: 0.001,
+              label: "Radius",
+            },
+            bodyHeight: {
+              value: propBodyHeight,
+              min: 0.01,
+              max: 100,
+              step: 0.001,
+              label: "Height",
+            },
+          }),
+          Skin: folder({
+            skinRadiusOffset: {
+              value: propSkinRadiusOffset,
+              min: -5,
+              max: 0,
+              step: 0.001,
+              label: "Radius Offset",
+            },
+            skinHeightAbove: {
+              value: propSkinHeightAbove,
+              min: -2,
+              max: 0,
+              step: 0.001,
+              label: "Y-Offset",
+            },
+            skinThickness: {
+              value: propSkinThickness,
+              min: 0.002,
+              max: 10,
+              step: 0.001,
+              label: "Height",
+            },
+          }),
+          Rim: folder({
+            rimCount: {
+              value: propRimCount,
+              min: 3,
+              max: 30,
+              step: 1,
+              label: "Count",
+            },
+            rimRadiusOffset: {
+              value: propRimRadiusOffset,
+              min: -8,
+              max: 8,
+              step: 0.001,
+              label: "Radius Offset",
+            },
+            rimBoxW: {
+              value: propRimBoxW,
+              min: 0,
+              max: 30,
+              step: 0.001,
+              label: "Box Width (tangent)",
+            },
+            rimBoxH: {
+              value: propRimBoxH,
+              min: 0,
+              max: 5,
+              step: 0.001,
+              label: "Box Height",
+            },
+            rimBoxD: {
+              value: propRimBoxD,
+              min: 0,
+              max: 2,
+              step: 0.001,
+              label: "Box Depth (radial)",
+            },
+          }),
+        }
+      : {},
+  ) as {
+    px: number;
+    py: number;
+    pz: number;
+    rx: number;
+    ry: number;
+    rz: number;
+    bodyRadius: number;
+    bodyHeight: number;
+    skinRadiusOffset: number;
+    skinHeightAbove: number;
+    skinThickness: number;
+    rimCount: number;
+    rimRadiusOffset: number;
+    rimBoxW: number;
+    rimBoxH: number;
+    rimBoxD: number;
+  };
 
   const px = showLeva ? levaValues.px : propPx;
   const py = showLeva ? levaValues.py : propPy;
