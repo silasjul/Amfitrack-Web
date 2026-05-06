@@ -41,9 +41,7 @@ export default function Home() {
       max: 1,
       step: 0.001,
     },
-    Colliders: folder({
-      isDebug: { value: true, label: "Show" },
-    }),
+    isDebug: { value: true, label: "Show Colliders" },
     Environment: folder({
       environment: {
         value: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",

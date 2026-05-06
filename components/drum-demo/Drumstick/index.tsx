@@ -26,7 +26,7 @@ export default function Drumstick({
   const { resetCenter } = useSensorSync(groupRef, sensorId);
 
   useEffect(() => {
-    onRegisterReset?.(() => resetCenter([0, -4.5, 0]));
+    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
   }, [resetCenter, onRegisterReset]);
 
   const { positionZ, scale } = useControls({
