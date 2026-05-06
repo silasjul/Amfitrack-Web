@@ -1,20 +1,10 @@
 import React from "react";
 import FloorTom from "./Colliders/FloorTom";
 import Snare from "./Colliders/Snare";
-import { folder, useControls } from "leva";
 import HiTom from "./Colliders/HiTom";
 import MediumTom from "./Colliders/MediumTom";
 
-export default function DrumsetColliders() {
-  const { isDebug } = useControls({
-    colliders: folder({
-      isDebug: {
-        value: true,
-        label: "Show",
-      },
-    }),
-  });
-
+export default function DrumsetColliders({ isDebug = false }: { isDebug?: boolean }) {
   return (
     <group>
       <FloorTom isDebug={isDebug} />

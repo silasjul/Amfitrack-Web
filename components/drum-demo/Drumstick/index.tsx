@@ -4,17 +4,20 @@ import { Center, useGLTF } from "@react-three/drei";
 import { folder, useControls } from "leva";
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import DrumstickCollider from "./DrumstickCollider";
 
 useGLTF.preload("/drum-kit/drumstick.glb");
 
 interface DrumstickProps {
   sensorId: number;
   onRegisterReset?: (fn: () => void) => void;
+  isDebug?: boolean;
 }
 
 export default function Drumstick({
   sensorId,
   onRegisterReset,
+  isDebug = false,
 }: DrumstickProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
@@ -36,7 +39,7 @@ export default function Drumstick({
         label: "rotationPoint",
       },
       scale: {
-        value: 0.025,
+        value: 0.02,
         min: 0.01,
         max: 0.05,
         step: 0.0001,
@@ -46,14 +49,26 @@ export default function Drumstick({
 
   return (
     <group ref={groupRef}>
-      <Center>
-        <primitive
-          object={clone}
-          scale={scale}
-          rotation-y={-Math.PI / 2}
-          position-z={positionZ}
-        />
-      </Center>
+      <primitive
+        object={clone}
+        scale={scale}
+        rotation-y={-Math.PI / 2}
+        position-z={positionZ}
+      />
+      <DrumstickCollider
+        isDebug={isDebug}
+        px={0}
+        py={0.14}
+        pz={-0.01}
+        rx={0}
+        ry={0}
+        rz={0}
+        bodyRadius={0.05}
+        bodyLength={2.58}
+        bodyOffsetZ={0.03}
+        tipRadius={0.06}
+        tipOffsetZ={-1.29}
+      />
     </group>
   );
 }

@@ -20,6 +20,7 @@ export default function Home() {
   const {
     fov,
     drumHeight,
+    isDebug,
     environment,
     environmentHeight,
     environmentRadius,
@@ -40,6 +41,9 @@ export default function Home() {
       max: 1,
       step: 0.001,
     },
+    Colliders: folder({
+      isDebug: { value: true, label: "Show" },
+    }),
     Environment: folder({
       environment: {
         value: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",
@@ -124,10 +128,11 @@ export default function Home() {
         <CameraRig fov={fov} />
         <Light />
         <Physics gravity={[0, -9.81, 0]}>
-          <Drumset drumHeight={drumHeight} />
+          <Drumset drumHeight={drumHeight} isDebug={isDebug} />
           {sensorTxIds[0] && (
             <Drumstick
               sensorId={sensorTxIds[0]}
+              isDebug={isDebug}
               onRegisterReset={(fn) => {
                 resetRefs.current[0] = fn;
               }}
@@ -136,6 +141,7 @@ export default function Home() {
           {sensorTxIds[1] && (
             <Drumstick
               sensorId={sensorTxIds[1]}
+              isDebug={isDebug}
               onRegisterReset={(fn) => {
                 resetRefs.current[1] = fn;
               }}
