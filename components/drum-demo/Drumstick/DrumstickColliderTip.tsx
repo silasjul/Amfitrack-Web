@@ -1,48 +1,29 @@
 import { useSphere } from "@react-three/cannon";
-import { useFrame } from "@react-three/fiber";
-import { RefObject } from "react";
-import * as THREE from "three";
-
-const _pos = new THREE.Vector3();
-const _quat = new THREE.Quaternion();
-const _offset = new THREE.Vector3();
+import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 
 interface Props {
-  syncRef: RefObject<THREE.Group | null>;
+  position: [number, number, number];
   radius: number;
-  offsetZ: number;
-  isDebug?: boolean;
 }
 
-export default function DrumstickColliderTip({
-  syncRef,
-  radius,
-  offsetZ,
-  isDebug = false,
-}: Props) {
-  const [ref, api] = useSphere(() => ({
-    type: "Kinematic",
+export default function DrumstickColliderTip({ position, radius }: Props) {
+  const isDebug = useDrumDemoStore((s) => s.isDebug);
+
+  const [ref] = useSphere(() => ({
+    type: "Dynamic",
+    mass: 1,
     args: [radius],
-    position: [0, -1000, 0],
+    position,
   }));
 
-  useFrame(() => {
-    if (!syncRef.current) return;
-    syncRef.current.getWorldPosition(_pos);
-    syncRef.current.getWorldQuaternion(_quat);
-    _offset.set(0, 0, offsetZ).applyQuaternion(_quat);
-    api.position.set(_pos.x + _offset.x, _pos.y + _offset.y, _pos.z + _offset.z);
-  });
-
   return (
-    <>
-      <group ref={ref} />
+    <group ref={ref}>
       {isDebug && (
-        <mesh position={[0, 0, offsetZ]}>
+        <mesh>
           <sphereGeometry args={[radius, 10, 10]} />
           <meshBasicMaterial color="yellow" wireframe />
         </mesh>
       )}
-    </>
+    </group>
   );
 }

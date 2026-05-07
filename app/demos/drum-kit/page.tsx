@@ -136,12 +136,11 @@ export default function Home() {
         />
         <CameraRig fov={fov} />
         <Light />
-        <Physics gravity={[0, -9.81, 0]}>
-          <Drumset drumHeight={drumHeight} />
+        <Physics gravity={[0, 0, 0]}>
+          {/* <Drumset drumHeight={drumHeight} /> */}
           {sensorTxIds[0] && (
             <Drumstick
               sensorId={sensorTxIds[0]}
-              isDebug={isDebug}
               onRegisterReset={(fn) => {
                 resetRefs.current[0] = fn;
               }}
@@ -150,7 +149,6 @@ export default function Home() {
           {sensorTxIds[1] && (
             <Drumstick
               sensorId={sensorTxIds[1]}
-              isDebug={isDebug}
               onRegisterReset={(fn) => {
                 resetRefs.current[1] = fn;
               }}

@@ -5,34 +5,38 @@ import { folder, useControls } from "leva";
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import DrumstickCollider from "./DrumstickCollider";
+import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 
 useGLTF.preload("/drum-kit/drumstick.glb");
 
 interface DrumstickProps {
   sensorId: number;
   onRegisterReset?: (fn: () => void) => void;
-  isDebug?: boolean;
 }
 
 export default function Drumstick({
   sensorId,
   onRegisterReset,
-  isDebug = false,
 }: DrumstickProps) {
-  const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
   useEnableModelShadow(clone);
-  const { resetCenter } = useSensorSync(groupRef, sensorId);
 
   useEffect(() => {
-    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
-  }, [resetCenter, onRegisterReset]);
+    onRegisterReset?.(() => console.log("reset position"));
+  }, [onRegisterReset]);
 
-  const { positionZ, scale } = useControls({
+  const { positionY, positionZ, scale } = useControls({
     drumstick: folder({
+      positionY: {
+        value: -0.14,
+        min: -0.5,
+        max: 0.5,
+        step: 0.001,
+        label: "offsetY",
+      },
       positionZ: {
-        value: 0,
+        value: 0.0,
         min: -2,
         max: 2,
         step: 0.001,
@@ -48,27 +52,27 @@ export default function Drumstick({
   });
 
   return (
-    <group ref={groupRef}>
+    <DrumstickCollider
+      showLeva
+      px={0.0}
+      py={0.14}
+      pz={-0.01}
+      rx={0}
+      ry={0}
+      rz={0}
+      bodyRadius={0.05}
+      bodyLength={2.55}
+      bodyOffsetZ={0.0}
+      tipRadius={0.06}
+      tipOffsetZ={-1.29}
+    >
       <primitive
         object={clone}
         scale={scale}
         rotation-y={-Math.PI / 2}
+        position-y={positionY}
         position-z={positionZ}
       />
-      <DrumstickCollider
-        isDebug={isDebug}
-        px={0}
-        py={0.14}
-        pz={-0.01}
-        rx={0}
-        ry={0}
-        rz={0}
-        bodyRadius={0.05}
-        bodyLength={2.58}
-        bodyOffsetZ={0.03}
-        tipRadius={0.06}
-        tipOffsetZ={-1.29}
-      />
-    </group>
+    </DrumstickCollider>
   );
 }

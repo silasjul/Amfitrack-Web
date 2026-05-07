@@ -1,11 +1,8 @@
 import { folder, useControls } from "leva";
-import { useRef } from "react";
-import * as THREE from "three";
-import DrumstickColliderBody from "./DrumstickColliderBody";
-import DrumstickColliderTip from "./DrumstickColliderTip";
+import { ReactNode } from "react";
+import DrumstickCompoundBody from "./DrumstickCompoundBody";
 
 interface DrumstickColliderProps {
-  isDebug?: boolean;
   showLeva?: boolean;
   px?: number;
   py?: number;
@@ -18,10 +15,10 @@ interface DrumstickColliderProps {
   bodyOffsetZ?: number;
   tipRadius?: number;
   tipOffsetZ?: number;
+  children?: ReactNode;
 }
 
 export default function DrumstickCollider({
-  isDebug = false,
   showLeva = false,
   px: propPx = 0,
   py: propPy = 0,
@@ -34,9 +31,8 @@ export default function DrumstickCollider({
   bodyOffsetZ: propBodyOffsetZ = -0.1,
   tipRadius: propTipRadius = 0.02,
   tipOffsetZ: propTipOffsetZ = 0.2,
+  children,
 }: DrumstickColliderProps) {
-  const syncRef = useRef<THREE.Group>(null);
-
   const levaValues = useControls(
     "DrumstickCollider",
     showLeva
@@ -108,19 +104,7 @@ export default function DrumstickCollider({
           }),
         }
       : {},
-  ) as {
-    px: number;
-    py: number;
-    pz: number;
-    rx: number;
-    ry: number;
-    rz: number;
-    bodyRadius: number;
-    bodyLength: number;
-    bodyOffsetZ: number;
-    tipRadius: number;
-    tipOffsetZ: number;
-  };
+  ) as any;
 
   const px = showLeva ? levaValues.px : propPx;
   const py = showLeva ? levaValues.py : propPy;
@@ -137,21 +121,18 @@ export default function DrumstickCollider({
   const physicsKey = `${px},${py},${pz},${rx},${ry},${rz},${bodyRadius},${bodyLength},${bodyOffsetZ},${tipRadius},${tipOffsetZ}`;
 
   return (
-    <group key={physicsKey} position={[px, py, pz]} rotation={[rx, ry, rz]}>
-      <group ref={syncRef} />
-      <DrumstickColliderBody
-        syncRef={syncRef}
-        radius={bodyRadius}
-        length={bodyLength}
-        offsetZ={bodyOffsetZ}
-        isDebug={isDebug}
-      />
-      <DrumstickColliderTip
-        syncRef={syncRef}
-        radius={tipRadius}
-        offsetZ={tipOffsetZ}
-        isDebug={isDebug}
-      />
+    <group key={physicsKey}>
+      <DrumstickCompoundBody
+        position={[px, py, pz]}
+        rotation={[rx, ry, rz]}
+        bodyRadius={bodyRadius}
+        bodyLength={bodyLength}
+        bodyOffsetZ={bodyOffsetZ}
+        tipRadius={tipRadius}
+        tipOffsetZ={tipOffsetZ}
+      >
+        {children}
+      </DrumstickCompoundBody>
     </group>
   );
 }
