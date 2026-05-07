@@ -114,7 +114,7 @@ export default function Home() {
     <div className="relative h-full w-full">
       <Leva
         collapsed
-        theme={{ sizes: { rootWidth: "400px", controlWidth: "360px" } }}
+        theme={{ sizes: { rootWidth: "400px", controlWidth: "full" } }}
       />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
         <Environment
