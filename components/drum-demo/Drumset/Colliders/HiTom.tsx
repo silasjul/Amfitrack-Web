@@ -1,10 +1,9 @@
 import React from "react";
 import DrumCollider from "./DrumCollider";
 
-export default function HiTom({ isDebug = false }: { isDebug?: boolean }) {
+export default function HiTom() {
   return (
     <DrumCollider
-      isDebug={isDebug}
       px={37.43}
       py={74.24}
       pz={84.47}

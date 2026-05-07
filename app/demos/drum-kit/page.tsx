@@ -9,6 +9,7 @@ import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { button, folder, Leva, useControls } from "leva";
 import Drumstick from "@/components/drum-demo/Drumstick";
 import useTxIds from "@/hooks/useTxIds";
+import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
@@ -16,6 +17,8 @@ const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
 export default function Home() {
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
+  const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
+  const setDrumHeight = useDrumDemoStore((s) => s.setDrumHeight);
 
   const {
     fov,
@@ -99,6 +102,14 @@ export default function Home() {
     resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
   });
 
+  useEffect(() => {
+    setIsDebug(isDebug);
+  }, [isDebug, setIsDebug]);
+
+  useEffect(() => {
+    setDrumHeight(drumHeight);
+  }, [drumHeight, setDrumHeight]);
+
   return (
     <div className="relative h-full w-full">
       <Leva
@@ -106,7 +117,7 @@ export default function Home() {
         theme={{ sizes: { rootWidth: "500px", controlWidth: "360px" } }}
       />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
-        <Environment
+        {/* <Environment
           files={environment}
           background
           ground={{
@@ -115,18 +126,18 @@ export default function Home() {
             scale: environmentScale,
           }}
           rotation-y={Math.PI}
-        />
+        /> */}
         <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
         <OrbitControls
           target={[0, drumHeight + 3.8, 0]}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI * 0.6}
-          maxDistance={10}
+          // minPolarAngle={0}
+          // maxPolarAngle={Math.PI * 0.6}
+          // maxDistance={10}
         />
         <CameraRig fov={fov} />
         <Light />
         <Physics gravity={[0, -9.81, 0]}>
-          <Drumset drumHeight={drumHeight} isDebug={isDebug} />
+          <Drumset drumHeight={drumHeight} />
           {sensorTxIds[0] && (
             <Drumstick
               sensorId={sensorTxIds[0]}
@@ -154,7 +165,7 @@ export default function Home() {
 function Light() {
   return (
     <>
-      <ambientLight intensity={1} />
+      <ambientLight intensity={10} />
     </>
   );
 }

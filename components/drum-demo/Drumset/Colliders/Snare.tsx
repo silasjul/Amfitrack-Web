@@ -1,10 +1,9 @@
 import React from "react";
 import DrumCollider from "./DrumCollider";
 
-export default function Snare({ isDebug = false }: { isDebug?: boolean }) {
+export default function Snare() {
   return (
     <DrumCollider
-      isDebug={isDebug}
       px={47.69}
       py={77.32}
       pz={-23.9}

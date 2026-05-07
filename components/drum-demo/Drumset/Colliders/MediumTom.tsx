@@ -1,10 +1,9 @@
 import React from "react";
 import DrumCollider from "./DrumCollider";
 
-export default function MediumTom({ isDebug = false }: { isDebug?: boolean }) {
+export default function MediumTom() {
   return (
     <DrumCollider
-      isDebug={isDebug}
       px={-51.9}
       py={68.65}
       pz={79.5}

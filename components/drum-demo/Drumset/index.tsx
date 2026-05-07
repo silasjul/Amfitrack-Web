@@ -6,21 +6,20 @@ import DrumsetColliders from "./DrumsetColliders";
 
 useGLTF.preload("/drum-kit/drumset.glb");
 
-export default function Drumset({
-  drumHeight,
-  isDebug = false,
-}: {
-  drumHeight: number;
-  isDebug?: boolean;
-}) {
+export default function Drumset({ drumHeight }: { drumHeight: number }) {
   const { scene } = useGLTF("/drum-kit/drumset.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
   useEnableModelShadow(clone);
 
   return (
-    <group position={[0, drumHeight, 0]} scale={0.045} rotation-y={Math.PI}>
-      <primitive object={clone} />
-      <DrumsetColliders isDebug={isDebug} />
+    <group>
+      <primitive
+        position={[0, drumHeight, 0]}
+        object={clone}
+        scale={0.045}
+        rotation-y={Math.PI}
+      />
+      <DrumsetColliders />
     </group>
   );
 }

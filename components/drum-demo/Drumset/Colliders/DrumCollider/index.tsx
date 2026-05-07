@@ -1,11 +1,9 @@
 import { folder, useControls } from "leva";
-import { Debug } from "@react-three/cannon";
 import DrumColliderBody from "./DrumColliderBody";
 import DrumColliderSkin from "./DrumColliderSkin";
 import DrumColliderRim from "./DrumColliderRim";
 
 interface DrumColliderProps {
-  isDebug?: boolean;
   showLeva?: boolean;
   px?: number;
   py?: number;
@@ -26,7 +24,6 @@ interface DrumColliderProps {
 }
 
 export default function DrumCollider({
-  isDebug = false,
   showLeva = false,
   px: propPx = 0,
   py: propPy = 100,
@@ -201,30 +198,30 @@ export default function DrumCollider({
   const physicsKey = `${bodyRadius},${bodyHeight},${skinRadiusOffset},${skinHeightAbove},${skinThickness},${rimCount},${rimRadiusOffset},${rimBoxW},${rimBoxH},${rimBoxD},${px},${py},${pz},${rx},${ry},${rz}`;
 
   return (
-    <group key={physicsKey} rotation={rotation}>
+    <group key={physicsKey}>
       <DrumColliderBody
         position={position}
+        rotation={rotation}
         radius={bodyRadius}
         height={bodyHeight}
-        isDebug={isDebug}
       />
       <DrumColliderSkin
         position={position}
+        rotation={rotation}
         radius={bodyRadius + skinRadiusOffset}
         bodyHeight={bodyHeight}
         heightAbove={skinHeightAbove}
         thickness={skinThickness}
-        isDebug={isDebug}
       />
       <DrumColliderRim
         position={position}
+        rotation={rotation}
         radius={bodyRadius + rimRadiusOffset}
         bodyHeight={bodyHeight}
         count={Math.round(rimCount)}
         boxW={rimBoxW}
         boxH={rimBoxH}
         boxD={rimBoxD}
-        isDebug={isDebug}
       />
     </group>
   );
