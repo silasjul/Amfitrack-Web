@@ -1,11 +1,12 @@
 import { folder, useControls } from "leva";
 import { ReactNode } from "react";
 import DrumstickCompoundBody from "./DrumstickCompoundBody";
-
+import * as THREE from "three";
 interface DrumstickColliderProps {
   showLeva?: boolean;
+  sensorPointRef?: React.RefObject<THREE.Mesh>;
   px?: number;
-  py?: number;
+  py?: number;  
   pz?: number;
   rx?: number;
   ry?: number;
@@ -20,6 +21,7 @@ interface DrumstickColliderProps {
 
 export default function DrumstickCollider({
   showLeva = false,
+  sensorPointRef,
   px: propPx = 0,
   py: propPy = 0,
   pz: propPz = 0,
@@ -123,6 +125,7 @@ export default function DrumstickCollider({
   return (
     <group key={physicsKey}>
       <DrumstickCompoundBody
+        sensorPointRef={sensorPointRef}
         position={[px, py, pz]}
         rotation={[rx, ry, rz]}
         bodyRadius={bodyRadius}

@@ -6,7 +6,7 @@ import { useDeviceStore } from "@/amfitrackSDK";
 const POSITION_SCALE = 0.01;
 
 export function useSensorSync(
-  modelRef: React.RefObject<THREE.Group | null>,
+  modelRef: React.RefObject<THREE.Group | THREE.Mesh | null>,
   txId: number | undefined,
 ) {
   const centerOffsetRef = useRef(new THREE.Vector3());
@@ -35,18 +35,21 @@ export function useSensorSync(
       .normalize();
   });
 
-  const resetCenter = useCallback((offset: [number, number, number] = [0, 0, 0]) => {
-    if (txId === undefined) return;
-    const emfData = useDeviceStore.getState().emfImuFrameId;
-    const data = emfData[txId];
-    if (data) {
-      centerOffsetRef.current.set(
-        -data.position.y * POSITION_SCALE + offset[0],
-        data.position.z * POSITION_SCALE + offset[1],
-        -data.position.x * POSITION_SCALE + offset[2],
-      );
-    }
-  }, [txId]);
+  const resetCenter = useCallback(
+    (offset: [number, number, number] = [0, 0, 0]) => {
+      if (txId === undefined) return;
+      const emfData = useDeviceStore.getState().emfImuFrameId;
+      const data = emfData[txId];
+      if (data) {
+        centerOffsetRef.current.set(
+          -data.position.y * POSITION_SCALE + offset[0],
+          data.position.z * POSITION_SCALE + offset[1],
+          -data.position.x * POSITION_SCALE + offset[2],
+        );
+      }
+    },
+    [txId],
+  );
 
   return { resetCenter };
 }

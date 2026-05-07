@@ -1,13 +1,10 @@
-import * as THREE from "three";
-import { useMemo } from "react";
-import { useCylinder, useSphere, useLockConstraint } from "@react-three/cannon";
+import { useCompoundBody } from "@react-three/cannon";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { ReactNode } from "react";
-
-// Aligns Cannon's Y-axis cylinder with the stick's Z axis
-const CYL_ALIGN = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
-
+import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 interface Props {
+  sensorPointRef?: React.RefObject<THREE.Mesh>;
   position: [number, number, number];
   rotation: [number, number, number];
   bodyRadius: number;
@@ -21,6 +18,7 @@ interface Props {
 }
 
 export default function DrumstickCompoundBody({
+  sensorPointRef,
   position,
   rotation,
   bodyRadius,
@@ -34,69 +32,51 @@ export default function DrumstickCompoundBody({
 }: Props) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
 
-  const stickQuat = useMemo(
-    () => new THREE.Quaternion().setFromEuler(new THREE.Euler(rotation[0], rotation[1], rotation[2])),
-    [rotation],
-  );
-
-  const bodyWorldPosition = useMemo<[number, number, number]>(() => {
-    const offset = new THREE.Vector3(0, 0, bodyOffsetZ).applyQuaternion(stickQuat);
-    return [position[0] + offset.x, position[1] + offset.y, position[2] + offset.z];
-  }, [position, stickQuat, bodyOffsetZ]);
-
-  const bodyWorldRotation = useMemo<[number, number, number]>(() => {
-    const e = new THREE.Euler().setFromQuaternion(
-      new THREE.Quaternion().multiplyQuaternions(stickQuat, CYL_ALIGN),
-    );
-    return [e.x, e.y, e.z];
-  }, [stickQuat]);
-
-  const tipWorldPosition = useMemo<[number, number, number]>(() => {
-    const offset = new THREE.Vector3(0, 0, tipOffsetZ).applyQuaternion(stickQuat);
-    return [position[0] + offset.x, position[1] + offset.y, position[2] + offset.z];
-  }, [position, stickQuat, tipOffsetZ]);
-
-  const [bodyRef] = useCylinder(() => ({
+  const [ref, api] = useCompoundBody(() => ({
     type: "Dynamic",
-    mass: 0.5,
-    args: [bodyRadius, bodyRadius, bodyLength, 8],
-    position: bodyWorldPosition,
-    rotation: bodyWorldRotation,
-    onCollide: onBodyCollide,
+    mass: 1,
+    position,
+    rotation,
+    shapes: [
+      {
+        type: "Cylinder",
+        args: [bodyRadius, bodyRadius, bodyLength, 8],
+        position: [0, 0, bodyOffsetZ] as [number, number, number],
+        rotation: [Math.PI / 2, 0, 0] as [number, number, number],
+      },
+      {
+        type: "Sphere",
+        args: [tipRadius] as [number],
+        position: [0, 0, tipOffsetZ] as [number, number, number],
+      },
+    ],
+    onCollide: (e) => {
+      onBodyCollide?.(e);
+      onTipCollide?.(e);
+    },
   }));
 
-  const [tipRef] = useSphere(() => ({
-    type: "Dynamic",
-    mass: 0.5,
-    args: [tipRadius],
-    position: tipWorldPosition,
-    onCollide: onTipCollide,
-  }));
+  useFrame(() => {
+    if (!sensorPointRef || !sensorPointRef.current) return;
 
-  useLockConstraint(bodyRef, tipRef, {});
+    // Position
+  });
 
   return (
-    <>
-      <group ref={bodyRef}>
-        {/* Undo CYL_ALIGN (-π/2 around X) and shift to stick root so children sit correctly */}
-        <group rotation-x={-Math.PI / 2} position={[0, -bodyOffsetZ, 0]}>
-          {children}
-        </group>
-        {isDebug && (
-          <mesh>
+    <group ref={ref}>
+      {children}
+      {isDebug && (
+        <>
+          <mesh position={[0, 0, bodyOffsetZ]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[bodyRadius, bodyRadius, bodyLength, 8]} />
             <meshBasicMaterial color="lime" wireframe />
           </mesh>
-        )}
-      </group>
-      <group ref={tipRef}>
-        {isDebug && (
-          <mesh>
+          <mesh position={[0, 0, tipOffsetZ]}>
             <sphereGeometry args={[tipRadius, 10, 10]} />
             <meshBasicMaterial color="yellow" wireframe />
           </mesh>
-        )}
-      </group>
-    </>
+        </>
+      )}
+    </group>
   );
 }

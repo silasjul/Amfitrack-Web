@@ -18,8 +18,12 @@ export default function Drumstick({
   sensorId,
   onRegisterReset,
 }: DrumstickProps) {
+  const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
+  const sensorPointRef = useRef<THREE.Mesh>(null!);
+
+  useSensorSync(sensorPointRef, sensorId);
   useEnableModelShadow(clone);
 
   useEffect(() => {
@@ -52,27 +56,34 @@ export default function Drumstick({
   });
 
   return (
-    <DrumstickCollider
-      showLeva
-      px={0.0}
-      py={0.14}
-      pz={-0.01}
-      rx={0}
-      ry={0}
-      rz={0}
-      bodyRadius={0.05}
-      bodyLength={2.55}
-      bodyOffsetZ={0.0}
-      tipRadius={0.06}
-      tipOffsetZ={-1.29}
-    >
-      <primitive
-        object={clone}
-        scale={scale}
-        rotation-y={-Math.PI / 2}
-        position-y={positionY}
-        position-z={positionZ}
-      />
-    </DrumstickCollider>
+    <>
+      <DrumstickCollider
+        showLeva
+        sensorPointRef={sensorPointRef}
+        px={0.0}
+        py={0.14}
+        pz={-0.01}
+        rx={0}
+        ry={0}
+        rz={0}
+        bodyRadius={0.05}
+        bodyLength={2.55}
+        bodyOffsetZ={0.0}
+        tipRadius={0.06}
+        tipOffsetZ={-1.29}
+      >
+        <primitive
+          object={clone}
+          scale={scale}
+          rotation-y={-Math.PI / 2}
+          position-y={positionY}
+          position-z={positionZ}
+        />
+      </DrumstickCollider>
+      <mesh ref={sensorPointRef}>
+        <sphereGeometry args={[0.1, 10, 10]} />
+        <meshBasicMaterial color="white" wireframe visible={isDebug} />
+      </mesh>
+    </>
   );
 }
