@@ -23,11 +23,11 @@ export default function Drumstick({
   const clone = useMemo(() => scene.clone(), [scene]);
   const sensorPointRef = useRef<THREE.Mesh>(null!);
 
-  useSensorSync(sensorPointRef, sensorId);
+  const { resetCenter } = useSensorSync(sensorPointRef, sensorId);
   useEnableModelShadow(clone);
 
   useEffect(() => {
-    onRegisterReset?.(() => console.log("reset position"));
+    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
   }, [onRegisterReset]);
 
   const { positionY, positionZ, scale } = useControls({
@@ -58,7 +58,6 @@ export default function Drumstick({
   return (
     <>
       <DrumstickCollider
-        showLeva
         sensorPointRef={sensorPointRef}
         px={0.0}
         py={0.14}

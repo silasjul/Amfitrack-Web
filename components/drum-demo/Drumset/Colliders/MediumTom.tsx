@@ -4,7 +4,6 @@ import DrumCollider from "./DrumCollider";
 export default function MediumTom() {
   return (
     <DrumCollider
-      showLeva
       px={0.973}
       py={5.395}
       pz={-0.3180000000000005}

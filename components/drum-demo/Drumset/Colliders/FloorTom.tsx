@@ -4,7 +4,6 @@ import DrumCollider from "./DrumCollider";
 export default function FloorTom() {
   return (
     <DrumCollider
-      showLeva={false}
       px={2.19}
       py={2.48}
       pz={1.68}

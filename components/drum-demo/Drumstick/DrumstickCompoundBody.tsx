@@ -2,7 +2,8 @@ import { useCompoundBody } from "@react-three/cannon";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { ReactNode } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useDrumstickSpringFollow } from "@/hooks/useDrumstickSpringFollow";
+
 interface Props {
   sensorPointRef?: React.RefObject<THREE.Mesh>;
   position: [number, number, number];
@@ -56,27 +57,47 @@ export default function DrumstickCompoundBody({
     },
   }));
 
-  useFrame(() => {
-    if (!sensorPointRef || !sensorPointRef.current) return;
-
-    // Position
-  });
+  useDrumstickSpringFollow(api, sensorPointRef);
 
   return (
     <group ref={ref}>
       {children}
       {isDebug && (
-        <>
-          <mesh position={[0, 0, bodyOffsetZ]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[bodyRadius, bodyRadius, bodyLength, 8]} />
-            <meshBasicMaterial color="lime" wireframe />
-          </mesh>
-          <mesh position={[0, 0, tipOffsetZ]}>
-            <sphereGeometry args={[tipRadius, 10, 10]} />
-            <meshBasicMaterial color="yellow" wireframe />
-          </mesh>
-        </>
+        <DebugShapes
+          bodyRadius={bodyRadius}
+          bodyLength={bodyLength}
+          bodyOffsetZ={bodyOffsetZ}
+          tipRadius={tipRadius}
+          tipOffsetZ={tipOffsetZ}
+        />
       )}
     </group>
+  );
+}
+
+function DebugShapes({
+  bodyRadius,
+  bodyLength,
+  bodyOffsetZ,
+  tipRadius,
+  tipOffsetZ,
+}: {
+  bodyRadius: number;
+  bodyLength: number;
+  bodyOffsetZ: number;
+  tipRadius: number;
+  tipOffsetZ: number;
+}) {
+  return (
+    <>
+      <mesh position={[0, 0, bodyOffsetZ]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[bodyRadius, bodyRadius, bodyLength, 8]} />
+        <meshBasicMaterial color="lime" wireframe />
+      </mesh>
+      <mesh position={[0, 0, tipOffsetZ]}>
+        <sphereGeometry args={[tipRadius, 10, 10]} />
+        <meshBasicMaterial color="yellow" wireframe />
+      </mesh>
+    </>
   );
 }

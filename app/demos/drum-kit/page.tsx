@@ -114,10 +114,10 @@ export default function Home() {
     <div className="relative h-full w-full">
       <Leva
         collapsed
-        theme={{ sizes: { rootWidth: "500px", controlWidth: "360px" } }}
+        theme={{ sizes: { rootWidth: "400px", controlWidth: "360px" } }}
       />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
-        {/* <Environment
+        <Environment
           files={environment}
           background
           ground={{
@@ -126,7 +126,7 @@ export default function Home() {
             scale: environmentScale,
           }}
           rotation-y={Math.PI}
-        /> */}
+        />
         <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
         <OrbitControls
           target={[0, drumHeight + 3.8, 0]}
@@ -137,7 +137,7 @@ export default function Home() {
         <CameraRig fov={fov} />
         <Light />
         <Physics gravity={[0, 0, 0]}>
-          {/* <Drumset drumHeight={drumHeight} /> */}
+          <Drumset drumHeight={drumHeight} />
           {sensorTxIds[0] && (
             <Drumstick
               sensorId={sensorTxIds[0]}
