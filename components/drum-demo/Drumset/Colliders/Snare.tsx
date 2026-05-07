@@ -8,7 +8,6 @@ export default function Snare() {
       py={77.32}
       pz={-23.9}
       rx={-0.11}
-      ry={0}
       rz={0.01}
       bodyRadius={26.71}
       bodyHeight={18.66}

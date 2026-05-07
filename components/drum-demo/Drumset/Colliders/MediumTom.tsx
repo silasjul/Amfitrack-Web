@@ -8,7 +8,6 @@ export default function MediumTom() {
       py={68.65}
       pz={79.5}
       rx={-0.81}
-      ry={0.27}
       rz={-0.11}
       bodyRadius={23.55}
       bodyHeight={28.79}

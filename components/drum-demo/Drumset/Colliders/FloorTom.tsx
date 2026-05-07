@@ -9,7 +9,6 @@ export default function FloorTom() {
       py={0}
       pz={0}
       rx={0}
-      ry={0}
       rz={0}
       bodyRadius={5}
       bodyHeight={5}

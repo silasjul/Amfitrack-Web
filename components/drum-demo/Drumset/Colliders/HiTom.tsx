@@ -8,7 +8,6 @@ export default function HiTom() {
       py={74.24}
       pz={84.47}
       rx={-0.8}
-      ry={-0.06}
       rz={0.08}
       bodyRadius={19.67}
       bodyHeight={23.25}
