@@ -163,7 +163,7 @@ export default function Home() {
 function Light() {
   return (
     <>
-      <ambientLight intensity={10} />
+      <ambientLight intensity={1} />
     </>
   );
 }

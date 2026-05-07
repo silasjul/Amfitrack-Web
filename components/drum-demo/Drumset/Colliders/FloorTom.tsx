@@ -16,7 +16,7 @@ export default function FloorTom() {
       skinThickness={0.11}
       rimCount={30}
       rimRadiusOffset={-0.06}
-      rimBoxW={0.28}
+      rimBoxW={0.3}
       rimBoxH={0.17}
       rimBoxD={0.07}
     />

@@ -12,11 +12,13 @@ useGLTF.preload("/drum-kit/drumstick.glb");
 interface DrumstickProps {
   sensorId: number;
   onRegisterReset?: (fn: () => void) => void;
+  showLeva?: boolean;
 }
 
 export default function Drumstick({
   sensorId,
   onRegisterReset,
+  showLeva = false,
 }: DrumstickProps) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
@@ -30,30 +32,34 @@ export default function Drumstick({
     onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
   }, [onRegisterReset]);
 
-  const { positionY, positionZ, scale } = useControls({
-    drumstick: folder({
-      positionY: {
-        value: -0.14,
-        min: -0.5,
-        max: 0.5,
-        step: 0.001,
-        label: "offsetY",
-      },
-      positionZ: {
-        value: 0.0,
-        min: -2,
-        max: 2,
-        step: 0.001,
-        label: "rotationPoint",
-      },
-      scale: {
-        value: 0.02,
-        min: 0.01,
-        max: 0.05,
-        step: 0.0001,
-      },
-    }),
-  });
+  const leva = useControls(
+    showLeva
+      ? {
+          drumstick: folder({
+            positionY: {
+              value: -0.14,
+              min: -0.5,
+              max: 0.5,
+              step: 0.001,
+              label: "offsetY",
+            },
+            positionZ: {
+              value: 0.0,
+              min: -2,
+              max: 2,
+              step: 0.001,
+              label: "rotationPoint",
+            },
+            scale: {
+              value: 0.02,
+              min: 0.01,
+              max: 0.05,
+              step: 0.0001,
+            },
+          }),
+        }
+      : {},
+  ) as any;
 
   return (
     <>
@@ -73,10 +79,10 @@ export default function Drumstick({
       >
         <primitive
           object={clone}
-          scale={scale}
+          scale={leva.scale ?? 0.02}
           rotation-y={-Math.PI / 2}
-          position-y={positionY}
-          position-z={positionZ}
+          position-y={leva.positionY ?? -0.14}
+          position-z={leva.positionZ ?? 0.0}
         />
       </DrumstickCollider>
       <mesh ref={sensorPointRef}>
