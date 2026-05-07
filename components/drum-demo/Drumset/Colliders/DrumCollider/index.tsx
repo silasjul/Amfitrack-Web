@@ -1,4 +1,5 @@
-import { folder, useControls } from "leva";
+import React, { useRef } from "react";
+import { button, folder, useControls } from "leva";
 import DrumColliderBody from "./DrumColliderBody";
 import DrumColliderSkin from "./DrumColliderSkin";
 import DrumColliderRim from "./DrumColliderRim";
@@ -31,9 +32,9 @@ export default function DrumCollider({
   rz: propRz = 0,
   bodyRadius: propBodyRadius = 50,
   bodyHeight: propBodyHeight = 50,
-  skinRadiusOffset: propSkinRadiusOffset = -2,
-  skinHeightAbove: propSkinHeightAbove = -0.01,
-  skinThickness: propSkinThickness = 2,
+  skinRadiusOffset: propSkinRadiusOffset = 0,
+  skinHeightAbove: propSkinHeightAbove = 0,
+  skinThickness: propSkinThickness = 0,
   rimCount: propRimCount = 15,
   rimRadiusOffset: propRimRadiusOffset = 4,
   rimBoxW: propRimBoxW = 15,
@@ -66,7 +67,7 @@ export default function DrumCollider({
           Body: folder({
             bodyRadius: {
               value: propBodyRadius,
-              min: 1,
+              min: 0.5,
               max: 4,
               step: 0.001,
               label: "Radius",
@@ -143,20 +144,35 @@ export default function DrumCollider({
       : {},
   ) as any;
 
+  const currentDebugValuesRef = useRef<any>(null);
+
+  useControls(
+    "DrumCollider",
+    showLeva
+      ? {
+          Debug: folder({
+            logValues: button(() => {
+              console.log(
+                "[DrumCollider values]",
+                currentDebugValuesRef.current,
+              );
+            }),
+          }),
+        }
+      : {},
+  );
+
   const px = showLeva ? levaValues.px : propPx;
   const py = showLeva ? levaValues.py : propPy;
   const pz = showLeva ? levaValues.pz : propPz;
   const rx = showLeva ? levaValues.rx : propRx;
-  const ry = 0;
   const rz = showLeva ? levaValues.rz : propRz;
   const bodyRadius = showLeva ? levaValues.bodyRadius : propBodyRadius;
   const bodyHeight = showLeva ? levaValues.bodyHeight : propBodyHeight;
   const skinRadiusOffset = showLeva
     ? levaValues.skinRadiusOffset
     : propSkinRadiusOffset;
-  const yOffset = showLeva
-    ? levaValues.yOffset
-    : propSkinHeightAbove;
+  const yOffset = showLeva ? levaValues.yOffset : propSkinHeightAbove;
   const skinThickness = showLeva ? levaValues.skinThickness : propSkinThickness;
   const rimCount = showLeva ? levaValues.rimCount : propRimCount;
   const rimRadiusOffset = showLeva
@@ -167,9 +183,29 @@ export default function DrumCollider({
   const rimBoxD = showLeva ? levaValues.rimBoxD : propRimBoxD;
 
   const position: [number, number, number] = [px, py, pz];
-  const rotation: [number, number, number] = [rx, ry, rz];
+  const rotation: [number, number, number] = [rx, 0, rz];
 
-  const physicsKey = `${bodyRadius},${bodyHeight},${skinRadiusOffset},${yOffset},${skinThickness},${rimCount},${rimRadiusOffset},${rimBoxW},${rimBoxH},${rimBoxD},${px},${py},${pz},${rx},${ry},${rz}`;
+  currentDebugValuesRef.current = {
+    px,
+    py,
+    pz,
+    rx,
+    rz,
+    position,
+    rotation,
+    bodyRadius,
+    bodyHeight,
+    skinRadiusOffset,
+    yOffset,
+    skinThickness,
+    rimCount,
+    rimRadiusOffset,
+    rimBoxW,
+    rimBoxH,
+    rimBoxD,
+  };
+
+  const physicsKey = `${bodyRadius},${bodyHeight},${skinRadiusOffset},${yOffset},${skinThickness},${rimCount},${rimRadiusOffset},${rimBoxW},${rimBoxH},${rimBoxD},${px},${py},${pz},${rx},${rz}`;
 
   return (
     <group key={physicsKey}>

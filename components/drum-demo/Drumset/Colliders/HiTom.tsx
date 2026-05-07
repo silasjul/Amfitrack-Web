@@ -4,21 +4,21 @@ import DrumCollider from "./DrumCollider";
 export default function HiTom() {
   return (
     <DrumCollider
-      px={37.43}
-      py={74.24}
-      pz={84.47}
-      rx={-0.8}
-      rz={0.08}
-      bodyRadius={19.67}
-      bodyHeight={23.25}
-      skinRadiusOffset={-1.3}
-      skinHeightAbove={-1.82}
-      skinThickness={2.92}
-      rimCount={21}
-      rimRadiusOffset={-0.94}
-      rimBoxW={5.82}
-      rimBoxH={4.1}
-      rimBoxD={1.3}
+      px={-1.1950000000000003}
+      py={5.425}
+      pz={-0.20999999999999996}
+      rx={0.8029999999999999}
+      rz={-0.09799999999999999}
+      bodyRadius={0.8649999999999998}
+      bodyHeight={1.041}
+      skinRadiusOffset={0}
+      skinHeightAbove={0}
+      skinThickness={0.04399999999999993}
+      rimCount={20}
+      rimRadiusOffset={-0.028999999999999915}
+      rimBoxW={0.28}
+      rimBoxH={0.16000000000000003}
+      rimBoxD={0.05599999999999994}
     />
   );
 }
