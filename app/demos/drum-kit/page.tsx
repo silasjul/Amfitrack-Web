@@ -11,6 +11,7 @@ import Drumstick from "@/components/drum-demo/Drumstick";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
+import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
@@ -20,6 +21,14 @@ export default function Home() {
   const resetRefs = useRef<Array<() => void>>([]);
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
   const setDrumHeight = useDrumDemoStore((s) => s.setDrumHeight);
+  const setTopNormalDeg = useDrumAudioThresholdsStore((s) => s.setTopNormalDeg);
+  const setRimRadiusPct = useDrumAudioThresholdsStore((s) => s.setRimRadiusPct);
+  const setSnareCenterPct = useDrumAudioThresholdsStore(
+    (s) => s.setSnareCenterPct,
+  );
+  const setRimshotAngleDeg = useDrumAudioThresholdsStore(
+    (s) => s.setRimshotAngleDeg,
+  );
 
   const {
     fov,
@@ -32,6 +41,10 @@ export default function Home() {
     Opacity,
     Blur,
     Far,
+    topNormalDeg,
+    rimRadiusPct,
+    snareCenterPct,
+    rimshotAngleDeg,
   } = useControls({
     fov: {
       value: 70,
@@ -81,6 +94,39 @@ export default function Home() {
       },
       { collapsed: true },
     ),
+    "Audio thresholds": folder(
+      {
+        topNormalDeg: {
+          value: 45,
+          min: 0,
+          max: 90,
+          step: 1,
+          label: "Top angle (°)",
+        },
+        rimRadiusPct: {
+          value: 0.85,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Rim radius %",
+        },
+        snareCenterPct: {
+          value: 0.45,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Snare center %",
+        },
+        rimshotAngleDeg: {
+          value: 60,
+          min: 0,
+          max: 90,
+          step: 1,
+          label: "Rimshot angle (°)",
+        },
+      },
+      { collapsed: true },
+    ),
     ContactShadows: folder(
       {
         Opacity: {
@@ -116,6 +162,22 @@ export default function Home() {
   useEffect(() => {
     setDrumHeight(drumHeight);
   }, [drumHeight, setDrumHeight]);
+
+  useEffect(() => {
+    setTopNormalDeg(topNormalDeg);
+  }, [topNormalDeg, setTopNormalDeg]);
+
+  useEffect(() => {
+    setRimRadiusPct(rimRadiusPct);
+  }, [rimRadiusPct, setRimRadiusPct]);
+
+  useEffect(() => {
+    setSnareCenterPct(snareCenterPct);
+  }, [snareCenterPct, setSnareCenterPct]);
+
+  useEffect(() => {
+    setRimshotAngleDeg(rimshotAngleDeg);
+  }, [rimshotAngleDeg, setRimshotAngleDeg]);
 
   return (
     <div className="relative h-full w-full">

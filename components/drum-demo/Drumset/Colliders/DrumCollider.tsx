@@ -1,12 +1,15 @@
 import { useControls, button } from "leva";
 import { useRef } from "react";
 import { useCylinder } from "@react-three/cannon";
+import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { useDrumAudio, type DrumSoundId } from "@/hooks/useDrumAudio";
+import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
+import { classifyDrumHit, type DrumKind } from "@/hooks/classifyDrumHit";
 
 interface DrumColliderProps {
   name: string;
-  soundId: DrumSoundId;
+  drumKind: DrumKind;
   px?: number;
   py?: number;
   pz?: number;
@@ -18,7 +21,7 @@ interface DrumColliderProps {
 
 export default function DrumCollider({
   name,
-  soundId,
+  drumKind,
   px: propPx = 0,
   py: propPy = 100,
   pz: propPz = 0,
@@ -93,19 +96,51 @@ export default function DrumCollider({
 
   const isDebug = useDrumDemoStore((s) => s.isDebug);
   const [ref] = useCylinder(
-    () => ({
-      type: "Static",
-      args: [bodyRadius, bodyRadius, bodyHeight, 16],
-      position,
-      rotation,
-      onCollide: (e) => {
-        const velocity = e.contact.impactVelocity;
-        const point = e.contact.contactPoint as [number, number, number];
-        playHit(soundId, point, velocity);
-      },
-    }),
+    () => {
+      const drumQuat = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(rx, 0, rz),
+      );
+      const stickQuat = new THREE.Quaternion();
+      const drumCenter: [number, number, number] = [px, py, pz];
+
+      return {
+        type: "Static",
+        args: [bodyRadius, bodyRadius, bodyHeight, 16],
+        position,
+        rotation,
+        onCollide: (e) => {
+          const velocity = e.contact.impactVelocity;
+          const point = e.contact.contactPoint as [number, number, number];
+          const normal = e.contact.contactNormal as [number, number, number];
+          const stickQ = e.body?.quaternion as unknown as
+            | [number, number, number, number]
+            | { x: number; y: number; z: number; w: number }
+            | undefined;
+          if (Array.isArray(stickQ)) {
+            stickQuat.set(stickQ[0], stickQ[1], stickQ[2], stickQ[3]);
+          } else if (stickQ) {
+            stickQuat.set(stickQ.x, stickQ.y, stickQ.z, stickQ.w);
+          } else {
+            stickQuat.identity();
+          }
+
+          const result = classifyDrumHit({
+            drumKind,
+            contactPoint: point,
+            contactNormal: normal,
+            drumPosition: drumCenter,
+            drumQuaternion: drumQuat,
+            drumRadius: bodyRadius,
+            stickQuaternion: stickQuat,
+            thresholds: useDrumAudioThresholdsStore.getState(),
+          });
+          if (!result.play) return;
+          playHit(result.soundId, point, velocity);
+        },
+      };
+    },
     undefined,
-    [bodyRadius, bodyHeight, px, py, pz, rx, rz],
+    [bodyRadius, bodyHeight, px, py, pz, rx, rz, drumKind],
   );
 
   return (

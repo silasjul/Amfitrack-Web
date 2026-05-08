@@ -1,8 +1,9 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import * as THREE from "three";
 
 const SOUNDS = {
   snare: "/drum-kit/drumsounds/snare/snare.ogg",
+  snare_side: "/drum-kit/drumsounds/snare/snare-side.ogg",
   snare_rim: "/drum-kit/drumsounds/snare/snare-rim.ogg",
   snare_rimshot: "/drum-kit/drumsounds/snare/snare-rimshot.ogg",
   hi_tom: "/drum-kit/drumsounds/hi-tom/hi-tom.ogg",
@@ -19,31 +20,51 @@ const COOLDOWN_MS = 80;
 const MIN_VELOCITY = 2;
 const MAX_VELOCITY = 20;
 
-// Module-level singletons — one AudioListener, one loader, shared buffers
-const audioListener = new THREE.AudioListener();
-const audioLoader = new THREE.AudioLoader();
 const buffers = new Map<DrumSoundId, AudioBuffer>();
-const loading = new Set<DrumSoundId>();
 const lastHitTime = new Map<DrumSoundId, number>();
 
-function loadBuffer(soundId: DrumSoundId): void {
-  if (buffers.has(soundId) || loading.has(soundId)) return;
-  loading.add(soundId);
-  audioLoader.load(SOUNDS[soundId], (buffer) => {
-    buffers.set(soundId, buffer);
-    loading.delete(soundId);
+let audioListener: THREE.AudioListener | null = null;
+let audioLoader: THREE.AudioLoader | null = null;
+let initialized = false;
+
+function initClient() {
+  if (initialized || typeof window === "undefined") return;
+  initialized = true;
+
+  audioListener = new THREE.AudioListener();
+  audioLoader = new THREE.AudioLoader();
+
+  (Object.keys(SOUNDS) as DrumSoundId[]).forEach((soundId) => {
+    audioLoader!.load(SOUNDS[soundId], (buffer) => {
+      buffers.set(soundId, buffer);
+    });
   });
+
+  // Browsers suspend AudioContext until a user gesture; resume on first interaction
+  // so the very first drum hit isn't delayed by the wake-up.
+  const resume = () => {
+    if (audioListener && audioListener.context.state === "suspended") {
+      audioListener.context.resume();
+    }
+    window.removeEventListener("pointerdown", resume);
+    window.removeEventListener("keydown", resume);
+    window.removeEventListener("touchstart", resume);
+  };
+  window.addEventListener("pointerdown", resume);
+  window.addEventListener("keydown", resume);
+  window.addEventListener("touchstart", resume);
+}
+
+if (typeof window !== "undefined") {
+  initClient();
 }
 
 export function getAudioListener(): THREE.AudioListener {
-  return audioListener;
+  initClient();
+  return audioListener!;
 }
 
 export function useDrumAudio() {
-  useEffect(() => {
-    (Object.keys(SOUNDS) as DrumSoundId[]).forEach(loadBuffer);
-  }, []);
-
   const playHit = useCallback(
     (
       soundId: DrumSoundId,
@@ -51,6 +72,7 @@ export function useDrumAudio() {
       velocity: number,
     ) => {
       if (velocity < MIN_VELOCITY) return;
+      if (!audioListener) return;
 
       const now = Date.now();
       if ((lastHitTime.get(soundId) ?? 0) + COOLDOWN_MS > now) return;
@@ -73,7 +95,6 @@ export function useDrumAudio() {
       sound.setRolloffFactor(1);
       sound.setVolume(gain);
       sound.position.set(...position);
-      // Force world matrix so PannerNode gets correct position before play
       sound.updateMatrixWorld(true);
       sound.play();
       (sound.source as AudioBufferSourceNode).onended = () =>
