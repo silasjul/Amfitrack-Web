@@ -4,10 +4,10 @@ import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import DrumsetColliders from "./DrumsetColliders";
 
-useGLTF.preload("/drum-kit/drumset.glb");
+useGLTF.preload("/drum-kit/models/drumset.glb");
 
 export default function Drumset({ drumHeight }: { drumHeight: number }) {
-  const { scene } = useGLTF("/drum-kit/drumset.glb");
+  const { scene } = useGLTF("/drum-kit/models/drumset.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
   useEnableModelShadow(clone);
 

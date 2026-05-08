@@ -32,7 +32,7 @@ export function useDrumstickSpringFollow(
         },
         Position: folder({
           posStiffness: {
-            value: 600,
+            value: 800,
             min: 0,
             max: 2000,
             step: 1,
@@ -55,7 +55,7 @@ export function useDrumstickSpringFollow(
         }),
         Rotation: folder({
           rotStiffness: {
-            value: 600,
+            value: 800,
             min: 0,
             max: 2000,
             step: 1,

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import DrumstickCollider from "./DrumstickCollider";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 
-useGLTF.preload("/drum-kit/drumstick.glb");
+useGLTF.preload("/drum-kit/models/drumstick.glb");
 
 interface DrumstickProps {
   sensorId: number;
@@ -19,7 +19,7 @@ export default function Drumstick({
   onRegisterReset,
 }: DrumstickProps) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
-  const { scene } = useGLTF("/drum-kit/drumstick.glb");
+  const { scene } = useGLTF("/drum-kit/models/drumstick.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
   const sensorPointRef = useRef<THREE.Mesh>(null!);
 
