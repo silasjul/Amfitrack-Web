@@ -19,55 +19,66 @@ export function useDrumstickSpringFollow(
     rotStiffness,
     rotDamping,
     rotMass,
+    gripOffsetZ,
   } = useControls({
-    drumPhysics: folder({
-      Position: folder({
-        posStiffness: {
-          value: 400,
-          min: 0,
-          max: 2000,
-          step: 1,
-          label: "Stiffness",
-        },
-        posDamping: {
-          value: 40,
-          min: 0,
-          max: 200,
-          step: 0.1,
-          label: "Damping",
-        },
-        posMass: {
-          value: 1,
-          min: 0.01,
-          max: 10,
+    drumstickPhysics: folder(
+      {
+        gripOffsetZ: {
+          value: -0.57,
+          min: -3,
+          max: 3,
           step: 0.01,
-          label: "Mass",
+          label: "Grip Offset Z",
         },
-      }),
-      Rotation: folder({
-        rotStiffness: {
-          value: 400,
-          min: 0,
-          max: 2000,
-          step: 1,
-          label: "Stiffness",
-        },
-        rotDamping: {
-          value: 40,
-          min: 0,
-          max: 200,
-          step: 0.1,
-          label: "Damping",
-        },
-        rotMass: {
-          value: 1,
-          min: 0.01,
-          max: 10,
-          step: 0.01,
-          label: "Mass",
-        },
-      }),
-    }),
+        Position: folder({
+          posStiffness: {
+            value: 600,
+            min: 0,
+            max: 2000,
+            step: 1,
+            label: "Stiffness",
+          },
+          posDamping: {
+            value: 40,
+            min: 0,
+            max: 200,
+            step: 0.1,
+            label: "Damping",
+          },
+          posMass: {
+            value: 1,
+            min: 0.01,
+            max: 10,
+            step: 0.01,
+            label: "Mass",
+          },
+        }),
+        Rotation: folder({
+          rotStiffness: {
+            value: 600,
+            min: 0,
+            max: 2000,
+            step: 1,
+            label: "Stiffness",
+          },
+          rotDamping: {
+            value: 40,
+            min: 0,
+            max: 200,
+            step: 0.1,
+            label: "Damping",
+          },
+          rotMass: {
+            value: 1,
+            min: 0.01,
+            max: 10,
+            step: 0.01,
+            label: "Mass",
+          },
+        }),
+      },
+      { collapsed: true },
+    ),
   });
 
   // Latest physics state, updated via worker subscriptions
@@ -87,6 +98,8 @@ export function useDrumstickSpringFollow(
       diffQuat: new THREE.Quaternion(),
       force: new THREE.Vector3(),
       torque: new THREE.Vector3(),
+      gripTarget: new THREE.Vector3(),
+      localZ: new THREE.Vector3(),
     }),
     [],
   );
@@ -110,9 +123,15 @@ export function useDrumstickSpringFollow(
     work.currentPos.fromArray(physicsPosition.current);
     work.currentVel.fromArray(physicsVelocity.current);
 
+    // Offset target along the drumstick's local Z to shift the grip point
+    work.localZ.set(0, 0, 1).applyQuaternion(sensorPointRef.current.quaternion);
+    work.gripTarget
+      .copy(sensorPointRef.current.position)
+      .addScaledVector(work.localZ, gripOffsetZ);
+
     // F = k * (target - current) - c * velocity
     work.force
-      .subVectors(sensorPointRef.current.position, work.currentPos)
+      .subVectors(work.gripTarget, work.currentPos)
       .multiplyScalar(posStiffness)
       .addScaledVector(work.currentVel, -posDamping);
 

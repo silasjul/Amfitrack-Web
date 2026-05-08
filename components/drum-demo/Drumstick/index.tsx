@@ -1,7 +1,7 @@
 import useEnableModelShadow from "@/hooks/useEnableModelShadow";
 import { useSensorSync } from "@/hooks/useSensorSync";
 import { Center, useGLTF } from "@react-three/drei";
-import { folder, useControls } from "leva";
+import { useControls } from "leva";
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import DrumstickCollider from "./DrumstickCollider";
@@ -12,13 +12,11 @@ useGLTF.preload("/drum-kit/drumstick.glb");
 interface DrumstickProps {
   sensorId: number;
   onRegisterReset?: (fn: () => void) => void;
-  showLeva?: boolean;
 }
 
 export default function Drumstick({
   sensorId,
   onRegisterReset,
-  showLeva = false,
 }: DrumstickProps) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { scene } = useGLTF("/drum-kit/drumstick.glb");
@@ -32,34 +30,27 @@ export default function Drumstick({
     onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
   }, [onRegisterReset]);
 
-  const leva = useControls(
-    showLeva
-      ? {
-          drumstick: folder({
-            positionY: {
-              value: -0.14,
-              min: -0.5,
-              max: 0.5,
-              step: 0.001,
-              label: "offsetY",
-            },
-            positionZ: {
-              value: 0.0,
-              min: -2,
-              max: 2,
-              step: 0.001,
-              label: "rotationPoint",
-            },
-            scale: {
-              value: 0.02,
-              min: 0.01,
-              max: 0.05,
-              step: 0.0001,
-            },
-          }),
-        }
-      : {},
-  ) as any;
+  const { positionY, positionZ, scale } = useControls(
+    "Drumstick model",
+    {
+      positionY: {
+        value: -0.14,
+        min: -0.5,
+        max: 0.5,
+        step: 0.001,
+        label: "offsetY",
+      },
+      positionZ: {
+        value: 0.0,
+        min: -2,
+        max: 2,
+        step: 0.001,
+        label: "rotationPoint",
+      },
+      scale: { value: 0.02, min: 0.01, max: 0.05, step: 0.0001 },
+    },
+    { collapsed: true },
+  );
 
   return (
     <>
@@ -79,10 +70,10 @@ export default function Drumstick({
       >
         <primitive
           object={clone}
-          scale={leva.scale ?? 0.02}
+          scale={scale}
           rotation-y={-Math.PI / 2}
-          position-y={leva.positionY ?? -0.14}
-          position-z={leva.positionZ ?? 0.0}
+          position-y={positionY}
+          position-z={positionZ}
         />
       </DrumstickCollider>
       <mesh ref={sensorPointRef}>

@@ -142,7 +142,7 @@ export default function Home() {
         />
         <CameraRig fov={fov} />
         <Light />
-        <Physics gravity={[0, 0, 0]}>
+        <Physics gravity={[0, -9.81, 0]}>
           <Drumset drumHeight={drumHeight} />
           {sensorTxIds[0] && (
             <Drumstick
