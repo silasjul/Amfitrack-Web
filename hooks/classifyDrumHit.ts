@@ -17,7 +17,7 @@ export interface ClassifyDrumHitInput {
   drumPosition: [number, number, number];
   drumQuaternion: THREE.Quaternion;
   drumRadius: number;
-  stickQuaternion: THREE.Quaternion;
+  stickVelocity: THREE.Vector3;
   thresholds: DrumHitThresholds;
 }
 
@@ -28,9 +28,8 @@ export type ClassifyResult =
 const _drumUp = new THREE.Vector3();
 const _normal = new THREE.Vector3();
 const _offset = new THREE.Vector3();
-const _stickDir = new THREE.Vector3();
+const _velNorm = new THREE.Vector3();
 const DRUM_LOCAL_UP = new THREE.Vector3(0, 1, 0);
-const STICK_LOCAL_TIP_DIR = new THREE.Vector3(0, 0, -1);
 
 export function classifyDrumHit(input: ClassifyDrumHitInput): ClassifyResult {
   const {
@@ -40,29 +39,37 @@ export function classifyDrumHit(input: ClassifyDrumHitInput): ClassifyResult {
     drumPosition,
     drumQuaternion,
     drumRadius,
-    stickQuaternion,
+    stickVelocity,
     thresholds,
   } = input;
 
   _drumUp.copy(DRUM_LOCAL_UP).applyQuaternion(drumQuaternion);
   _normal.set(contactNormal[0], contactNormal[1], contactNormal[2]);
-
-  // |dot| because cannon's contactNormal sign depends on which body is A vs B
-  const normalAlignment = Math.abs(_drumUp.dot(_normal));
-  const topAngleDeg =
-    Math.acos(Math.min(1, normalAlignment)) * (180 / Math.PI);
-  if (topAngleDeg > thresholds.topNormalDeg) {
-    return { play: false };
-  }
-
   _offset.set(
     contactPoint[0] - drumPosition[0],
     contactPoint[1] - drumPosition[1],
     contactPoint[2] - drumPosition[2],
   );
-  // Project onto head plane: subtract component along drum-up
-  const along = _offset.dot(_drumUp);
-  _offset.addScaledVector(_drumUp, -along);
+
+  // Signed projection onto drum's up axis. > 0 = upper half, < 0 = lower half.
+  // Required so bottom face hits don't pass — abs(normal·drumUp) alone treats
+  // top and bottom face the same.
+  const localY = _offset.dot(_drumUp);
+  if (localY <= 0) {
+    return { play: false };
+  }
+
+  // Reject side-wall hits: contact normal must be aligned with drum's up axis.
+  // |dot| because cannon's contactNormal sign depends on which body is A vs B,
+  // and we already excluded the bottom half above.
+  const normalAlignment = Math.abs(_drumUp.dot(_normal));
+  const topAngleDeg = Math.acos(Math.min(1, normalAlignment)) * (180 / Math.PI);
+  if (topAngleDeg > thresholds.topNormalDeg) {
+    return { play: false };
+  }
+
+  // Project offset onto the head plane to get radial distance from center.
+  _offset.addScaledVector(_drumUp, -localY);
   const r = _offset.length();
   const rPct = drumRadius > 0 ? r / drumRadius : 0;
 
@@ -78,15 +85,24 @@ export function classifyDrumHit(input: ClassifyDrumHitInput): ClassifyResult {
     return { play: true, soundId: "snare_rim" };
   }
 
-  // Stick approach angle: 0° = perpendicular to head (normal hit), 90° = laying flat
-  _stickDir.copy(STICK_LOCAL_TIP_DIR).applyQuaternion(stickQuaternion);
-  const headInward = _drumUp.clone().multiplyScalar(-1);
-  const stickAlignment = Math.max(-1, Math.min(1, _stickDir.dot(headInward)));
-  const stickAngleDeg = Math.acos(stickAlignment) * (180 / Math.PI);
-
-  if (stickAngleDeg >= thresholds.rimshotAngleDeg) {
-    return { play: true, soundId: "snare_rimshot" };
+  // Rimshot: stick lies nearly flat against the head (small angle from the head plane).
+  // velocity-to-plane angle: 0° = stick parallel to head (rimshot),
+  // 90° = stick perpendicular to head (normal hit).
+  const velLen = stickVelocity.length();
+  // console.log("velLen", velLen);
+  if (velLen > 0.001) {
+    _velNorm.copy(stickVelocity).divideScalar(velLen);
+    const perpDot = Math.abs(_velNorm.dot(_drumUp));
+    const angleFromPlaneDeg =
+      90 - Math.acos(Math.min(1, perpDot)) * (180 / Math.PI);
+    console.log(
+      `[snare rimshot check] angleFromPlane=${angleFromPlaneDeg.toFixed(1)}°, threshold=${thresholds.rimshotAngleDeg}°, velLen=${velLen.toFixed(2)}, rPct=${rPct.toFixed(2)}`,
+    );
+    if (angleFromPlaneDeg <= thresholds.rimshotAngleDeg) {
+      return { play: true, soundId: "snare_rimshot" };
+    }
   }
+
   if (rPct <= thresholds.snareCenterPct) {
     return { play: true, soundId: "snare" };
   }

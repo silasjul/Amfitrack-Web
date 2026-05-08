@@ -1,8 +1,12 @@
 import { useCompoundBody } from "@react-three/cannon";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import * as THREE from "three";
 import { useDrumstickSpringFollow } from "@/hooks/useDrumstickSpringFollow";
+import {
+  setDrumstickVelocity,
+  clearDrumstickVelocity,
+} from "@/hooks/drumstickVelocity";
 
 interface Props {
   sensorPointRef?: React.RefObject<THREE.Mesh>;
@@ -58,6 +62,18 @@ export default function DrumstickCompoundBody({
   }));
 
   useDrumstickSpringFollow(api, sensorPointRef);
+
+  useEffect(() => {
+    const unsub = api.velocity.subscribe((v) => {
+      const uuid = ref.current?.uuid;
+      if (uuid) setDrumstickVelocity(uuid, v as [number, number, number]);
+    });
+    return () => {
+      unsub();
+      const uuid = ref.current?.uuid;
+      if (uuid) clearDrumstickVelocity(uuid);
+    };
+  }, [api.velocity, ref]);
 
   return (
     <group ref={ref}>

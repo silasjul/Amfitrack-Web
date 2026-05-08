@@ -83,10 +83,7 @@ export function useDrumAudio() {
 
       const gain =
         0.3 +
-        Math.min(
-          (velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY),
-          1,
-        ) *
+        Math.min((velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY), 1) *
           0.7;
 
       const sound = new THREE.PositionalAudio(audioListener);
@@ -97,6 +94,7 @@ export function useDrumAudio() {
       sound.position.set(...position);
       sound.updateMatrixWorld(true);
       sound.play();
+      console.log("Playing sound", soundId);
       (sound.source as AudioBufferSourceNode).onended = () =>
         sound.disconnect();
     },

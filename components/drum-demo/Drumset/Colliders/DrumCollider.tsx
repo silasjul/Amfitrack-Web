@@ -6,6 +6,7 @@ import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudio } from "@/hooks/useDrumAudio";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { classifyDrumHit, type DrumKind } from "@/hooks/classifyDrumHit";
+import { getDrumstickVelocity } from "@/hooks/drumstickVelocity";
 
 interface DrumColliderProps {
   name: string;
@@ -31,6 +32,7 @@ export default function DrumCollider({
   bodyHeight: propBodyHeight = 50,
 }: DrumColliderProps) {
   const currentDebugValuesRef = useRef<any>(null);
+  const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { playHit } = useDrumAudio();
 
   const levaValues = useControls(
@@ -94,13 +96,11 @@ export default function DrumCollider({
     bodyHeight,
   };
 
-  const isDebug = useDrumDemoStore((s) => s.isDebug);
   const [ref] = useCylinder(
     () => {
       const drumQuat = new THREE.Quaternion().setFromEuler(
         new THREE.Euler(rx, 0, rz),
       );
-      const stickQuat = new THREE.Quaternion();
       const drumCenter: [number, number, number] = [px, py, pz];
 
       return {
@@ -112,16 +112,11 @@ export default function DrumCollider({
           const velocity = e.contact.impactVelocity;
           const point = e.contact.contactPoint as [number, number, number];
           const normal = e.contact.contactNormal as [number, number, number];
-          const stickQ = e.body?.quaternion as unknown as
-            | [number, number, number, number]
-            | { x: number; y: number; z: number; w: number }
-            | undefined;
-          if (Array.isArray(stickQ)) {
-            stickQuat.set(stickQ[0], stickQ[1], stickQ[2], stickQ[3]);
-          } else if (stickQ) {
-            stickQuat.set(stickQ.x, stickQ.y, stickQ.z, stickQ.w);
-          } else {
-            stickQuat.identity();
+          const otherUuid = (e.body as { uuid?: string } | undefined)?.uuid;
+          const vel = otherUuid ? getDrumstickVelocity(otherUuid) : undefined;
+          const stickVelocity = new THREE.Vector3();
+          if (vel) {
+            stickVelocity.set(vel[0], vel[1], vel[2]);
           }
 
           const result = classifyDrumHit({
@@ -131,7 +126,7 @@ export default function DrumCollider({
             drumPosition: drumCenter,
             drumQuaternion: drumQuat,
             drumRadius: bodyRadius,
-            stickQuaternion: stickQuat,
+            stickVelocity,
             thresholds: useDrumAudioThresholdsStore.getState(),
           });
           if (!result.play) return;

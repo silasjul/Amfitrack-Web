@@ -97,14 +97,14 @@ export default function Home() {
     "Audio thresholds": folder(
       {
         topNormalDeg: {
-          value: 45,
+          value: 85,
           min: 0,
           max: 90,
           step: 1,
           label: "Top angle (°)",
         },
         rimRadiusPct: {
-          value: 0.85,
+          value: 0.90,
           min: 0,
           max: 1,
           step: 0.01,
