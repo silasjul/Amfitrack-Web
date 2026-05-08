@@ -4,6 +4,7 @@ export default function Snare() {
   return (
     <DrumCollider
       name="Snare"
+      soundId="snare"
       px={-2.14}
       py={3.591}
       pz={1.44}

@@ -2,9 +2,11 @@ import { useControls, button } from "leva";
 import { useRef } from "react";
 import { useCylinder } from "@react-three/cannon";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
+import { useDrumAudio, type DrumSoundId } from "@/hooks/useDrumAudio";
 
 interface DrumColliderProps {
   name: string;
+  soundId: DrumSoundId;
   px?: number;
   py?: number;
   pz?: number;
@@ -16,6 +18,7 @@ interface DrumColliderProps {
 
 export default function DrumCollider({
   name,
+  soundId,
   px: propPx = 0,
   py: propPy = 100,
   pz: propPz = 0,
@@ -25,6 +28,7 @@ export default function DrumCollider({
   bodyHeight: propBodyHeight = 50,
 }: DrumColliderProps) {
   const currentDebugValuesRef = useRef<any>(null);
+  const { playHit } = useDrumAudio();
 
   const levaValues = useControls(
     name,
@@ -96,14 +100,8 @@ export default function DrumCollider({
       rotation,
       onCollide: (e) => {
         const velocity = e.contact.impactVelocity;
-        const point = e.contact.contactPoint;
-        const normal = e.contact.contactNormal;
-
-        console.log("Collision " + name, {
-          velocity,
-          normal,
-          point,
-        });
+        const point = e.contact.contactPoint as [number, number, number];
+        playHit(soundId, point, velocity);
       },
     }),
     undefined,

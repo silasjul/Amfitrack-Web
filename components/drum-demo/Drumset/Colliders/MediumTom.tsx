@@ -4,6 +4,7 @@ export default function MediumTom() {
   return (
     <DrumCollider
       name="Medium Tom"
+      soundId="medium_tom"
       px={0.973}
       py={5.395}
       pz={-0.318}

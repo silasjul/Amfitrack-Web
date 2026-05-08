@@ -4,6 +4,7 @@ export default function HiTom() {
   return (
     <DrumCollider
       name="Hi Tom"
+      soundId="hi_tom"
       px={-1.195}
       py={5.425}
       pz={-0.21}

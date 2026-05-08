@@ -8,6 +8,7 @@ import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { button, folder, Leva, useControls } from "leva";
 import Drumstick from "@/components/drum-demo/Drumstick";
+import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 
@@ -141,6 +142,7 @@ export default function Home() {
           // maxDistance={10}
         />
         <CameraRig fov={fov} />
+        <DrumAudioListener />
         <Light />
         <Physics gravity={[0, -9.81, 0]}>
           <Drumset drumHeight={drumHeight} />
