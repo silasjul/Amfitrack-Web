@@ -26,10 +26,6 @@ export default function Home() {
   const setSnareCenterPct = useDrumAudioThresholdsStore(
     (s) => s.setSnareCenterPct,
   );
-  const setRimshotAngleDeg = useDrumAudioThresholdsStore(
-    (s) => s.setRimshotAngleDeg,
-  );
-
   const {
     fov,
     drumHeight,
@@ -44,7 +40,6 @@ export default function Home() {
     topNormalDeg,
     rimRadiusPct,
     snareCenterPct,
-    rimshotAngleDeg,
   } = useControls({
     fov: {
       value: 70,
@@ -117,13 +112,7 @@ export default function Home() {
           step: 0.01,
           label: "Snare center %",
         },
-        rimshotAngleDeg: {
-          value: 60,
-          min: 0,
-          max: 90,
-          step: 1,
-          label: "Rimshot angle (°)",
-        },
+
       },
       { collapsed: true },
     ),
@@ -175,9 +164,6 @@ export default function Home() {
     setSnareCenterPct(snareCenterPct);
   }, [snareCenterPct, setSnareCenterPct]);
 
-  useEffect(() => {
-    setRimshotAngleDeg(rimshotAngleDeg);
-  }, [rimshotAngleDeg, setRimshotAngleDeg]);
 
   return (
     <div className="relative h-full w-full">

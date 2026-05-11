@@ -5,7 +5,6 @@ const SOUNDS = {
   snare: "/drum-kit/drumsounds/snare/snare.ogg",
   snare_side: "/drum-kit/drumsounds/snare/snare-side.ogg",
   snare_rim: "/drum-kit/drumsounds/snare/snare-rim.ogg",
-  snare_rimshot: "/drum-kit/drumsounds/snare/snare-rimshot.ogg",
   hi_tom: "/drum-kit/drumsounds/hi-tom/hi-tom.ogg",
   hi_tom_rim: "/drum-kit/drumsounds/hi-tom/hi-tom-rim.ogg",
   medium_tom: "/drum-kit/drumsounds/medium-tom/medium-tom.ogg",

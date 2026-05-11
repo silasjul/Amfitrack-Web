@@ -259,24 +259,24 @@ export class DeviceManager implements IDeviceManager {
   private async resolveDeviceConfig(device: ITransport, temporaryTxId: number) {
     try {
       // Temporary hack for BLE devices
-      if (device.getConnectionKind() === "ble") {
-        const txId = 4;
-        const kind = "sensor" as const;
-        const configuration: Configuration[] = [];
-        console.log(
-          `BLE transport: skipping name/config probe; assuming sensor txId ${txId}`,
-        );
-        this.store
-          .getState()
-          .commitTransportTxIdResolution(
-            temporaryTxId,
-            txId,
-            configuration,
-            kind,
-          );
-        this.transportTxIdMap.set(device, txId);
-        return;
-      }
+      // if (device.getConnectionKind() === "ble") {
+      //   const txId = 4;
+      //   const kind = "sensor" as const;
+      //   const configuration: Configuration[] = [];
+      //   console.log(
+      //     `BLE transport: skipping name/config probe; assuming sensor txId ${txId}`,
+      //   );
+      //   this.store
+      //     .getState()
+      //     .commitTransportTxIdResolution(
+      //       temporaryTxId,
+      //       txId,
+      //       configuration,
+      //       kind,
+      //     );
+      //   this.transportTxIdMap.set(device, txId);
+      //   return;
+      // }
 
       const [configuration, versions, uuid] = await Promise.all([
         this.configurator.getConfiguration(device),

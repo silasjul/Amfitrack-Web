@@ -6,7 +6,6 @@ import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudio } from "@/hooks/useDrumAudio";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { classifyDrumHit, type DrumKind } from "@/hooks/classifyDrumHit";
-import { getDrumstickVelocity } from "@/hooks/drumstickVelocity";
 
 interface DrumColliderProps {
   name: string;
@@ -112,13 +111,6 @@ export default function DrumCollider({
           const velocity = e.contact.impactVelocity;
           const point = e.contact.contactPoint as [number, number, number];
           const normal = e.contact.contactNormal as [number, number, number];
-          const otherUuid = (e.body as { uuid?: string } | undefined)?.uuid;
-          const vel = otherUuid ? getDrumstickVelocity(otherUuid) : undefined;
-          const stickVelocity = new THREE.Vector3();
-          if (vel) {
-            stickVelocity.set(vel[0], vel[1], vel[2]);
-          }
-
           const result = classifyDrumHit({
             drumKind,
             contactPoint: point,
@@ -126,7 +118,6 @@ export default function DrumCollider({
             drumPosition: drumCenter,
             drumQuaternion: drumQuat,
             drumRadius: bodyRadius,
-            stickVelocity,
             thresholds: useDrumAudioThresholdsStore.getState(),
           });
           if (!result.play) return;
