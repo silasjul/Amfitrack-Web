@@ -62,10 +62,10 @@ export default function Drumstick({
         rx={0}
         ry={0}
         rz={0}
-        bodyRadius={0.05}
+        bodyRadius={0.1}
         bodyLength={2.55}
         bodyOffsetZ={0.0}
-        tipRadius={0.06}
+        tipRadius={0.12}
         tipOffsetZ={-1.29}
       >
         <primitive

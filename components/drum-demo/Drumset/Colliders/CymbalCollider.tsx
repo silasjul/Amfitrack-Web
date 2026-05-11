@@ -28,6 +28,11 @@ interface CymbalColliderProps {
   bellRadius?: number;
   bellOffsetY?: number;
   mass?: number;
+  rotStiffness?: number;
+  rotDamping?: number;
+  rotMass?: number;
+  angularDamping?: number;
+  linearDamping?: number;
   meshPx?: number;
   meshPy?: number;
   meshPz?: number;
@@ -52,6 +57,11 @@ export default function CymbalCollider({
   bellRadius: propBellRadius = 0.35,
   bellOffsetY: propBellOffsetY = 0.1,
   mass: propMass = 0.5,
+  rotStiffness: propRotStiffness = 200,
+  rotDamping: propRotDamping = 8,
+  rotMass: propRotMass = 1,
+  angularDamping: propAngularDamping = 0.4,
+  linearDamping: propLinearDamping = 0.1,
   meshPx: propMeshPx = 0,
   meshPy: propMeshPy = 0,
   meshPz: propMeshPz = 0,
@@ -92,9 +102,27 @@ export default function CymbalCollider({
     name,
     {
       Body: folder({
-        px: { value: propPx, min: -10, max: 10, step: 0.001, label: "X" },
-        py: { value: propPy, min: -2, max: 12, step: 0.001, label: "Y" },
-        pz: { value: propPz, min: -10, max: 10, step: 0.001, label: "Z" },
+        px: {
+          value: propPx,
+          min: propPx - 1,
+          max: propPx + 1,
+          step: 0.001,
+          label: "X",
+        },
+        py: {
+          value: propPy,
+          min: propPy - 1,
+          max: propPy + 1,
+          step: 0.001,
+          label: "Y",
+        },
+        pz: {
+          value: propPz,
+          min: propPz - 1,
+          max: propPz + 1,
+          step: 0.001,
+          label: "Z",
+        },
         rx: {
           value: propRx,
           min: -Math.PI,
@@ -201,37 +229,43 @@ export default function CymbalCollider({
         },
       }),
       Physics: folder({
-        mass: { value: propMass, min: 0.01, max: 5, step: 0.001, label: "Mass" },
+        mass: {
+          value: propMass,
+          min: 0.01,
+          max: 5,
+          step: 0.001,
+          label: "Mass",
+        },
         rotStiffness: {
-          value: 200,
+          value: propRotStiffness,
           min: 0,
           max: 2000,
           step: 1,
           label: "Spring Stiffness",
         },
         rotDamping: {
-          value: 8,
+          value: propRotDamping,
           min: 0,
           max: 100,
           step: 0.1,
           label: "Spring Damping",
         },
         rotMass: {
-          value: 1,
+          value: propRotMass,
           min: 0.01,
           max: 10,
           step: 0.01,
           label: "Spring Mass",
         },
         angularDamping: {
-          value: 0.4,
+          value: propAngularDamping,
           min: 0,
           max: 1,
           step: 0.01,
           label: "Angular Damping",
         },
         linearDamping: {
-          value: 0.1,
+          value: propLinearDamping,
           min: 0,
           max: 1,
           step: 0.01,
@@ -306,6 +340,9 @@ export default function CymbalCollider({
       rotation: [rx, ry, rz],
       angularDamping,
       linearDamping,
+      allowSleep: false,
+      restitution: 0.1,
+      friction: 0.5,
       shapes: [
         {
           type: "Cylinder",
@@ -419,7 +456,9 @@ export default function CymbalCollider({
       .addScaledVector(work.currentAngVel, -rotDamping);
 
     // Clamp to keep transient mismatches from launching the cymbal.
-    work.torque.clampLength(0, 500);
+    // Needs to be high enough that the spring can out-push the drumstick's
+    // velocity-override spring (in useDrumstickSpringFollow) when in contact.
+    work.torque.clampLength(0, 4000);
 
     work.currentAngVel.addScaledVector(work.torque, delta / rotMass);
     api.angularVelocity.set(
@@ -443,7 +482,9 @@ export default function CymbalCollider({
         {isDebug && (
           <>
             <mesh>
-              <cylinderGeometry args={[discRadius, discRadius, discHeight, 16]} />
+              <cylinderGeometry
+                args={[discRadius, discRadius, discHeight, 16]}
+              />
               <meshBasicMaterial color="lime" wireframe />
             </mesh>
             <mesh position={[0, bellOffsetY, 0]}>
