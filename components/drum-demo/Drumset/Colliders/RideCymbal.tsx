@@ -28,8 +28,6 @@ export default function RideCymbal() {
       rz={0}
       discRadius={1.7}
       discHeight={0.1}
-      bellRadius={0.5}
-      bellOffsetY={0.12}
       meshScale={RIDE_MESH_SCALE}
     >
       <mesh

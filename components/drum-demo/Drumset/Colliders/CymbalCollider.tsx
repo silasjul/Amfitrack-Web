@@ -25,8 +25,6 @@ interface CymbalColliderProps {
   rz?: number;
   discRadius?: number;
   discHeight?: number;
-  bellRadius?: number;
-  bellOffsetY?: number;
   mass?: number;
   rotStiffness?: number;
   rotDamping?: number;
@@ -54,8 +52,6 @@ export default function CymbalCollider({
   rz: propRz = 0,
   discRadius: propDiscRadius = 1.5,
   discHeight: propDiscHeight = 0.1,
-  bellRadius: propBellRadius = 0.35,
-  bellOffsetY: propBellOffsetY = 0.1,
   mass: propMass = 0.5,
   rotStiffness: propRotStiffness = 200,
   rotDamping: propRotDamping = 8,
@@ -83,8 +79,6 @@ export default function CymbalCollider({
     rz,
     discRadius,
     discHeight,
-    bellRadius,
-    bellOffsetY,
     mass,
     rotStiffness,
     rotDamping,
@@ -212,22 +206,6 @@ export default function CymbalCollider({
           label: "Height",
         },
       }),
-      Bell: folder({
-        bellRadius: {
-          value: propBellRadius,
-          min: 0.05,
-          max: 1.5,
-          step: 0.001,
-          label: "Radius",
-        },
-        bellOffsetY: {
-          value: propBellOffsetY,
-          min: -0.5,
-          max: 1,
-          step: 0.001,
-          label: "Y Offset",
-        },
-      }),
       Physics: folder({
         mass: {
           value: propMass,
@@ -291,8 +269,6 @@ export default function CymbalCollider({
     rz,
     discRadius,
     discHeight,
-    bellRadius,
-    bellOffsetY,
     mass,
     rotStiffness,
     rotDamping,
@@ -313,8 +289,6 @@ export default function CymbalCollider({
   const shapeDeps = [
     discRadius,
     discHeight,
-    bellRadius,
-    bellOffsetY,
     mass,
     angularDamping,
     linearDamping,
@@ -349,11 +323,6 @@ export default function CymbalCollider({
           args: [discRadius, discRadius, discHeight, 16],
           position: [0, 0, 0] as Vec3Tuple,
           rotation: [0, 0, 0] as Vec3Tuple,
-        },
-        {
-          type: "Sphere",
-          args: [bellRadius] as [number],
-          position: [0, bellOffsetY, 0] as Vec3Tuple,
         },
       ],
     }),
@@ -480,18 +449,12 @@ export default function CymbalCollider({
           {children}
         </group>
         {isDebug && (
-          <>
-            <mesh>
-              <cylinderGeometry
-                args={[discRadius, discRadius, discHeight, 16]}
-              />
-              <meshBasicMaterial color="lime" wireframe />
-            </mesh>
-            <mesh position={[0, bellOffsetY, 0]}>
-              <sphereGeometry args={[bellRadius, 10, 10]} />
-              <meshBasicMaterial color="yellow" wireframe />
-            </mesh>
-          </>
+          <mesh>
+            <cylinderGeometry
+              args={[discRadius, discRadius, discHeight, 16]}
+            />
+            <meshBasicMaterial color="lime" wireframe />
+          </mesh>
         )}
       </group>
 

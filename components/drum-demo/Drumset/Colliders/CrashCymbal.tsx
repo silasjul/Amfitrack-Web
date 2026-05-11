@@ -24,8 +24,6 @@ export default function CrashCymbal() {
       rz={-0.313}
       discRadius={1.487}
       discHeight={0.45}
-      bellRadius={0.389}
-      bellOffsetY={-0.142}
       mass={12}
       rotStiffness={1500}
       rotDamping={60}
