@@ -111,7 +111,7 @@ export default function DrumstickCollider({
         label: "Z Offset",
       },
     }),
-  });
+  }, { collapsed: true });
 
   const physicsKey = `${px},${py},${pz},${rx},${ry},${rz},${bodyRadius},${bodyLength},${bodyOffsetZ},${tipRadius},${tipOffsetZ}`;
 

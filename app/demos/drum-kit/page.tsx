@@ -12,11 +12,13 @@ import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
+import { useLevaToggle } from "@/hooks/useLevaToggle";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
 
 export default function Home() {
+  const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
@@ -196,7 +198,7 @@ export default function Home() {
   return (
     <div className="relative h-full w-full">
       <Leva
-        collapsed
+        hidden={levaHidden}
         theme={{ sizes: { rootWidth: "400px", controlWidth: "full" } }}
       />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
