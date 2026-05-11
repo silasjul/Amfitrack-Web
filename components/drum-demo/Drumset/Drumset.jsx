@@ -69,5 +69,3 @@ export function Model(props) {
     </group>
   )
 }
-
-useGLTF.preload('/drumset.glb')

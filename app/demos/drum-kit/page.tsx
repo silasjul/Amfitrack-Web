@@ -29,6 +29,9 @@ export default function Home() {
   const setBellRadiusPct = useDrumAudioThresholdsStore(
     (s) => s.setBellRadiusPct,
   );
+  const setHihatTipRadiusPct = useDrumAudioThresholdsStore(
+    (s) => s.setHihatTipRadiusPct,
+  );
   const {
     fov,
     drumHeight,
@@ -44,6 +47,7 @@ export default function Home() {
     rimRadiusPct,
     snareCenterPct,
     bellRadiusPct,
+    hihatTipRadiusPct,
   } = useControls({
     fov: {
       value: 70,
@@ -123,6 +127,13 @@ export default function Home() {
           step: 0.01,
           label: "Ride bell radius %",
         },
+        hihatTipRadiusPct: {
+          value: 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Hihat tip radius %",
+        },
       },
       { collapsed: true },
     ),
@@ -177,6 +188,10 @@ export default function Home() {
   useEffect(() => {
     setBellRadiusPct(bellRadiusPct);
   }, [bellRadiusPct, setBellRadiusPct]);
+
+  useEffect(() => {
+    setHihatTipRadiusPct(hihatTipRadiusPct);
+  }, [hihatTipRadiusPct, setHihatTipRadiusPct]);
 
   return (
     <div className="relative h-full w-full">
