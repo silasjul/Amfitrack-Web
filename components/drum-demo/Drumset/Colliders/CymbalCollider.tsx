@@ -8,6 +8,9 @@ import { folder, useControls, button } from "leva";
 import { ReactNode, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
+import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
+import { classifyCymbalHit } from "@/hooks/classifyCymbalHit";
 
 export type CymbalKind = "ride" | "crash";
 
@@ -69,6 +72,8 @@ export default function CymbalCollider({
 }: CymbalColliderProps) {
   const currentValuesRef = useRef<any>(null);
   const isDebug = useDrumDemoStore((s) => s.isDebug);
+  const { playHit } = useDrumAudio();
+  const rideToggleRef = useRef(0);
 
   const {
     px,
@@ -294,6 +299,17 @@ export default function CymbalCollider({
     linearDamping,
   ];
 
+  // Live physics state (subscribed from worker). Declared above the body so
+  // onCollide can read the current quaternion at hit time.
+  const physicsQuat = useRef<QuatTuple>([0, 0, 0, 1]);
+  const physicsAngVel = useRef<Vec3Tuple>([0, 0, 0]);
+
+  // Latest pose/radius for onCollide without recreating the body each edit.
+  const poseRef = useRef({ px, py, pz, discRadius });
+  poseRef.current = { px, py, pz, discRadius };
+
+  const collideQuat = useMemo(() => new THREE.Quaternion(), []);
+
   // Static anchor — point in space used as the pivot reference.
   const [anchorRef, anchorApi] = useParticle(
     () => ({
@@ -325,6 +341,22 @@ export default function CymbalCollider({
           rotation: [0, 0, 0] as Vec3Tuple,
         },
       ],
+      onCollide: (e) => {
+        const velocity = e.contact.impactVelocity;
+        const point = e.contact.contactPoint as [number, number, number];
+        const pose = poseRef.current;
+        collideQuat.fromArray(physicsQuat.current);
+        const result = classifyCymbalHit({
+          cymbalKind,
+          contactPoint: point,
+          cymbalPosition: [pose.px, pose.py, pose.pz],
+          cymbalQuaternion: collideQuat,
+          cymbalRadius: pose.discRadius,
+          thresholds: useDrumAudioThresholdsStore.getState(),
+          rideToggleRef,
+        });
+        playHit(result.soundId, point, velocity);
+      },
     }),
     undefined,
     shapeDeps,
@@ -340,10 +372,6 @@ export default function CymbalCollider({
     },
     shapeDeps,
   );
-
-  // Live physics state (subscribed from worker)
-  const physicsQuat = useRef<QuatTuple>([0, 0, 0, 1]);
-  const physicsAngVel = useRef<Vec3Tuple>([0, 0, 0]);
 
   useEffect(() => {
     const unsubs = [

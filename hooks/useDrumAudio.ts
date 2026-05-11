@@ -11,6 +11,10 @@ const SOUNDS = {
   medium_tom_rim: "/drum-kit/drumsounds/medium-tom/medium-tom-rim.ogg",
   floor_tom: "/drum-kit/drumsounds/floor-tom/floor-tom.ogg",
   floor_tom_rim: "/drum-kit/drumsounds/floor-tom/floor-tom-rim.ogg",
+  crash: "/drum-kit/drumsounds/crash/crash.ogg",
+  ride_1: "/drum-kit/drumsounds/ride/ride-1.ogg",
+  ride_2: "/drum-kit/drumsounds/ride/ride-2.ogg",
+  ride_bell: "/drum-kit/drumsounds/ride/ride_bell.ogg",
 } as const;
 
 export type DrumSoundId = keyof typeof SOUNDS;
