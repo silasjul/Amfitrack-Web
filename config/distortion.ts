@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 /**
  * Metal distortion level thresholds (0.0 – 1.0).
  *

@@ -7,15 +7,14 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useDeviceStore } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
-import { DISTORTION_THRESHOLDS } from "@/config/distortion";
+import { applyDistortionColor } from "@/lib/distortionColorLerp";
+import { useSensorSync } from "@/hooks/useSensorSync";
 import {
   SENSOR_COLOR_CLEAN,
   SENSOR_COLOR_DISTORTED,
 } from "./coordinateSystem/config";
 
 useFBX.preload("/models/viewer/sensor.fbx");
-
-const POSITION_SCALE = 0.01;
 
 export const COLOR_CLEAN = new THREE.Color(SENSOR_COLOR_CLEAN);
 const COLOR_DISTORTED = new THREE.Color(SENSOR_COLOR_DISTORTED);
@@ -38,6 +37,9 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
 
   const isHovered = hoveredSensorId === sensorId;
 
+  useSensorSync(groupRef, sensorId);
+
+  // invalidate the frame
   useEffect(() => {
     let prev = useDeviceStore.getState().emfImuFrameId[sensorId];
     return useDeviceStore.subscribe((state) => {
@@ -49,6 +51,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     });
   }, [sensorId, invalidate]);
 
+  // getting material refs
   useEffect(() => {
     const bodyMesh = clone.children[0] as THREE.Mesh;
     const lightMesh = clone.children[1] as THREE.Mesh;
@@ -69,39 +72,22 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     bodyMesh.material = bodyMatClone;
   }, [clone]);
 
+  // applying distortion color to light material
   useFrame(() => {
+    if (groupRef.current) groupRef.current.position.y += MODEL_OFFSET_Y - 0.01;
+
     const data = useDeviceStore.getState().emfImuFrameId[sensorId];
-    if (!data || !groupRef.current) return;
-
-    groupRef.current.position.set(
-      -data.position.y * POSITION_SCALE,
-      data.position.z * POSITION_SCALE,
-      -data.position.x * POSITION_SCALE,
-    ).y += MODEL_OFFSET_Y - 0.01;
-
-    groupRef.current.quaternion
-      .set(
-        -data.quaternion.y,
-        data.quaternion.z,
-        -data.quaternion.x,
-        data.quaternion.w,
-      )
-      .normalize();
-
-    if (lightMaterialRef.current) {
-      const distortion = data.metalDistortion / 255;
-      if (distortion < DISTORTION_THRESHOLDS.CLEAN) {
-        lightMaterialRef.current.color.set(COLOR_CLEAN);
-      } else {
-        lightMaterialRef.current.color.lerpColors(
-          COLOR_CLEAN,
-          COLOR_DISTORTED,
-          distortion,
-        );
-      }
+    if (data && lightMaterialRef.current) {
+      applyDistortionColor(
+        lightMaterialRef.current,
+        data.metalDistortion / 255,
+        COLOR_CLEAN,
+        COLOR_DISTORTED,
+      );
     }
   });
 
+  // applying hover color to body material
   useEffect(() => {
     if (!originalBodyColorRef.current) return;
 
@@ -134,10 +120,6 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
     }
   }, [isHovered]);
 
-  function handleClick() {
-    setSelectedDeviceId(sensorId);
-  }
-
   return (
     <group ref={groupRef}>
       <group position={[0, 0, MODEL_OFFSET_Y]}>
@@ -153,7 +135,7 @@ function SensorInstance({ sensorId }: { sensorId: number }) {
               setHoveredSensorId(null);
               document.body.style.cursor = "default";
             }}
-            onClick={handleClick}
+            onClick={() => setSelectedDeviceId(sensorId)}
             object={clone}
             scale={0.01}
             rotation-x={Math.PI / 2}

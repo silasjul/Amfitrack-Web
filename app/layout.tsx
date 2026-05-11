@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/sidebar-left/sidebar";
+import Sidebar from "@/components/general/sidebar-left/sidebar";
 import Providers from "./providers";
-import PendingChangesBar from "@/components/PendingChangesBar";
+import PendingChangesBar from "@/components/general/PendingChangesBar";
 import FloatingRecordingBar from "@/components/recording/FloatingRecordingBar";
 import { Toaster } from "@/components/ui/sonner";
 
