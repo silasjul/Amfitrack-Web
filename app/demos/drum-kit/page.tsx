@@ -38,7 +38,6 @@ export default function Home() {
     fov,
     drumHeight,
     isDebug,
-    environment,
     environmentHeight,
     environmentRadius,
     environmentScale,
@@ -67,14 +66,6 @@ export default function Home() {
     resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
     Environment: folder(
       {
-        environment: {
-          value: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",
-          options: {
-            Studio: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",
-            Desert: "/drum-kit/HDRI/kiara_1_dawn_4k.hdr",
-          },
-          label: "HDRI",
-        },
         environmentHeight: {
           value: 7.6,
           min: 0,
@@ -203,7 +194,7 @@ export default function Home() {
       />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
         <Environment
-          files={environment}
+          files={"/drum-kit/HDRI/ferndale_studio_11_4k.hdr"}
           background
           ground={{
             height: environmentHeight,
