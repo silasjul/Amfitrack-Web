@@ -19,6 +19,7 @@ const SOUNDS = {
   hihat_tip_tight: "/drum-kit/drumsounds/hihat/hihat-tip-tight.ogg",
   hihat_shank: "/drum-kit/drumsounds/hihat/hihat-shank.ogg",
   hihat_shank_tight: "/drum-kit/drumsounds/hihat/hihat-shank-tight.ogg",
+  kick: "/drum-kit/drumsounds/kick/kick-drum.ogg",
 } as const;
 
 export type DrumSoundId = keyof typeof SOUNDS;

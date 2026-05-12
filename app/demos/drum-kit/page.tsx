@@ -8,6 +8,7 @@ import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { button, folder, Leva, useControls } from "leva";
 import Drumstick from "@/components/drum-demo/Drumstick";
+import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
@@ -228,6 +229,14 @@ export default function Home() {
               sensorId={sensorTxIds[1]}
               onRegisterReset={(fn) => {
                 resetRefs.current[1] = fn;
+              }}
+            />
+          )}
+          {sensorTxIds[2] && (
+            <Shoe
+              sensorId={sensorTxIds[2]}
+              onRegisterReset={(fn) => {
+                resetRefs.current[2] = fn;
               }}
             />
           )}
