@@ -1,25 +1,69 @@
 import { useCallback } from "react";
 import * as THREE from "three";
 
+const BASE_VOLUME = 2;
+
 const SOUNDS = {
-  snare: "/drum-kit/drumsounds/snare/snare.ogg",
-  snare_side: "/drum-kit/drumsounds/snare/snare-side.ogg",
-  snare_rim: "/drum-kit/drumsounds/snare/snare-rim.ogg",
-  hi_tom: "/drum-kit/drumsounds/hi-tom/hi-tom.ogg",
-  hi_tom_rim: "/drum-kit/drumsounds/hi-tom/hi-tom-rim.ogg",
-  medium_tom: "/drum-kit/drumsounds/medium-tom/medium-tom.ogg",
-  medium_tom_rim: "/drum-kit/drumsounds/medium-tom/medium-tom-rim.ogg",
-  floor_tom: "/drum-kit/drumsounds/floor-tom/floor-tom.ogg",
-  floor_tom_rim: "/drum-kit/drumsounds/floor-tom/floor-tom-rim.ogg",
-  crash: "/drum-kit/drumsounds/crash/crash.ogg",
-  ride_1: "/drum-kit/drumsounds/ride/ride-1.ogg",
-  ride_2: "/drum-kit/drumsounds/ride/ride-2.ogg",
-  ride_bell: "/drum-kit/drumsounds/ride/ride_bell.ogg",
-  hihat_tip: "/drum-kit/drumsounds/hihat/hihat-tip.ogg",
-  hihat_tip_tight: "/drum-kit/drumsounds/hihat/hihat-tip-tight.ogg",
-  hihat_shank: "/drum-kit/drumsounds/hihat/hihat-shank.ogg",
-  hihat_shank_tight: "/drum-kit/drumsounds/hihat/hihat-shank-tight.ogg",
-  kick: "/drum-kit/drumsounds/kick/kick-drum.ogg",
+  snare: { url: "/drum-kit/drumsounds/snare/snare.ogg", volume: BASE_VOLUME },
+  snare_side: {
+    url: "/drum-kit/drumsounds/snare/snare-side.ogg",
+    volume: BASE_VOLUME,
+  },
+  snare_rim: {
+    url: "/drum-kit/drumsounds/snare/snare-rim.ogg",
+    volume: BASE_VOLUME,
+  },
+  hi_tom: {
+    url: "/drum-kit/drumsounds/hi-tom/hi-tom.ogg",
+    volume: BASE_VOLUME,
+  },
+  hi_tom_rim: {
+    url: "/drum-kit/drumsounds/hi-tom/hi-tom-rim.ogg",
+    volume: BASE_VOLUME,
+  },
+  medium_tom: {
+    url: "/drum-kit/drumsounds/medium-tom/medium-tom.ogg",
+    volume: BASE_VOLUME,
+  },
+  medium_tom_rim: {
+    url: "/drum-kit/drumsounds/medium-tom/medium-tom-rim.ogg",
+    volume: BASE_VOLUME,
+  },
+  floor_tom: {
+    url: "/drum-kit/drumsounds/floor-tom/floor-tom.ogg",
+    volume: BASE_VOLUME,
+  },
+  floor_tom_rim: {
+    url: "/drum-kit/drumsounds/floor-tom/floor-tom-rim.ogg",
+    volume: BASE_VOLUME,
+  },
+  crash: {
+    url: "/drum-kit/drumsounds/crash/crash.ogg",
+    volume: BASE_VOLUME + 4,
+  },
+  ride_1: { url: "/drum-kit/drumsounds/ride/ride-1.ogg", volume: BASE_VOLUME },
+  ride_2: { url: "/drum-kit/drumsounds/ride/ride-2.ogg", volume: BASE_VOLUME },
+  ride_bell: {
+    url: "/drum-kit/drumsounds/ride/ride_bell.ogg",
+    volume: BASE_VOLUME,
+  },
+  hihat_tip: {
+    url: "/drum-kit/drumsounds/hihat/hihat-tip.ogg",
+    volume: BASE_VOLUME,
+  },
+  hihat_tip_tight: {
+    url: "/drum-kit/drumsounds/hihat/hihat-tip-tight.ogg",
+    volume: BASE_VOLUME,
+  },
+  hihat_shank: {
+    url: "/drum-kit/drumsounds/hihat/hihat-shank.ogg",
+    volume: BASE_VOLUME,
+  },
+  hihat_shank_tight: {
+    url: "/drum-kit/drumsounds/hihat/hihat-shank-tight.ogg",
+    volume: BASE_VOLUME,
+  },
+  kick: { url: "/drum-kit/drumsounds/kick/kick-drum.ogg", volume: BASE_VOLUME },
 } as const;
 
 export type DrumSoundId = keyof typeof SOUNDS;
@@ -43,7 +87,7 @@ function initClient() {
   audioLoader = new THREE.AudioLoader();
 
   (Object.keys(SOUNDS) as DrumSoundId[]).forEach((soundId) => {
-    audioLoader!.load(SOUNDS[soundId], (buffer) => {
+    audioLoader!.load(SOUNDS[soundId].url, (buffer) => {
       buffers.set(soundId, buffer);
     });
   });
@@ -96,9 +140,9 @@ export function useDrumAudio() {
 
       const sound = new THREE.PositionalAudio(audioListener);
       sound.setBuffer(buffer);
-      sound.setRefDistance(3);
-      sound.setRolloffFactor(1);
-      sound.setVolume(gain);
+      sound.setRefDistance(30);
+      sound.setRolloffFactor(0.3);
+      sound.setVolume(gain * SOUNDS[soundId].volume);
       sound.position.set(...position);
       sound.updateMatrixWorld(true);
       sound.play();
