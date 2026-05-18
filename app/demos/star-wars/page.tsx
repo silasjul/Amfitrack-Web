@@ -16,6 +16,7 @@ import { useDeviceStore } from "@/amfitrackSDK";
 import { useSensorSync } from "@/hooks/useSensorSync";
 import useTxIds from "@/hooks/useTxIds";
 import { useLevaToggle } from "@/hooks/useLevaToggle";
+import R3fLoader from "@/components/general/r3f-loader";
 
 export default function Home() {
   const levaHidden = useLevaToggle();
@@ -72,6 +73,7 @@ export default function Home() {
   return (
     <div className="relative h-full w-full">
       <Leva hidden={levaHidden} />
+      <R3fLoader />
       <Canvas
         shadows
         camera={{ position: [0, 0.25, 2], near: 0.1, far: 1000 }}

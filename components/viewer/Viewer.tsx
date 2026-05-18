@@ -7,13 +7,15 @@ import CoordinateSystem from "@/components/viewer/coordinateSystem/CoordinateSys
 import SourceModel from "@/components/viewer/SourceModel";
 import SensorModels from "@/components/viewer/SensorModel";
 import { Leva, useControls } from "leva";
+import R3fLoader from "@/components/general/r3f-loader";
 
 export default function Viewer() {
   const cameraStartScale = 0.75;
 
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full">
       {/* <Leva collapsed /> */}
+      <R3fLoader />
       <Canvas
         frameloop="demand"
         camera={{

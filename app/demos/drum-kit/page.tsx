@@ -3,11 +3,17 @@
 import { Physics } from "@react-three/cannon";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { Suspense, useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { button, folder, Leva, useControls } from "leva";
-import { XR, XROrigin, createXRStore, useXR } from "@react-three/xr";
+import {
+  XR,
+  XROrigin,
+  createXRStore,
+  useXR,
+  type XRStore,
+} from "@react-three/xr";
 import Drumstick from "@/components/drum-demo/Drumstick";
 import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
@@ -15,6 +21,7 @@ import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { useLevaToggle } from "@/hooks/useLevaToggle";
+import R3fLoader from "@/components/general/r3f-loader";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
@@ -24,9 +31,8 @@ const XR_ORIGIN_POSITION: [number, number, number] = [
   CAMERA_POSITION[1] - PLAYER_HEAD_HEIGHT,
   -CAMERA_POSITION[2],
 ];
-const xrStore = createXRStore({ offerSession: false });
-
 export default function Home() {
+  const [xrStore] = useState(() => createXRStore({ offerSession: false }));
   const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
@@ -201,9 +207,9 @@ export default function Home() {
         hidden={levaHidden}
         theme={{ sizes: { rootWidth: "400px", controlWidth: "full" } }}
       />
-      <EnterVRButton />
+      <EnterVRButton store={xrStore} />
+      <R3fLoader />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
-        <color attach="background" args={["#87CEEB"]} />
         <XR store={xrStore}>
           <Suspense fallback={null}>
             <HdrEnvironment
@@ -300,7 +306,7 @@ function HdrEnvironment({
   );
 }
 
-function EnterVRButton() {
+function EnterVRButton({ store }: { store: XRStore }) {
   const [supported, setSupported] = React.useState(false);
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.xr) return;
@@ -315,7 +321,7 @@ function EnterVRButton() {
   if (!supported) return null;
   return (
     <button
-      onClick={() => xrStore.enterVR()}
+      onClick={() => store.enterVR()}
       className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md bg-black/70 px-4 py-2 text-sm text-white"
     >
       Enter VR
