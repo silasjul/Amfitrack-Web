@@ -3,20 +3,31 @@
 import { Physics } from "@react-three/cannon";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { button, folder, Leva, useControls } from "leva";
+import { XR, XROrigin, createXRStore, useXR } from "@react-three/xr";
 import Drumstick from "@/components/drum-demo/Drumstick";
+import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
+import { useLevaToggle } from "@/hooks/useLevaToggle";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
+const PLAYER_HEAD_HEIGHT = 1.6;
+const XR_ORIGIN_POSITION: [number, number, number] = [
+  -CAMERA_POSITION[0],
+  CAMERA_POSITION[1] - PLAYER_HEAD_HEIGHT,
+  -CAMERA_POSITION[2],
+];
+const xrStore = createXRStore({ offerSession: false });
 
 export default function Home() {
+  const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
@@ -26,11 +37,16 @@ export default function Home() {
   const setSnareCenterPct = useDrumAudioThresholdsStore(
     (s) => s.setSnareCenterPct,
   );
+  const setBellRadiusPct = useDrumAudioThresholdsStore(
+    (s) => s.setBellRadiusPct,
+  );
+  const setHihatTipRadiusPct = useDrumAudioThresholdsStore(
+    (s) => s.setHihatTipRadiusPct,
+  );
   const {
     fov,
     drumHeight,
     isDebug,
-    environment,
     environmentHeight,
     environmentRadius,
     environmentScale,
@@ -40,6 +56,8 @@ export default function Home() {
     topNormalDeg,
     rimRadiusPct,
     snareCenterPct,
+    bellRadiusPct,
+    hihatTipRadiusPct,
   } = useControls({
     fov: {
       value: 70,
@@ -53,18 +71,10 @@ export default function Home() {
       max: 1,
       step: 0.001,
     },
-    isDebug: { value: true, label: "Show Colliders" },
+    isDebug: { value: false, label: "Show Colliders" },
     resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
     Environment: folder(
       {
-        environment: {
-          value: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",
-          options: {
-            Studio: "/drum-kit/HDRI/ferndale_studio_11_4k.hdr",
-            Desert: "/drum-kit/HDRI/kiara_1_dawn_4k.hdr",
-          },
-          label: "HDRI",
-        },
         environmentHeight: {
           value: 7.6,
           min: 0,
@@ -99,7 +109,7 @@ export default function Home() {
           label: "Top angle (°)",
         },
         rimRadiusPct: {
-          value: 0.90,
+          value: 0.9,
           min: 0,
           max: 1,
           step: 0.01,
@@ -112,7 +122,20 @@ export default function Home() {
           step: 0.01,
           label: "Snare center %",
         },
-
+        bellRadiusPct: {
+          value: 0.25,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Ride bell radius %",
+        },
+        hihatTipRadiusPct: {
+          value: 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Hihat tip radius %",
+        },
       },
       { collapsed: true },
     ),
@@ -164,53 +187,72 @@ export default function Home() {
     setSnareCenterPct(snareCenterPct);
   }, [snareCenterPct, setSnareCenterPct]);
 
+  useEffect(() => {
+    setBellRadiusPct(bellRadiusPct);
+  }, [bellRadiusPct, setBellRadiusPct]);
+
+  useEffect(() => {
+    setHihatTipRadiusPct(hihatTipRadiusPct);
+  }, [hihatTipRadiusPct, setHihatTipRadiusPct]);
 
   return (
     <div className="relative h-full w-full">
       <Leva
-        collapsed
+        hidden={levaHidden}
         theme={{ sizes: { rootWidth: "400px", controlWidth: "full" } }}
       />
+      <EnterVRButton />
       <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
-        <Environment
-          files={environment}
-          background
-          ground={{
-            height: environmentHeight,
-            radius: environmentRadius,
-            scale: environmentScale,
-          }}
-          rotation-y={Math.PI}
-        />
-        <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
-        <OrbitControls
-          target={[0, drumHeight + 3.8, 0]}
-          // minPolarAngle={0}
-          // maxPolarAngle={Math.PI * 0.6}
-          // maxDistance={10}
-        />
-        <CameraRig fov={fov} />
-        <DrumAudioListener />
-        <Light />
-        <Physics gravity={[0, -9.81, 0]}>
-          <Drumset drumHeight={drumHeight} />
-          {sensorTxIds[0] && (
-            <Drumstick
-              sensorId={sensorTxIds[0]}
-              onRegisterReset={(fn) => {
-                resetRefs.current[0] = fn;
-              }}
+        <color attach="background" args={["#87CEEB"]} />
+        <XR store={xrStore}>
+          <Suspense fallback={null}>
+            <HdrEnvironment
+              environmentHeight={environmentHeight}
+              environmentRadius={environmentRadius}
+              environmentScale={environmentScale}
             />
-          )}
-          {sensorTxIds[1] && (
-            <Drumstick
-              sensorId={sensorTxIds[1]}
-              onRegisterReset={(fn) => {
-                resetRefs.current[1] = fn;
-              }}
-            />
-          )}
-        </Physics>
+            <NotInXR>
+              <ContactShadows
+                opacity={Opacity}
+                blur={Blur}
+                scale={15}
+                far={Far}
+              />
+            </NotInXR>
+            <XROrigin position={XR_ORIGIN_POSITION} />
+            <DesktopCameraControls target={[0, drumHeight + 3.8, 0]} />
+            <CameraRig fov={fov} />
+            <DrumAudioListener />
+            <Light />
+            <Physics gravity={[0, -9.81, 0]}>
+              <Drumset drumHeight={drumHeight} />
+              {sensorTxIds[0] && (
+                <Drumstick
+                  sensorId={sensorTxIds[0]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[0] = fn;
+                  }}
+                />
+              )}
+              {sensorTxIds[1] && (
+                <Drumstick
+                  sensorId={sensorTxIds[1]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[1] = fn;
+                  }}
+                />
+              )}
+              {sensorTxIds[2] && (
+                <Shoe
+                  sensorId={sensorTxIds[2]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[2] = fn;
+                  }}
+                />
+              )}
+            </Physics>
+          </Suspense>
+        </XR>
       </Canvas>
     </div>
   );
@@ -224,13 +266,82 @@ function Light() {
   );
 }
 
+function NotInXR({ children }: { children: React.ReactNode }) {
+  const inXR = useXR((s) => s.mode != null);
+  if (inXR) return null;
+  return <>{children}</>;
+}
+
+function HdrEnvironment({
+  environmentHeight,
+  environmentRadius,
+  environmentScale,
+}: {
+  environmentHeight: number;
+  environmentRadius: number;
+  environmentScale: number;
+}) {
+  const inXR = useXR((s) => s.mode != null);
+  return (
+    <Environment
+      files={"/drum-kit/HDRI/ferndale_studio_11_4k.hdr"}
+      background
+      ground={
+        inXR
+          ? undefined
+          : {
+              height: environmentHeight,
+              radius: environmentRadius,
+              scale: environmentScale,
+            }
+      }
+      rotation-y={inXR ? 0 : Math.PI}
+    />
+  );
+}
+
+function EnterVRButton() {
+  const [supported, setSupported] = React.useState(false);
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.xr) return;
+    let cancelled = false;
+    navigator.xr.isSessionSupported("immersive-vr").then((ok) => {
+      if (!cancelled) setSupported(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!supported) return null;
+  return (
+    <button
+      onClick={() => xrStore.enterVR()}
+      className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md bg-black/70 px-4 py-2 text-sm text-white"
+    >
+      Enter VR
+    </button>
+  );
+}
+
+function DesktopCameraControls({
+  target,
+}: {
+  target: [number, number, number];
+}) {
+  const inXR = useXR((s) => s.mode != null);
+  if (inXR) return null;
+  return <OrbitControls target={target} />;
+}
+
 function CameraRig({ fov }: { fov: number }) {
   const { camera } = useThree();
+  const inXR = useXR((s) => s.mode != null);
 
   useEffect(() => {
+    if (inXR) return;
     (camera as THREE.PerspectiveCamera).fov = fov;
     camera.updateProjectionMatrix();
-  }, [fov, camera]);
+  }, [fov, camera, inXR]);
 
   return null;
 }

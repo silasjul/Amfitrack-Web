@@ -15,8 +15,10 @@ import { useFrame } from "@react-three/fiber";
 import { useDeviceStore } from "@/amfitrackSDK";
 import { useSensorSync } from "@/hooks/useSensorSync";
 import useTxIds from "@/hooks/useTxIds";
+import { useLevaToggle } from "@/hooks/useLevaToggle";
 
 export default function Home() {
+  const levaHidden = useLevaToggle();
   const resetCenterRef = useRef<() => void>(() => {});
 
   const { mode, exposure, enabled, pivotOffsetY, files } = useControls({
@@ -69,7 +71,7 @@ export default function Home() {
 
   return (
     <div className="relative h-full w-full">
-      <Leva collapsed />
+      <Leva hidden={levaHidden} />
       <Canvas
         shadows
         camera={{ position: [0, 0.25, 2], near: 0.1, far: 1000 }}
