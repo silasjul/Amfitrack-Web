@@ -9,10 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@pmndrs/uikit-lucide": "^1.0.72",
     "@react-three/cannon": "^6.6.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "@react-three/uikit": "^1.0.72",
+    "@react-three/uikit-default": "^1.0.72",
     "@react-three/xr": "^6.6.29",
     "axios": "^1.15.0",
     "class-variance-authority": "^0.7.1",

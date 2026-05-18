@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeftRight, Bug } from "lucide-react";
+import { ArrowLeftRight, Bug, RectangleGoggles, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import ConfigTransferDialog from "@/components/general/sidebar-left/nav-secondary-components/ConfigTransferDialog";
 import RecordDialog from "@/components/general/sidebar-left/nav-secondary-components/RecordDialog";
+import { xrStore } from "@/stores/xrStore";
+import { useIsInXR } from "@/hooks/useIsInXR";
 
 import {
   SidebarGroup,
@@ -17,6 +20,20 @@ export default function NavSecondary() {
   const [isConfigTransferDialogOpen, setIsConfigTransferDialogOpen] =
     React.useState(false);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = React.useState(false);
+  const inXR = useIsInXR();
+
+  const handleToggleXR = async () => {
+    if (inXR) {
+      xrStore.getState().session?.end();
+      return;
+    }
+    try {
+      await xrStore.enterVR();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to enter VR";
+      toast.error(message);
+    }
+  };
 
   return (
     <>
@@ -42,6 +59,12 @@ export default function NavSecondary() {
               >
                 <ArrowLeftRight />
                 <span>Config transfer</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="sm" onClick={handleToggleXR}>
+                {inXR ? <LogOut /> : <RectangleGoggles />}
+                <span>{inXR ? "Exit VR" : "Enter VR"}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
