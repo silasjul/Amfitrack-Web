@@ -7,6 +7,7 @@ import ConfigTransferDialog from "@/components/general/sidebar-left/nav-secondar
 import RecordDialog from "@/components/general/sidebar-left/nav-secondary-components/RecordDialog";
 import { xrStore } from "@/stores/xrStore";
 import { useIsInXR } from "@/hooks/useIsInXR";
+import { useIsVRSupported } from "@/hooks/useIsVRSupported";
 
 import {
   SidebarGroup,
@@ -21,12 +22,10 @@ export default function NavSecondary() {
     React.useState(false);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = React.useState(false);
   const inXR = useIsInXR();
+  const vrSupported = useIsVRSupported();
 
   const handleToggleXR = async () => {
-    if (inXR) {
-      xrStore.getState().session?.end();
-      return;
-    }
+    if (inXR) return;
     try {
       await xrStore.enterVR();
     } catch (err) {
@@ -61,12 +60,14 @@ export default function NavSecondary() {
                 <span>Config transfer</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="sm" onClick={handleToggleXR}>
-                {inXR ? <LogOut /> : <RectangleGoggles />}
-                <span>{inXR ? "Exit VR" : "Enter VR"}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {vrSupported && (
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" onClick={handleToggleXR}>
+                  <RectangleGoggles />
+                  <span>Enter VR</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

@@ -1,31 +1,33 @@
 "use client";
 
 import { Physics } from "@react-three/cannon";
-import { useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
-import { button, folder, useControls } from "leva";
-import { XROrigin, useXR } from "@react-three/xr";
+import { button, folder, Leva, useControls } from "leva";
+import { XR, XROrigin, useXR } from "@react-three/xr";
+import { xrStore } from "@/stores/xrStore";
 import Drumstick from "@/components/drum-demo/Drumstick";
 import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
 import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
+import { useLevaToggle } from "@/hooks/useLevaToggle";
+import R3fLoader from "@/components/general/r3f-loader";
 
-import { SCENE_CONFIGS } from "../sceneConfigs";
-
-const CAMERA_POSITION = SCENE_CONFIGS["drum-kit"].camera.position;
+const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
+const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
 const PLAYER_HEAD_HEIGHT = 1.6;
 const XR_ORIGIN_POSITION: [number, number, number] = [
   -CAMERA_POSITION[0],
   CAMERA_POSITION[1] - PLAYER_HEAD_HEIGHT,
   -CAMERA_POSITION[2],
 ];
-
-export default function DrumKitScene() {
+export default function Home() {
+  const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
@@ -41,7 +43,6 @@ export default function DrumKitScene() {
   const setHihatTipRadiusPct = useDrumAudioThresholdsStore(
     (s) => s.setHihatTipRadiusPct,
   );
-
   const {
     fov,
     drumHeight,
@@ -57,9 +58,19 @@ export default function DrumKitScene() {
     snareCenterPct,
     bellRadiusPct,
     hihatTipRadiusPct,
-  } = useControls("Drum Kit", {
-    fov: { value: 70, min: 10, max: 180, step: 1 },
-    drumHeight: { value: 0.23, min: 0, max: 1, step: 0.001 },
+  } = useControls({
+    fov: {
+      value: 70,
+      min: 10,
+      max: 180,
+      step: 1,
+    },
+    drumHeight: {
+      value: 0.23,
+      min: 0,
+      max: 1,
+      step: 0.001,
+    },
     isDebug: { value: false, label: "Show Colliders" },
     resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
     Environment: folder(
@@ -130,78 +141,126 @@ export default function DrumKitScene() {
     ),
     ContactShadows: folder(
       {
-        Opacity: { value: 0.6, min: 0, max: 1, step: 0.01, label: "Opacity" },
-        Blur: { value: 4.2, min: 0, max: 10, step: 0.1, label: "Blur" },
-        Far: { value: 12, min: 0.1, max: 50, step: 0.1, label: "Far" },
+        Opacity: {
+          value: 0.6,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: "Opacity",
+        },
+        Blur: {
+          value: 4.2,
+          min: 0,
+          max: 10,
+          step: 0.1,
+          label: "Blur",
+        },
+        Far: {
+          value: 12,
+          min: 0.1,
+          max: 50,
+          step: 0.1,
+          label: "Far",
+        },
       },
       { collapsed: true },
     ),
   });
 
-  useEffect(() => setIsDebug(isDebug), [isDebug, setIsDebug]);
-  useEffect(() => setDrumHeight(drumHeight), [drumHeight, setDrumHeight]);
-  useEffect(
-    () => setTopNormalDeg(topNormalDeg),
-    [topNormalDeg, setTopNormalDeg],
-  );
-  useEffect(
-    () => setRimRadiusPct(rimRadiusPct),
-    [rimRadiusPct, setRimRadiusPct],
-  );
-  useEffect(
-    () => setSnareCenterPct(snareCenterPct),
-    [snareCenterPct, setSnareCenterPct],
-  );
-  useEffect(
-    () => setBellRadiusPct(bellRadiusPct),
-    [bellRadiusPct, setBellRadiusPct],
-  );
-  useEffect(
-    () => setHihatTipRadiusPct(hihatTipRadiusPct),
-    [hihatTipRadiusPct, setHihatTipRadiusPct],
-  );
+  useEffect(() => {
+    setIsDebug(isDebug);
+  }, [isDebug, setIsDebug]);
+
+  useEffect(() => {
+    setDrumHeight(drumHeight);
+  }, [drumHeight, setDrumHeight]);
+
+  useEffect(() => {
+    setTopNormalDeg(topNormalDeg);
+  }, [topNormalDeg, setTopNormalDeg]);
+
+  useEffect(() => {
+    setRimRadiusPct(rimRadiusPct);
+  }, [rimRadiusPct, setRimRadiusPct]);
+
+  useEffect(() => {
+    setSnareCenterPct(snareCenterPct);
+  }, [snareCenterPct, setSnareCenterPct]);
+
+  useEffect(() => {
+    setBellRadiusPct(bellRadiusPct);
+  }, [bellRadiusPct, setBellRadiusPct]);
+
+  useEffect(() => {
+    setHihatTipRadiusPct(hihatTipRadiusPct);
+  }, [hihatTipRadiusPct, setHihatTipRadiusPct]);
 
   return (
-    <>
-      <HdrEnvironment
-        environmentHeight={environmentHeight}
-        environmentRadius={environmentRadius}
-        environmentScale={environmentScale}
+    <div className="relative h-full w-full">
+      <Leva
+        hidden={levaHidden}
+        theme={{ sizes: { rootWidth: "400px", controlWidth: "full" } }}
       />
-      <NotInXR>
-        <ContactShadows opacity={Opacity} blur={Blur} scale={15} far={Far} />
-      </NotInXR>
-      <XROrigin position={XR_ORIGIN_POSITION} />
-      <DesktopCameraControls target={[0, drumHeight + 3.8, 0]} fov={fov} />
-      <DrumAudioListener />
+      <R3fLoader />
+      <Canvas shadows gl={GL_PROPS} camera={{ fov, position: CAMERA_POSITION }}>
+        <XR store={xrStore}>
+          <Suspense fallback={null}>
+            <HdrEnvironment
+              environmentHeight={environmentHeight}
+              environmentRadius={environmentRadius}
+              environmentScale={environmentScale}
+            />
+            <NotInXR>
+              <ContactShadows
+                opacity={Opacity}
+                blur={Blur}
+                scale={15}
+                far={Far}
+              />
+            </NotInXR>
+            <XROrigin position={XR_ORIGIN_POSITION} />
+            <DesktopCameraControls target={[0, drumHeight + 3.8, 0]} />
+            <CameraRig fov={fov} />
+            <DrumAudioListener />
+            <Light />
+            <Physics gravity={[0, -9.81, 0]}>
+              <Drumset drumHeight={drumHeight} />
+              {sensorTxIds[0] && (
+                <Drumstick
+                  sensorId={sensorTxIds[0]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[0] = fn;
+                  }}
+                />
+              )}
+              {sensorTxIds[1] && (
+                <Drumstick
+                  sensorId={sensorTxIds[1]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[1] = fn;
+                  }}
+                />
+              )}
+              {sensorTxIds[2] && (
+                <Shoe
+                  sensorId={sensorTxIds[2]}
+                  onRegisterReset={(fn) => {
+                    resetRefs.current[2] = fn;
+                  }}
+                />
+              )}
+            </Physics>
+          </Suspense>
+        </XR>
+      </Canvas>
+    </div>
+  );
+}
+
+function Light() {
+  return (
+    <>
       <ambientLight intensity={1} />
-      <Physics gravity={[0, -9.81, 0]}>
-        <Drumset drumHeight={drumHeight} />
-        {sensorTxIds[0] && (
-          <Drumstick
-            sensorId={sensorTxIds[0]}
-            onRegisterReset={(fn) => {
-              resetRefs.current[0] = fn;
-            }}
-          />
-        )}
-        {sensorTxIds[1] && (
-          <Drumstick
-            sensorId={sensorTxIds[1]}
-            onRegisterReset={(fn) => {
-              resetRefs.current[1] = fn;
-            }}
-          />
-        )}
-        {sensorTxIds[2] && (
-          <Shoe
-            sensorId={sensorTxIds[2]}
-            onRegisterReset={(fn) => {
-              resetRefs.current[2] = fn;
-            }}
-          />
-        )}
-      </Physics>
     </>
   );
 }
@@ -242,21 +301,23 @@ function HdrEnvironment({
 
 function DesktopCameraControls({
   target,
-  fov,
 }: {
   target: [number, number, number];
-  fov: number;
 }) {
+  const inXR = useXR((s) => s.mode != null);
+  if (inXR) return null;
+  return <OrbitControls target={target} />;
+}
+
+function CameraRig({ fov }: { fov: number }) {
   const { camera } = useThree();
   const inXR = useXR((s) => s.mode != null);
 
   useEffect(() => {
     if (inXR) return;
-    const cam = camera as THREE.PerspectiveCamera;
-    cam.fov = fov;
-    cam.updateProjectionMatrix();
+    (camera as THREE.PerspectiveCamera).fov = fov;
+    camera.updateProjectionMatrix();
   }, [fov, camera, inXR]);
 
-  if (inXR) return null;
-  return <OrbitControls target={target} />;
+  return null;
 }

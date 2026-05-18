@@ -8,6 +8,8 @@ import SourceModel from "@/components/viewer/SourceModel";
 import SensorModels from "@/components/viewer/SensorModel";
 import { Leva, useControls } from "leva";
 import R3fLoader from "@/components/general/r3f-loader";
+import { XR } from "@react-three/xr";
+import { xrStore } from "@/stores/xrStore";
 
 export default function Viewer() {
   const cameraStartScale = 0.75;
@@ -27,14 +29,13 @@ export default function Viewer() {
           fov: 50,
         }}
       >
-        {/* <Stats /> */}
-        <Light />
-
-        <CoordinateSystem />
-        <SourceModel />
-        <SensorModels />
-
-        <OrbitControls makeDefault />
+        <XR store={xrStore}>
+          <Light />
+          <CoordinateSystem />
+          <SourceModel />
+          <SensorModels />
+          <OrbitControls makeDefault />
+        </XR>
       </Canvas>
     </div>
   );
