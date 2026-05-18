@@ -65,7 +65,7 @@ export default function NavSecondary() {
                 <SidebarMenuButton size="sm" onClick={handleToggleXR}>
                   <RectangleGoggles />
                   <span>Enter VR</span>
-                </SidebarMenuButton>
+                </SidebarMenuButton>       
               </SidebarMenuItem>
             )}
           </SidebarMenu>

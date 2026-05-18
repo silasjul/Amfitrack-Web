@@ -16,6 +16,7 @@ import { useDeviceStore } from "@/amfitrackSDK";
 import { useSensorSync } from "@/hooks/useSensorSync";
 import useTxIds from "@/hooks/useTxIds";
 import { useLevaToggle } from "@/hooks/useLevaToggle";
+import { useKeyPress } from "@/hooks/useKeyPress";
 import R3fLoader from "@/components/general/r3f-loader";
 import { XR } from "@react-three/xr";
 import { xrStore } from "@/stores/xrStore";
@@ -23,6 +24,7 @@ import { xrStore } from "@/stores/xrStore";
 export default function Home() {
   const levaHidden = useLevaToggle();
   const resetCenterRef = useRef<() => void>(() => {});
+  useKeyPress("space", () => resetCenterRef.current());
 
   const { mode, exposure, enabled, pivotOffsetY, files } = useControls({
     toneMapping: folder({

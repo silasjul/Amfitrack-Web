@@ -16,6 +16,7 @@ import useTxIds from "@/hooks/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { useLevaToggle } from "@/hooks/useLevaToggle";
+import { useKeyPress } from "@/hooks/useKeyPress";
 import R3fLoader from "@/components/general/r3f-loader";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
@@ -30,6 +31,7 @@ export default function Home() {
   const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
   const resetRefs = useRef<Array<() => void>>([]);
+  useKeyPress("space", () => resetRefs.current.forEach((fn) => fn()));
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
   const setDrumHeight = useDrumDemoStore((s) => s.setDrumHeight);
   const setTopNormalDeg = useDrumAudioThresholdsStore((s) => s.setTopNormalDeg);
