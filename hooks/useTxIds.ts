@@ -8,6 +8,7 @@ export interface UseTxIdsResult {
   unknownTxIds: number[];
   BLETxIds: number[];
   USBTxIds: number[];
+  WebRTCTxIds: number[];
   allTxIds: number[];
 }
 
@@ -21,6 +22,7 @@ export default function useTxIds(): UseTxIdsResult {
     const unknownTxIds: number[] = [];
     const BLETxIds: number[] = [];
     const USBTxIds: number[] = [];
+    const WebRTCTxIds: number[] = [];
     const allTxIds: number[] = [];
 
     for (const key of Object.keys(deviceMeta)) {
@@ -29,6 +31,14 @@ export default function useTxIds(): UseTxIdsResult {
 
       const meta = deviceMeta[id];
       if (!meta) continue;
+
+      // The WebRTC bridge is a transport, not a device — it gets exactly one
+      // sidebar entry and is excluded from every device list so it doesn't
+      // pollute the right-sidebar viewer.
+      if (meta.uplink === "webrtc" && meta.kind === "unknown") {
+        WebRTCTxIds.push(id);
+        continue;
+      }
 
       // Transport lists include all entries (temp negative IDs too).
       if (meta.uplink === "ble") BLETxIds.push(id);
@@ -51,6 +61,7 @@ export default function useTxIds(): UseTxIdsResult {
       unknownTxIds,
       BLETxIds,
       USBTxIds,
+      WebRTCTxIds,
       allTxIds,
     };
   }, [deviceMeta]);

@@ -10,11 +10,12 @@ export type DeviceKind = "hub" | "source" | "sensor" | "unknown";
 
 /**
  * How a device's packets reach us:
- *   "usb" | "ble"  — device is physically connected on this link
+ *   "usb" | "ble"   — device is physically connected on this link
+ *   "webrtc"        — packets are relayed from a companion PC over the WebRTC bridge
  *   number          — packets are relayed through the hub with this TX ID
  *   null            — not yet determined (transient during initial registration)
  */
-export type DeviceUplink = number | "usb" | "ble" | null;
+export type DeviceUplink = number | "usb" | "ble" | "webrtc" | null;
 
 export interface DeviceFrequency {
   totalHz: number;

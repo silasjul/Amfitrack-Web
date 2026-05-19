@@ -29,6 +29,9 @@ export class ReadPipeline implements IReadPipeline {
     const readFromTxId =
       this.deviceManager.registerTransportOrGetTxId(transport);
 
+    // WebRTC bridge frames share the USB framing path (byte 0 is the
+    // padding / report-ID prepended by the transport); only BLE strips a
+    // GATT-side prefix.
     const frameBytes =
       transport.getConnectionKind() === "ble" ? bytes.subarray(3) : bytes;
 
@@ -44,11 +47,17 @@ export class ReadPipeline implements IReadPipeline {
       return;
     }
 
+    // Devices arriving via the WebRTC bridge are tagged with the literal
+    // "webrtc" uplink so the UI can distinguish them and so SendPipeline can
+    // resolve back to the bridge transport.
+    const uplink =
+      transport.getConnectionKind() === "webrtc" ? "webrtc" : readFromTxId;
+
     // Ping or register the device
     this.deviceManager.pingOrRegisterDevice(
       decodedHeader.sourceTxId,
       decodedHeader.payloadType,
-      readFromTxId,
+      uplink,
     );
 
     // Track the frequency of the packet
