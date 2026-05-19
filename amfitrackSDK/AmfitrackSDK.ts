@@ -12,6 +12,7 @@ import {
 import { ITransport } from "./src/interfaces/ITransport";
 import { HIDConnection } from "./src/transport/HIDConnection";
 import { BLEConnection } from "./src/transport/BLEConnection";
+import { WebRTCConnection } from "./src/transport/WebRTCConnection";
 import { IReadPipeline } from "./src/interfaces/IReadPipeline";
 import { ReadPipeline } from "./src/pipeline/ReadPipeline";
 import { IDecoder } from "./src/interfaces/IDecoder";
@@ -106,6 +107,25 @@ export class AmfitrackSDK implements IAmfitrackSDK {
     await this.addTransport(
       new BLEConnection(device, this.allocateTransportId()),
     );
+    return true;
+  }
+
+  public async requestConnectionViaWebRTC(
+    url: string = "ws://localhost:8080",
+    onDropped?: () => void,
+  ): Promise<boolean> {
+    const key = `webrtc:${url}`;
+    const existing = this.connections.get(key);
+    if (existing) {
+      // Re-attach the caller's drop handler to the live transport so a
+      // second auto-connect cycle (e.g. React StrictMode remount) doesn't
+      // silently lose the listener.
+      if (onDropped) existing.onDisconnect(onDropped);
+      return true;
+    }
+    const connection = new WebRTCConnection(url, this.allocateTransportId());
+    if (onDropped) connection.onDisconnect(onDropped);
+    await this.addTransport(connection);
     return true;
   }
 

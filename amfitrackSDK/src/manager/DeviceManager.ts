@@ -4,8 +4,15 @@ import {
   PRODUCT_ID_SOURCE,
 } from "../../config";
 import { PayloadType } from "../protocol/AmfitrackDecoder";
-import type { DeviceKind, DeviceStoreApi } from "../interfaces/IStore";
-import { ITransport } from "../interfaces/ITransport";
+import type {
+  DeviceKind,
+  DeviceStoreApi,
+  DeviceUplink,
+} from "../interfaces/IStore";
+import {
+  ITransport,
+  TransportConnectionKind,
+} from "../interfaces/ITransport";
 import { IDeviceManager } from "../interfaces/IDeviceManager";
 import type { Configuration, IConfigurator } from "../interfaces/IConfigurator";
 import { ResolvedTransport } from "../interfaces/ISendPipeline";
@@ -39,6 +46,12 @@ export class DeviceManager implements IDeviceManager {
     this.store
       .getState()
       .registerDevice(temporaryTxId, "unknown", transport.getConnectionKind());
+
+    // The WebRTC bridge is a packet relay, not a device — keep the placeholder
+    // so the sidebar can render a single "WebRTC" transport entry, but skip
+    // the config probe because writeToDevice is a no-op for the bridge.
+    if (transport.getConnectionKind() === "webrtc") return temporaryTxId;
+
     this.resolveDeviceConfig(transport, temporaryTxId);
 
     return temporaryTxId;
@@ -49,16 +62,35 @@ export class DeviceManager implements IDeviceManager {
     this.transportTxIdMap.delete(transport);
     if (txId === undefined) return;
 
+    const kind = transport.getConnectionKind();
     const { deviceMeta, removeDevice } = this.store.getState();
 
     removeDevice(txId);
 
     for (const key of Object.keys(deviceMeta)) {
       const id = Number(key);
-      if (deviceMeta[id]?.uplink === txId) {
+      const meta = deviceMeta[id];
+      if (!meta) continue;
+      if (meta.uplink === txId) {
+        removeDevice(id);
+      } else if (
+        kind === "webrtc" &&
+        meta.uplink === "webrtc" &&
+        !this.hasOtherTransportOfKind(transport, "webrtc")
+      ) {
         removeDevice(id);
       }
     }
+  }
+
+  private hasOtherTransportOfKind(
+    exclude: ITransport,
+    kind: TransportConnectionKind,
+  ): boolean {
+    for (const t of this.transportTxIdMap.keys()) {
+      if (t !== exclude && t.getConnectionKind() === kind) return true;
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -68,7 +100,7 @@ export class DeviceManager implements IDeviceManager {
   public pingOrRegisterDevice(
     deviceTxId: number,
     payloadType: PayloadType,
-    uplink: number | null,
+    uplink: DeviceUplink,
   ) {
     const { deviceMeta, registerDevice, pingDevice } = this.store.getState();
 
@@ -83,11 +115,15 @@ export class DeviceManager implements IDeviceManager {
     if (this.isTxIdRetired(kind, deviceTxId)) return;
 
     registerDevice(deviceTxId, kind, uplink);
-    if (uplink != null && uplink >= 0) {
+    if (typeof uplink === "number" && uplink >= 0) {
       this.refreshDeviceInfo(deviceTxId);
-    } else {
+    } else if (typeof uplink === "number") {
+      // Negative temp TX id — defer config fetch until the transport resolves.
       this.pendingConfigDevices.add(deviceTxId);
     }
+    // For string uplinks (usb/ble/webrtc) the device's config is fetched
+    // elsewhere (commitTransportTxIdResolution for usb/ble) or not at all
+    // (webrtc — bridge is read-only).
     this.startLivenessCheck();
   }
 
@@ -112,6 +148,17 @@ export class DeviceManager implements IDeviceManager {
       }
     }
 
+    // Devices relayed by the WebRTC bridge have no dedicated transport — pick
+    // the bridge transport so SendPipeline can attempt (and gracefully time
+    // out) the write rather than crashing the caller.
+    if (meta?.uplink === "webrtc") {
+      for (const transport of this.transportTxIdMap.keys()) {
+        if (transport.getConnectionKind() === "webrtc") {
+          return { transport, deviceTxId: txId };
+        }
+      }
+    }
+
     throw new Error(`No transport found for txId "${txId}"`);
   }
 
@@ -121,6 +168,11 @@ export class DeviceManager implements IDeviceManager {
 
   public isDirectlyConnected(txId: number): boolean {
     const meta = this.store.getState().deviceMeta[txId];
+    // "webrtc" is intentionally excluded: the bridge is a relay, not a direct
+    // link, and the frequency tracker uses this gate to dedup packets that
+    // arrive via both a direct transport and a hub relay. WebRTC packets are
+    // always relayed (sourceTxId !== bridge transport id), so treating them as
+    // direct here would cause the gate to skip them and freq would read 0.
     return meta?.uplink === "usb" || meta?.uplink === "ble";
   }
 

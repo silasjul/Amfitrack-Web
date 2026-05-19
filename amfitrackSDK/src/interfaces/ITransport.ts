@@ -2,7 +2,7 @@ export type DataCallback = (bytes: Uint8Array) => void;
 
 export type DisconnectCallback = () => void;
 
-export type TransportConnectionKind = "usb" | "ble";
+export type TransportConnectionKind = "usb" | "ble" | "webrtc";
 
 export interface ITransport {
   /** Monotonic id assigned by the SDK when the transport is constructed. */

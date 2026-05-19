@@ -1,6 +1,6 @@
 import { PayloadType } from "../protocol/AmfitrackDecoder";
 import { ResolvedTransport } from "./ISendPipeline";
-import { DeviceKind } from "./IStore";
+import { DeviceKind, DeviceUplink } from "./IStore";
 import { ITransport } from "./ITransport";
 
 export interface IDeviceManager {
@@ -10,7 +10,7 @@ export interface IDeviceManager {
   pingOrRegisterDevice(
     deviceTxId: number,
     payloadType: PayloadType,
-    uplink: number | null,
+    uplink: DeviceUplink,
   ): void;
   resolveTransport(txId: number): ResolvedTransport;
   isDirectlyConnected(txId: number): boolean;
