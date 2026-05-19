@@ -6,7 +6,7 @@ import { useIsVRSupported } from "./useIsVRSupported";
 import { useAmfitrack } from "@/amfitrackSDK";
 import { useWebRTCConnectionStore } from "@/stores/useWebRTCConnectionStore";
 
-const DEFAULT_URL = "ws://localhost:8080";
+const DEFAULT_URL = "wss://10.0.8.64:8080";
 const MAX_BACKOFF_MS = 15000;
 
 /**

@@ -111,7 +111,7 @@ export class AmfitrackSDK implements IAmfitrackSDK {
   }
 
   public async requestConnectionViaWebRTC(
-    url: string = "ws://localhost:8080",
+    url: string = "wss://10.0.8.64:8080",
     onDropped?: () => void,
   ): Promise<boolean> {
     const key = `webrtc:${url}`;
