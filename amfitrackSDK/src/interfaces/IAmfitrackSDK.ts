@@ -17,6 +17,19 @@ export interface IAmfitrackSDK {
   requestConnectionViaBLE(productIds: number[]): Promise<boolean>;
 
   /**
+   * Connect to the local Amfitrack WebRTC bridge. The bridge is one-way
+   * (server → client); writes through the resulting transport are dropped.
+   *
+   * @param url WebSocket signaling URL (e.g. ws://localhost:8080).
+   * @param onDropped Called whenever the bridge connection is lost so the
+   *                  caller can restart its retry loop.
+   */
+  requestConnectionViaWebRTC(
+    url?: string,
+    onDropped?: () => void,
+  ): Promise<boolean>;
+
+  /**
    * Set a parameter on a device.
    *
    * @param deviceID - Target device id.

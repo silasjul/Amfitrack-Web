@@ -2,7 +2,13 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { CircleHelp, MoreHorizontal, Settings, Unplug } from "lucide-react";
+import {
+  CircleHelp,
+  MonitorUp,
+  MoreHorizontal,
+  Settings,
+  Unplug,
+} from "lucide-react";
 import { useDeviceStore, useAmfitrack } from "@/amfitrackSDK";
 import type { Configuration } from "@/amfitrackSDK";
 import { cn } from "@/lib/utils";
@@ -27,25 +33,38 @@ import type {
 import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
 import useTxIds from "@/hooks/useTxIds";
 import { KindIconMap } from "@/lib/utils";
+import { useWebRTCConnectionStore } from "@/stores/useWebRTCConnectionStore";
 
 export default function TransportItems() {
-  const { BLETxIds, USBTxIds } = useTxIds();
+  const { BLETxIds, USBTxIds, WebRTCTxIds } = useTxIds();
   const { sdk } = useAmfitrack();
   const deviceMeta = useDeviceStore((s) => s.deviceMeta);
+  const setWebRTCManuallyDisconnected = useWebRTCConnectionStore(
+    (s) => s.setManuallyDisconnected,
+  );
   const [configDialogTxId, setConfigDialogTxId] = useState<number | null>(null);
 
   const handleDisconnect = useCallback(
     async (txId: number) => {
       try {
+        // Suppress auto-reconnect first so the drop fired by disconnectDevice
+        // doesn't race the flag and trigger one retry before the hook bails.
+        if (deviceMeta[txId]?.uplink === "webrtc") {
+          setWebRTCManuallyDisconnected(true);
+        }
         await sdk?.disconnectDevice(txId);
       } catch (err) {
         console.error(`Failed to disconnect device ${txId}`, err);
       }
     },
-    [sdk],
+    [sdk, deviceMeta, setWebRTCManuallyDisconnected],
   );
 
-  if (BLETxIds.length === 0 && USBTxIds.length === 0) {
+  if (
+    BLETxIds.length === 0 &&
+    USBTxIds.length === 0 &&
+    WebRTCTxIds.length === 0
+  ) {
     return null;
   }
 
@@ -70,6 +89,14 @@ export default function TransportItems() {
           />
         ))}
         {USBTxIds.map((txId) => (
+          <TransportItem
+            key={txId}
+            txId={txId}
+            onOpenSettings={() => setConfigDialogTxId(txId)}
+            onDisconnect={() => handleDisconnect(txId)}
+          />
+        ))}
+        {WebRTCTxIds.map((txId) => (
           <TransportItem
             key={txId}
             txId={txId}
@@ -107,8 +134,9 @@ function TransportItem({
   const meta = deviceMeta[txId];
 
   if (!meta) return null;
-  const { kind } = meta;
+  const { kind, uplink } = meta;
   const configurationLoaded = meta.configuration !== undefined;
+  const isWebRTC = uplink === "webrtc";
 
   return (
     <DropdownMenu>
@@ -119,8 +147,10 @@ function TransportItem({
             type="button"
             className="transition-colors ease-linear"
           >
-            <DeviceIcon kind={kind} />
-            <span className="min-w-0 flex-1 truncate">{Label(kind)}</span>
+            <DeviceIcon kind={kind} uplink={uplink} />
+            <span className="min-w-0 flex-1 truncate">
+              {isWebRTC ? "WebRTC" : Label(kind)}
+            </span>
             <span className="flex shrink-0 items-center gap-1 text-sidebar-foreground/50">
               <MoreHorizontal className="size-4" />
             </span>
@@ -152,7 +182,16 @@ function Label(kind: DeviceKind) {
   return String(kind).charAt(0).toUpperCase() + String(kind).slice(1);
 }
 
-export function DeviceIcon({ kind }: { kind: DeviceKind }) {
+export function DeviceIcon({
+  kind,
+  uplink,
+}: {
+  kind: DeviceKind;
+  uplink?: DeviceMeta["uplink"];
+}) {
+  if (uplink === "webrtc") {
+    return <MonitorUp className="text-sidebar-foreground/70 size-4" />;
+  }
   return kind !== "unknown" && KindIconMap[kind] ? (
     <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-md">
       <Image
