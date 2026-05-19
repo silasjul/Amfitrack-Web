@@ -27,7 +27,6 @@ export class WebRTCConnection implements ITransport {
   private channel: RTCDataChannel | null = null;
   private disconnected = false;
   private handshakeComplete = false;
-  private loggedFirstPacket = false;
 
   constructor(url: string, id: number) {
     this.url = url;
@@ -90,16 +89,6 @@ export class WebRTCConnection implements ITransport {
           bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
         }
         if (!bytes) return;
-
-        if (!this.loggedFirstPacket) {
-          this.loggedFirstPacket = true;
-          const hex = Array.from(bytes)
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-          console.log(
-            `[WebRTCConnection] first packet: len=${bytes.length} hex=${hex}`,
-          );
-        }
 
         // Bridge forwards node-hid bytes as-is. node-hid prefixes with the
         // HID report ID (0x01) — matching what Chrome's WebHID puts at
