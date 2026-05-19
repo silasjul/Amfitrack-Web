@@ -5,7 +5,7 @@ import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { Center, useFBX } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useDeviceStore } from "@/amfitrackSDK";
+import { useDeviceStore } from "amfitrack";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { applyDistortionColor } from "@/lib/distortionColorLerp";
 import { useSensorSync } from "@/hooks/useSensorSync";

@@ -1,7 +1,9 @@
-import type { EmfImuFrameIdData } from "@/amfitrackSDK/src/protocol/payloads/EmfImuFrameIdPayload";
-import type { SourceMeasurementData } from "@/amfitrackSDK/src/protocol/payloads/SourceMeasurementPayload";
-import type { SourceCalibrationData } from "@/amfitrackSDK/src/protocol/payloads/SourceCalibrationPayload";
-import type { DeviceKind } from "@/amfitrackSDK/src/interfaces/IStore";
+import type {
+  EmfImuFrameIdData,
+  SourceMeasurementData,
+  SourceCalibrationData,
+  DeviceKind,
+} from "amfitrack";
 
 const DELIMITER = ";";
 const UTF8_BOM = "﻿";

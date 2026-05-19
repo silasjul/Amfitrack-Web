@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useDeviceStore } from "@/amfitrackSDK";
+import { useDeviceStore } from "amfitrack";
 
 const POSITION_SCALE = 0.01;
 

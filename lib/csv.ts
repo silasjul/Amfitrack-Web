@@ -1,6 +1,7 @@
 import { strToU8, zip } from "fflate";
-import type { DeviceUplink } from "@/amfitrackSDK/src/interfaces/IStore";
-import type { ParameterValue } from "@/amfitrackSDK/src/interfaces/IConfigurator";
+import type { ParameterValue } from "amfitrack";
+
+type DeviceUplink = number | "usb" | "ble" | null;
 
 export function formatUplink(uplink: DeviceUplink): string {
   if (uplink === "ble") return "BLE";

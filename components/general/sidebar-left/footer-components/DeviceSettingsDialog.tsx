@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Configuration } from "@/amfitrackSDK";
+import type { Configuration } from "amfitrack";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import ParameterCard from "./ParameterCard";
 

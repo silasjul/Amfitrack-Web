@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { AmfitrackContext, useAmfitrackProvider } from "@/amfitrackSDK";
+import { AmfitrackContext, useAmfitrackProvider } from "amfitrack";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 

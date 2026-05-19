@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { useAmfitrack } from "@/amfitrackSDK";
+import { useAmfitrack } from "amfitrack";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 
 export function useSaveConfigurations() {

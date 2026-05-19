@@ -1,4 +1,4 @@
-import { DeviceKind } from "@/amfitrackSDK/src/interfaces/IStore";
+import type { DeviceKind } from "amfitrack";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 

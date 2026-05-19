@@ -2,8 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useAmfitrack } from "@/amfitrackSDK";
-import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
+import { useAmfitrack, useDeviceStore } from "amfitrack";
 import type { DeviceExportData } from "@/lib/csv";
 
 export interface ImportProgress {

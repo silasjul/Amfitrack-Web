@@ -8,10 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
 import { ScrollBar } from "@/components/ui/scroll-area";
-import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
-import useTxIds from "@/hooks/useTxIds";
+import { useDeviceStore, useTxIds } from "amfitrack";
 import { cn, KindIconMap } from "@/lib/utils";
-import type { DeviceKind } from "@/amfitrackSDK/src/interfaces/IStore";
+import type { DeviceKind } from "amfitrack";
 
 type SectionDef = { key: string; label: string; kinds: DeviceKind[] };
 

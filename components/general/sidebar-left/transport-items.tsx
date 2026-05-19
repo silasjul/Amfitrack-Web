@@ -3,8 +3,8 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { CircleHelp, MoreHorizontal, Settings, Unplug } from "lucide-react";
-import { useDeviceStore, useAmfitrack } from "@/amfitrackSDK";
-import type { Configuration } from "@/amfitrackSDK";
+import { useDeviceStore, useAmfitrack, useTxIds } from "amfitrack";
+import type { Configuration } from "amfitrack";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -20,12 +20,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import type {
-  DeviceKind,
-  DeviceMeta,
-} from "@/amfitrackSDK/src/interfaces/IStore";
+import type { DeviceKind, DeviceMeta } from "amfitrack";
 import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
-import useTxIds from "@/hooks/useTxIds";
 import { KindIconMap } from "@/lib/utils";
 
 export default function TransportItems() {

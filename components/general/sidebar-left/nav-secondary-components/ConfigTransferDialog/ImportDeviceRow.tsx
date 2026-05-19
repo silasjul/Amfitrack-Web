@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { DeviceMeta } from "@/amfitrackSDK/src/interfaces/IStore";
+import type { DeviceMeta } from "amfitrack";
 import type { DeviceExportData } from "@/lib/csv";
 
 interface ImportDeviceRowProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
+import { useDeviceStore } from "amfitrack";
 import { useRecordingStore } from "@/stores/useRecordingStore";
 import { downloadZip } from "@/lib/csv";
 import { extractSectionFields, framesToCSVPerDevice } from "@/lib/recordingCsv";

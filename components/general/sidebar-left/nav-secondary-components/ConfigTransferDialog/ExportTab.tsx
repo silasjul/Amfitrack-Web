@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import DeviceTable from "./DeviceTable";
 import { Download, Loader2 } from "lucide-react";
 import { useExport } from "@/hooks/useExport";
-import { useAmfitrack, useDeviceStore } from "@/amfitrackSDK";
-import useTxIds from "@/hooks/useTxIds";
+import { useAmfitrack, useDeviceStore, useTxIds } from "amfitrack";
 
 export default function ExportTab() {
   const { allTxIds } = useTxIds();

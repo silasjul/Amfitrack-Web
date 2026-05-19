@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeviceStore } from "@/amfitrackSDK";
+import { useDeviceStore, useTxIds } from "amfitrack";
 import type {
   EmfImuFrameIdData,
   SourceMeasurementData,
@@ -8,9 +8,8 @@ import type {
   DeviceKind,
   DeviceFrequency,
   DeviceVersions,
-} from "@/amfitrackSDK";
+} from "amfitrack";
 import { useViewerStore } from "@/stores/useViewerStore";
-import useTxIds from "@/hooks/useTxIds";
 import { useEffect, useState } from "react";
 import { Radio, Router, CircleHelp } from "lucide-react";
 import Image from "next/image";

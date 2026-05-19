@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRecordingStore } from "@/stores/useRecordingStore";
-import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
+import { useDeviceStore } from "amfitrack";
 import { cn } from "@/lib/utils";
 import { CHARTABLE_FIELDS, SECTION_LABELS } from "./chartConfig";
 import RecordingChart from "./RecordingChart";

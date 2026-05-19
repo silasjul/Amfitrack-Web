@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { DeviceMeta } from "@/amfitrackSDK/src/interfaces/IStore";
+import type { DeviceMeta } from "amfitrack";
 import DeviceTableRow from "./DeviceTableRow";
 
 interface DeviceTableProps {

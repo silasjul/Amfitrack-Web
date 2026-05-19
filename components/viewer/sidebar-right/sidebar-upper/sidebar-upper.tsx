@@ -1,7 +1,7 @@
 "use client";
 
-import { useDeviceStore } from "@/amfitrackSDK";
-import type { DeviceMeta, Configuration } from "@/amfitrackSDK";
+import { useDeviceStore, useTxIds } from "amfitrack";
+import type { DeviceMeta, Configuration } from "amfitrack";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import { useEffect, useState } from "react";
@@ -23,7 +23,6 @@ import {
 import { HelpCircle } from "lucide-react";
 import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
 import { DeviceRow } from "./device-row";
-import useTxIds from "@/hooks/useTxIds";
 
 type DeviceFilter = "all" | "hubs" | "sources" | "sensors" | "unknown";
 

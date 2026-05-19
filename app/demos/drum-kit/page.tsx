@@ -12,7 +12,7 @@ import { xrStore } from "@/stores/xrStore";
 import Drumstick from "@/components/drum-demo/Drumstick";
 import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
-import useTxIds from "@/hooks/useTxIds";
+import { useTxIds } from "amfitrack";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { useLevaToggle } from "@/hooks/useLevaToggle";

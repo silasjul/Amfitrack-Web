@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useDeviceStore } from "@/amfitrackSDK";
-import type { DeviceFrequency, DeviceKind } from "@/amfitrackSDK";
+import { useDeviceStore } from "amfitrack";
+import type { DeviceFrequency, DeviceKind } from "amfitrack";
 import { getDistortionLevel } from "@/config/distortion";
 import { FrequencyHoverCard } from "@/components/general/frequency-breakdown";
 import { useViewerStore } from "@/stores/useViewerStore";
