@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Configuration } from "@/amfitrackSDK";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
+import { PENDING_BAR_ATTR } from "@/components/general/PendingChangesBar";
 import ParameterCard from "./ParameterCard";
 
 export default function DeviceSettingsDialog({
@@ -58,7 +59,15 @@ export default function DeviceSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl h-[75vh] flex flex-col">
+      <DialogContent
+        className="sm:max-w-5xl h-[75vh] flex flex-col"
+        onInteractOutside={(e) => {
+          const target = e.target as Element | null;
+          if (target?.closest(`[${PENDING_BAR_ATTR}]`)) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{deviceName} Settings</DialogTitle>
           <DialogDescription>
