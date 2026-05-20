@@ -57,9 +57,12 @@ export class WebRTCConnection implements ITransport {
       const ws = new WebSocket(this.url);
       this.ws = ws;
 
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-      });
+      // No STUN: the bridge is on the same LAN (Windows Mobile Hotspot,
+      // 192.168.137.0/24) so host candidates are sufficient. Adding STUN can
+      // gather srflx candidates via whatever NIC has internet access — when
+      // Meta Quest Link is active, that's a virtual interface that can't
+      // reach the hotspot subnet, and ICE may end up pairing it.
+      const pc = new RTCPeerConnection({ iceServers: [] });
       this.pc = pc;
 
       // Low-latency channel: real-time sensor data prefers drops over
