@@ -10,6 +10,7 @@ import { Leva, useControls } from "leva";
 import R3fLoader from "@/components/general/r3f-loader";
 import { XR } from "@react-three/xr";
 import { xrStore } from "@/stores/xrStore";
+import XRRig from "@/components/viewer/XRRig";
 
 export default function Viewer() {
   const cameraStartScale = 0.75;
@@ -30,6 +31,7 @@ export default function Viewer() {
         }}
       >
         <XR store={xrStore}>
+          <XRRig />
           <Light />
           <CoordinateSystem />
           <SourceModel />

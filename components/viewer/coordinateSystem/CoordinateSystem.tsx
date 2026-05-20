@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import type { Line2 } from "three-stdlib";
 import MirroredGizmoViewport from "./MirroredGizmo";
+import { useIsInXR } from "@/hooks/useIsInXR";
 import {
   PRIMARY,
   AXIS_X,
@@ -64,8 +65,10 @@ function AxisLabel({
   color: string;
 }) {
   const ref = useRef<THREE.Mesh>(null!);
+  // Read the camera's *world* quaternion: in XR the active camera's local
+  // `.quaternion` is not updated from the headset pose — only its matrices are.
   useFrame(({ camera }) => {
-    ref.current.quaternion.copy(camera.quaternion);
+    camera.getWorldQuaternion(ref.current.quaternion);
   });
   return (
     <Text
@@ -86,6 +89,7 @@ function AxisLabel({
 
 export default function CoordinateSystem() {
   const gridRef = useRef<THREE.Mesh>(null);
+  const isInXR = useIsInXR();
   useLayoutEffect(() => {
     const m = gridRef.current?.material;
     if (m && !Array.isArray(m)) {
@@ -133,9 +137,11 @@ export default function CoordinateSystem() {
         color={AXIS_X}
       />
 
-      <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-        <MirroredGizmoViewport />
-      </GizmoHelper>
+      {!isInXR && (
+        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+          <MirroredGizmoViewport />
+        </GizmoHelper>
+      )}
     </group>
   );
 }
