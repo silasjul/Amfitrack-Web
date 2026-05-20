@@ -12,10 +12,11 @@ type SignalMessage =
   | { type: "ice"; candidate: RTCIceCandidateInit | null };
 
 /**
- * Transport that consumes raw Amfitrack HID frames forwarded by the local
- * Node WebRTC bridge (see /webrtc). Uses a WebSocket for signaling and a
- * single RTCDataChannel for the binary packet stream. The bridge is
- * read-only — writeToDevice intentionally drops writes.
+ * Transport that exchanges raw Amfitrack HID frames with the local Node
+ * WebRTC bridge (see /webrtc). Uses a WebSocket for signaling and a single
+ * RTCDataChannel for the binary packet stream — bidirectional: inbound
+ * frames fan out to listeners, writeToDevice sends frames back to the
+ * bridge which forwards them to the HID device.
  */
 export class WebRTCConnection implements ITransport {
   public readonly id: number;
@@ -182,11 +183,20 @@ export class WebRTCConnection implements ITransport {
     /* nothing to revoke — no browser permission grant for WebRTC. */
   }
 
-  /** No-op: the WebRTC bridge is a one-way packet relay (server → client). */
-  public async writeToDevice(_bytes: Uint8Array): Promise<void> {
-    console.warn(
-      "[WebRTCConnection] writeToDevice ignored — bridge is read-only",
-    );
+  public async writeToDevice(bytes: Uint8Array): Promise<void> {
+    if (!this.channel || this.channel.readyState !== "open") {
+      console.warn(
+        "[WebRTCConnection] writeToDevice ignored — channel not open",
+      );
+      return;
+    }
+    // Copy into a freshly-allocated ArrayBuffer: satisfies send()'s strict
+    // ArrayBufferView<ArrayBuffer> typing (Uint8Array<ArrayBufferLike> isn't
+    // assignable) and decouples the wire payload from any later mutation of
+    // the caller's buffer.
+    const buf = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(buf).set(bytes);
+    this.channel.send(buf);
   }
 
   public getProductName(): string {

@@ -49,7 +49,8 @@ export class DeviceManager implements IDeviceManager {
 
     // The WebRTC bridge is a packet relay, not a device — keep the placeholder
     // so the sidebar can render a single "WebRTC" transport entry, but skip
-    // the config probe because writeToDevice is a no-op for the bridge.
+    // the config probe on the bridge transport itself. Devices discovered
+    // behind the bridge get their configs fetched by pingOrRegisterDevice.
     if (transport.getConnectionKind() === "webrtc") return temporaryTxId;
 
     this.resolveDeviceConfig(transport, temporaryTxId);
@@ -120,10 +121,14 @@ export class DeviceManager implements IDeviceManager {
     } else if (typeof uplink === "number") {
       // Negative temp TX id — defer config fetch until the transport resolves.
       this.pendingConfigDevices.add(deviceTxId);
+    } else if (uplink === "webrtc") {
+      // The WebRTC bridge is bidirectional: each device behind the bridge is
+      // discovered packet-side here and needs its own config probe (usb/ble
+      // get this via commitTransportTxIdResolution instead).
+      this.refreshDeviceInfo(deviceTxId);
     }
-    // For string uplinks (usb/ble/webrtc) the device's config is fetched
-    // elsewhere (commitTransportTxIdResolution for usb/ble) or not at all
-    // (webrtc — bridge is read-only).
+    // For string uplinks (usb/ble) the device's config is fetched elsewhere
+    // (commitTransportTxIdResolution).
     this.startLivenessCheck();
   }
 
