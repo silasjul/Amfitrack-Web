@@ -62,20 +62,20 @@ export function ParameterConfigHoverCard({
         </div>
 
         {/* Metadata */}
-        <div className="px-3 pt-2 flex flex-wrap gap-1.5">
+        <div className="px-3 py-2.5 flex flex-wrap gap-1.5">
           <MetaPill label="Type" value={config.type} />
           <MetaPill label="UID" value={uid} />
           <MetaPill label="Mode" value={config.config_mode} />
         </div>
 
         {/* Description */}
-        {description ? (
+        {/* {description ? (
           <div className="px-3 py-2.5 max-h-48 overflow-y-auto">
             <p className="text-[11.5px] text-popover-foreground/85 whitespace-pre-wrap leading-relaxed">
               {description}
             </p>
           </div>
-        ) : null}
+        ) : null} */}
       </HoverCardContent>
     </HoverCard>
   );

@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Configuration } from "@/amfitrackSDK";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
 import { PENDING_BAR_ATTR } from "@/components/general/PendingChangesBar";
-import ParameterCard from "./ParameterCard";
+import ParameterRow from "./ParameterRow";
 
 export default function DeviceSettingsDialog({
   open,
@@ -101,9 +101,9 @@ export default function DeviceSettingsDialog({
                   value={category.name}
                   className="mt-0"
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
+                  <div className="rounded-lg border bg-sidebar-accent/40">
                     {category.parameters.map((param) => (
-                      <ParameterCard
+                      <ParameterRow
                         key={`${param.uid}-${param.value}`}
                         param={param}
                         txId={txId}
@@ -145,12 +145,17 @@ function LoadingSkeleton() {
           <Skeleton key={i} className="h-9 w-24 rounded-md" />
         ))}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
-        {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="rounded-lg border p-3 space-y-2">
-            <Skeleton className="h-3.5 w-24" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-2.5 w-16" />
+      <div className="rounded-lg border bg-sidebar-accent/40">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div
+            key={i}
+            className="relative flex items-center justify-between gap-4 px-4 py-3 before:absolute before:left-4 before:right-4 before:top-0 before:h-px before:bg-border/60 first:before:hidden"
+          >
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <Skeleton className="h-3.5 w-32" />
+              <Skeleton className="h-2.5 w-48" />
+            </div>
+            <Skeleton className="h-8 w-36 shrink-0" />
           </div>
         ))}
       </div>

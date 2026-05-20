@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
@@ -15,7 +14,7 @@ function formatStoreValue(value: number | boolean | string): string {
   return "";
 }
 
-export default function ParameterCard({
+export default function ParameterRow({
   param,
   txId,
   onValueChange,
@@ -49,9 +48,6 @@ export default function ParameterCard({
     pending && typeof value !== "boolean" ? String(pending.valueToPush) : null,
   );
 
-  // Sync local state to the device-confirmed value once a save completes
-  // (pending removed). useLayoutEffect avoids a visible flash of the stale
-  // value before the confirmed value paints.
   useLayoutEffect(() => {
     if (pending) return;
     setLocalText(null);
@@ -73,12 +69,12 @@ export default function ParameterCard({
   }
 
   return (
-    <Card size="sm" className="gap-1 py-2 bg-sidebar-accent">
-      <CardHeader className="px-3 pb-0">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="font-roboto-mono min-w-0 flex-1 leading-tight">
+    <div className="relative flex items-center justify-between gap-4 px-4 py-4 before:absolute before:left-4 before:right-4 before:top-0 before:h-px before:bg-border/60 first:before:hidden">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="font-roboto-mono text-sm font-medium leading-tight">
             {param.name}
-          </CardTitle>
+          </span>
           {configurationTooltip ? (
             <ParameterConfigHoverCard
               parameterName={param.name}
@@ -86,25 +82,28 @@ export default function ParameterCard({
             />
           ) : null}
         </div>
-      </CardHeader>
-      <CardContent className="px-3 pb-2">
+        {configurationTooltip?.description ? (
+          <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+            {configurationTooltip.description}
+          </p>
+        ) : null}
+      </div>
+      <div className="shrink-0">
         {typeof value === "boolean" ? (
-          <div className="flex items-center">
-            <Switch
-              checked={localBool}
-              onCheckedChange={handleSwitchChange}
-              aria-label={param.name}
-            />
-          </div>
+          <Switch
+            checked={localBool}
+            onCheckedChange={handleSwitchChange}
+            aria-label={param.name}
+          />
         ) : (
           <Input
             value={displayText}
             onChange={handleInputChange}
             aria-label={param.name}
-            className="font-mono text-sm font-medium h-8 px-2 opacity-80"
+            className="font-mono text-sm font-medium h-8 w-36 px-2"
           />
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
