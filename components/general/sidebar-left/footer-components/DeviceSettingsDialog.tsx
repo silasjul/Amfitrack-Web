@@ -33,8 +33,8 @@ export default function DeviceSettingsDialog({
 }) {
   const defaultTab = configuration[0]?.name ?? "";
   const updatePending = usePendingConfigStore((s) => s.updatePending);
-  const configurationTooltips = usePendingConfigStore(
-    (s) => s.configurationTooltips,
+  const configurationTooltipsByUid = usePendingConfigStore(
+    (s) => s.configurationTooltipsByUid,
   );
 
   const handleValueChange = useCallback(
@@ -108,8 +108,7 @@ export default function DeviceSettingsDialog({
                         param={param}
                         txId={txId}
                         configurationTooltip={
-                          configurationTooltips[category.name]?.[param.name] ??
-                          undefined
+                          configurationTooltipsByUid[param.uid]
                         }
                         onValueChange={(
                           uid,

@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/configuration-tooltips",
+        source: "/api/configuration-tooltips/:file",
         destination:
-          "https://guide.amfitrack.com/_sources/parameter/parameter_sensor.rst.txt",
+          "https://guide.amfitrack.com/_sources/parameter/parameter_:file.rst.txt",
       },
     ];
   },

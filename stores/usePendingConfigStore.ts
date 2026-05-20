@@ -2,8 +2,11 @@ import { create } from "zustand";
 import axios from "axios";
 import {
   parseConfigToObject,
-  type ParsedConfig,
+  flattenConfigByUid,
+  type ConfigByUid,
 } from "@/lib/configTooltipParser";
+
+const TOOLTIP_SOURCES = ["sensor", "source"] as const;
 
 export interface PendingConfiguration {
   txId: number;
@@ -16,7 +19,7 @@ export interface PendingConfiguration {
 
 interface PendingConfigState {
   pending: PendingConfiguration[];
-  configurationTooltips: ParsedConfig;
+  configurationTooltipsByUid: ConfigByUid;
   lastDeviceIdRemap: { oldTxId: number; newTxId: number } | null;
 
   updatePending: (entry: PendingConfiguration) => void;
@@ -29,7 +32,7 @@ interface PendingConfigState {
 
 export const usePendingConfigStore = create<PendingConfigState>((set, get) => ({
   pending: [],
-  configurationTooltips: {},
+  configurationTooltipsByUid: {},
   lastDeviceIdRemap: null,
 
   updatePending: (entry) =>
@@ -76,11 +79,19 @@ export const usePendingConfigStore = create<PendingConfigState>((set, get) => ({
 
   fetchTooltips: async () => {
     try {
-      const tooltips = await axios.get("/api/configuration-tooltips");
-      const parsedTooltips = parseConfigToObject(tooltips.data, {
-        includeRstOnlyBlocks: true,
-      });
-      set({ configurationTooltips: parsedTooltips });
+      const responses = await Promise.all(
+        TOOLTIP_SOURCES.map((file) =>
+          axios.get<string>(`/api/configuration-tooltips/${file}`),
+        ),
+      );
+      const merged: ConfigByUid = {};
+      for (const res of responses) {
+        const parsed = parseConfigToObject(res.data, {
+          includeRstOnlyBlocks: true,
+        });
+        Object.assign(merged, flattenConfigByUid(parsed));
+      }
+      set({ configurationTooltipsByUid: merged });
     } catch (err) {
       console.error(
         "[PendingConfigStore] Failed to load configuration tooltips:",

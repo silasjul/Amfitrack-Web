@@ -11,6 +11,18 @@ export interface ParsedConfig {
   [categoryName: string]: ConfigCategory;
 }
 
+export type ConfigByUid = Record<number, ConfigItem>;
+
+export function flattenConfigByUid(parsed: ParsedConfig): ConfigByUid {
+  const out: ConfigByUid = {};
+  for (const category of Object.values(parsed)) {
+    for (const item of Object.values(category)) {
+      if (item.uid > 0) out[item.uid] = item;
+    }
+  }
+  return out;
+}
+
 export interface ParseConfigOptions {
   /**
    * When false (default), skips reStructuredText `.. only:: …` blocks
