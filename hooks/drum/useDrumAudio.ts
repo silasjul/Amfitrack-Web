@@ -76,6 +76,8 @@ const buffers = new Map<DrumSoundId, AudioBuffer>();
 const lastHitTime = new Map<DrumSoundId, number>();
 
 let audioListener: THREE.AudioListener | null = null;
+let audioContext: AudioContext | null = null;
+let masterGain: GainNode | null = null;
 let audioLoader: THREE.AudioLoader | null = null;
 let initialized = false;
 
@@ -84,6 +86,11 @@ function initClient() {
   initialized = true;
 
   audioListener = new THREE.AudioListener();
+  audioContext = audioListener.context as AudioContext;
+  masterGain = audioContext.createGain();
+  masterGain.gain.value = 1;
+  masterGain.connect(audioContext.destination);
+
   audioLoader = new THREE.AudioLoader();
 
   (Object.keys(SOUNDS) as DrumSoundId[]).forEach((soundId) => {
@@ -95,8 +102,12 @@ function initClient() {
   // Browsers suspend AudioContext until a user gesture; resume on first interaction
   // so the very first drum hit isn't delayed by the wake-up.
   const resume = () => {
-    if (audioListener && audioListener.context.state === "suspended") {
-      audioListener.context.resume();
+    if (audioContext && audioContext.state === "suspended") {
+      audioContext.resume().then(() => {
+        console.log(
+          `[drum audio] baseLatency=${(audioContext!.baseLatency * 1000).toFixed(1)}ms outputLatency=${((audioContext as any).outputLatency * 1000 || 0).toFixed(1)}ms sampleRate=${audioContext!.sampleRate}Hz`,
+        );
+      });
     }
     window.removeEventListener("pointerdown", resume);
     window.removeEventListener("keydown", resume);
@@ -120,11 +131,11 @@ export function useDrumAudio() {
   const playHit = useCallback(
     (
       soundId: DrumSoundId,
-      position: [number, number, number],
+      _position: [number, number, number],
       velocity: number,
     ) => {
       if (velocity < MIN_VELOCITY) return;
-      if (!audioListener) return;
+      if (!audioContext || !masterGain) return;
 
       const now = Date.now();
       if ((lastHitTime.get(soundId) ?? 0) + COOLDOWN_MS > now) return;
@@ -138,17 +149,16 @@ export function useDrumAudio() {
         Math.min((velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY), 1) *
           0.7;
 
-      const sound = new THREE.PositionalAudio(audioListener);
-      sound.setBuffer(buffer);
-      sound.setRefDistance(30);
-      sound.setRolloffFactor(0.3);
-      sound.setVolume(gain * SOUNDS[soundId].volume);
-      sound.position.set(...position);
-      sound.updateMatrixWorld(true);
-      sound.play();
-      console.log("Playing sound", soundId);
-      (sound.source as AudioBufferSourceNode).onended = () =>
-        sound.disconnect();
+      const src = audioContext.createBufferSource();
+      src.buffer = buffer;
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = gain * SOUNDS[soundId].volume;
+      src.connect(gainNode).connect(masterGain);
+      src.start(0);
+      src.onended = () => {
+        src.disconnect();
+        gainNode.disconnect();
+      };
     },
     [],
   );
