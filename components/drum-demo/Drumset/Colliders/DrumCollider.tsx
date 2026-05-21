@@ -108,6 +108,7 @@ export default function DrumCollider({
         position,
         rotation,
         onCollide: (e) => {
+          const hitTime = performance.now();
           const velocity = e.contact.impactVelocity;
           const point = e.contact.contactPoint as [number, number, number];
           const normal = e.contact.contactNormal as [number, number, number];
@@ -121,7 +122,7 @@ export default function DrumCollider({
             thresholds: useDrumAudioThresholdsStore.getState(),
           });
           if (!result.play) return;
-          playHit(result.soundId, point, velocity);
+          playHit(result.soundId, point, velocity, hitTime);
         },
       };
     },

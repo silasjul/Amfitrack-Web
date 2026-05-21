@@ -125,7 +125,7 @@ export default function Shoe({ sensorId, onRegisterReset }: ShoeProps) {
 
     if (inside && armedRef.current && downSpeed > minTriggerSpeed) {
       armedRef.current = false;
-      playHit("kick", [x, y, z], downSpeed);
+      playHit("kick", [x, y, z], downSpeed, performance.now());
     }
   });
 

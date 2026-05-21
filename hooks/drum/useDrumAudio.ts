@@ -103,11 +103,12 @@ function initClient() {
   // so the very first drum hit isn't delayed by the wake-up.
   const resume = () => {
     if (audioContext && audioContext.state === "suspended") {
-      audioContext.resume().then(() => {
-        console.log(
-          `[drum audio] baseLatency=${(audioContext!.baseLatency * 1000).toFixed(1)}ms outputLatency=${((audioContext as any).outputLatency * 1000 || 0).toFixed(1)}ms sampleRate=${audioContext!.sampleRate}Hz`,
-        );
-      });
+      audioContext.resume();
+      // audioContext.resume().then(() => {
+      //   console.log(
+      //     `[drum audio] baseLatency=${(audioContext!.baseLatency * 1000).toFixed(1)}ms outputLatency=${((audioContext as any).outputLatency * 1000 || 0).toFixed(1)}ms sampleRate=${audioContext!.sampleRate}Hz`,
+      //   );
+      // });
     }
     window.removeEventListener("pointerdown", resume);
     window.removeEventListener("keydown", resume);
@@ -133,6 +134,7 @@ export function useDrumAudio() {
       soundId: DrumSoundId,
       _position: [number, number, number],
       velocity: number,
+      hitTime?: number,
     ) => {
       if (velocity < MIN_VELOCITY) return;
       if (!audioContext || !masterGain) return;
@@ -154,7 +156,16 @@ export function useDrumAudio() {
       const gainNode = audioContext.createGain();
       gainNode.gain.value = gain * SOUNDS[soundId].volume;
       src.connect(gainNode).connect(masterGain);
+      const beforeStart = performance.now();
       src.start(0);
+      // if (hitTime !== undefined) {
+      //   const collisionToStart = beforeStart - hitTime;
+      //   const baseMs = audioContext.baseLatency * 1000;
+      //   const outputMs = ((audioContext as any).outputLatency || 0) * 1000;
+      //   console.log(
+      //     `[drum audio] ${soundId} collision→start=${collisionToStart.toFixed(2)}ms base=${baseMs.toFixed(1)}ms output=${outputMs.toFixed(1)}ms total~${(collisionToStart + baseMs + outputMs).toFixed(1)}ms`,
+      //   );
+      // }
       src.onended = () => {
         src.disconnect();
         gainNode.disconnect();

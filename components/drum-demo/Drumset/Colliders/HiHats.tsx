@@ -121,6 +121,7 @@ export default function HiHats() {
           },
         ],
         onCollide: (e) => {
+          const hitTime = performance.now();
           const velocity = e.contact.impactVelocity;
           const point = e.contact.contactPoint as Vec3Tuple;
           const result = classifyHiHatHit({
@@ -132,7 +133,7 @@ export default function HiHats() {
             tipToggleRef,
             shankToggleRef,
           });
-          playHit(result.soundId, point, velocity);
+          playHit(result.soundId, point, velocity, hitTime);
         },
       };
     },

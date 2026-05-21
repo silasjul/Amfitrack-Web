@@ -342,6 +342,7 @@ export default function CymbalCollider({
         },
       ],
       onCollide: (e) => {
+        const hitTime = performance.now();
         const velocity = e.contact.impactVelocity;
         const point = e.contact.contactPoint as [number, number, number];
         const pose = poseRef.current;
@@ -355,7 +356,7 @@ export default function CymbalCollider({
           thresholds: useDrumAudioThresholdsStore.getState(),
           rideToggleRef,
         });
-        playHit(result.soundId, point, velocity);
+        playHit(result.soundId, point, velocity, hitTime);
       },
     }),
     undefined,
