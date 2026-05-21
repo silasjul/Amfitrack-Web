@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { BarChart2, Download, Pause, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRecordingStore } from "@/stores/useRecordingStore";
-import { useRecordingSession } from "@/hooks/useRecordingSession";
+import { useRecordingSession } from "@/hooks/config/useRecordingSession";
 import { cn } from "@/lib/utils";
 import RecordingTimer from "./RecordingTimer";
 import RecordingChartDialog from "./RecordingChartDialog";

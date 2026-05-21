@@ -12,11 +12,11 @@ import { xrStore } from "@/stores/xrStore";
 import Drumstick from "@/components/drum-demo/Drumstick";
 import Shoe from "@/components/drum-demo/Shoe";
 import DrumAudioListener from "@/components/drum-demo/DrumAudioListener";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
-import { useLevaToggle } from "@/hooks/useLevaToggle";
-import { useKeyPress } from "@/hooks/useKeyPress";
+import { useLevaToggle } from "@/hooks/ui/useLevaToggle";
+import { useKeyPress } from "@/hooks/ui/useKeyPress";
 import R3fLoader from "@/components/general/r3f-loader";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };

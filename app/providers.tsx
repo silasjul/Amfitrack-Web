@@ -4,7 +4,7 @@ import { ReactNode, useEffect } from "react";
 import { AmfitrackContext, useAmfitrackProvider } from "@/amfitrackSDK";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
-import { useAmfitrackWebRTCAutoConnect } from "@/hooks/useAmfitrackWebRTCAutoConnect";
+import { useAmfitrackWebRTCAutoConnect } from "@/hooks/xr/useAmfitrackWebRTCAutoConnect";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const sdk = useAmfitrackProvider();

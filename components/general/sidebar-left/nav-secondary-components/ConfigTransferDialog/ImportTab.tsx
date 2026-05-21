@@ -16,9 +16,9 @@ import ImportDeviceRow from "./ImportDeviceRow";
 import { Loader2, RefreshCcw, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDeviceStore } from "@/amfitrackSDK";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 import { parseConfigCSV, type DeviceExportData } from "@/lib/csv";
-import { useImportConfigurations } from "@/hooks/useImportConfigurations";
+import { useImportConfigurations } from "@/hooks/config/useImportConfigurations";
 import { toast } from "sonner";
 
 type Phase = "idle" | "decoding" | "ready";

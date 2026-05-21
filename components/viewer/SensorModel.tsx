@@ -8,7 +8,7 @@ import gsap from "gsap";
 import { useDeviceStore } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
 import { applyDistortionColor } from "@/lib/distortionColorLerp";
-import { useSensorSync } from "@/hooks/useSensorSync";
+import { useSensorSync } from "@/hooks/sensor/useSensorSync";
 import {
   SENSOR_COLOR_CLEAN,
   SENSOR_COLOR_DISTORTED,

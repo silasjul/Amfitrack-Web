@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import ConfigTransferDialog from "@/components/general/sidebar-left/nav-secondary-components/ConfigTransferDialog";
 import RecordDialog from "@/components/general/sidebar-left/nav-secondary-components/RecordDialog";
 import { xrStore } from "@/stores/xrStore";
-import { useIsInXR } from "@/hooks/useIsInXR";
-import { useIsVRSupported } from "@/hooks/useIsVRSupported";
+import { useIsInXR } from "@/hooks/xr/useIsInXR";
+import { useIsVRSupported } from "@/hooks/xr/useIsVRSupported";
 
 import {
   SidebarGroup,

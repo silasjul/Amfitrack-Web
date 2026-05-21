@@ -3,9 +3,9 @@ import { useRef } from "react";
 import { useCylinder } from "@react-three/cannon";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useDrumAudio } from "@/hooks/drum/useDrumAudio";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
-import { classifyDrumHit, type DrumKind } from "@/hooks/classifyDrumHit";
+import { classifyDrumHit, type DrumKind } from "@/hooks/drum/classifyDrumHit";
 
 interface DrumColliderProps {
   name: string;

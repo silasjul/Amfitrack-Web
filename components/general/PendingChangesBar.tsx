@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePendingConfigStore } from "@/stores/usePendingConfigStore";
-import { useSaveConfigurations } from "@/hooks/useSaveConfigurations";
+import { useSaveConfigurations } from "@/hooks/config/useSaveConfigurations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X } from "lucide-react";

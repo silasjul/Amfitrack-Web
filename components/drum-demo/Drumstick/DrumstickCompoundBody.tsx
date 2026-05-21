@@ -2,11 +2,11 @@ import { useCompoundBody } from "@react-three/cannon";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { ReactNode, useEffect } from "react";
 import * as THREE from "three";
-import { useDrumstickSpringFollow } from "@/hooks/useDrumstickSpringFollow";
+import { useDrumstickSpringFollow } from "@/hooks/drum/useDrumstickSpringFollow";
 import {
   setDrumstickVelocity,
   clearDrumstickVelocity,
-} from "@/hooks/drumstickVelocity";
+} from "@/hooks/drum/drumstickVelocity";
 
 interface Props {
   sensorPointRef?: React.RefObject<THREE.Mesh>;

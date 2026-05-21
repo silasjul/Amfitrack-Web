@@ -31,7 +31,7 @@ import type {
   DeviceMeta,
 } from "@/amfitrackSDK/src/interfaces/IStore";
 import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 import { KindIconMap } from "@/lib/utils";
 import { useWebRTCConnectionStore } from "@/stores/useWebRTCConnectionStore";
 

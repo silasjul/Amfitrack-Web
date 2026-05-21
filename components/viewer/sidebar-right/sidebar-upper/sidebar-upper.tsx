@@ -23,7 +23,7 @@ import {
 import { HelpCircle } from "lucide-react";
 import DeviceSettingsDialog from "@/components/general/sidebar-left/footer-components/DeviceSettingsDialog";
 import { DeviceRow } from "./device-row";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 
 type DeviceFilter = "all" | "hubs" | "sources" | "sensors" | "unknown";
 

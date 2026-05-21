@@ -4,9 +4,9 @@ import { folder, useControls } from "leva";
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { useSensorSync } from "@/hooks/useSensorSync";
-import useEnableModelShadow from "@/hooks/useEnableModelShadow";
-import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useSensorSync } from "@/hooks/sensor/useSensorSync";
+import useEnableModelShadow from "@/hooks/ui/useEnableModelShadow";
+import { useDrumAudio } from "@/hooks/drum/useDrumAudio";
 
 useGLTF.preload("/drum-kit/models/shoe.glb");
 

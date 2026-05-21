@@ -3,9 +3,9 @@ import { TabsContent } from "@/components/ui/tabs";
 import React, { useState } from "react";
 import DeviceTable from "./DeviceTable";
 import { Download, Loader2 } from "lucide-react";
-import { useExport } from "@/hooks/useExport";
+import { useExport } from "@/hooks/config/useExport";
 import { useAmfitrack, useDeviceStore } from "@/amfitrackSDK";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 
 export default function ExportTab() {
   const { allTxIds } = useTxIds();

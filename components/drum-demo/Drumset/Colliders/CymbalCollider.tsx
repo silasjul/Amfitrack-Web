@@ -8,9 +8,9 @@ import { folder, useControls, button } from "leva";
 import { ReactNode, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useDrumAudio } from "@/hooks/drum/useDrumAudio";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
-import { classifyCymbalHit } from "@/hooks/classifyCymbalHit";
+import { classifyCymbalHit } from "@/hooks/drum/classifyCymbalHit";
 
 export type CymbalKind = "ride" | "crash";
 

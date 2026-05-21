@@ -9,7 +9,7 @@ import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
 import { ScrollBar } from "@/components/ui/scroll-area";
 import { useDeviceStore } from "@/amfitrackSDK/src/store/useDeviceStore";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 import { cn, KindIconMap } from "@/lib/utils";
 import type { DeviceKind } from "@/amfitrackSDK/src/interfaces/IStore";
 

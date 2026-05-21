@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import type { Line2 } from "three-stdlib";
 import MirroredGizmoViewport from "./MirroredGizmo";
-import { useIsInXR } from "@/hooks/useIsInXR";
+import { useIsInXR } from "@/hooks/xr/useIsInXR";
 import {
   PRIMARY,
   AXIS_X,

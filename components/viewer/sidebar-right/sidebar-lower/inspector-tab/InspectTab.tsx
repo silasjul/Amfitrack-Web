@@ -10,7 +10,7 @@ import type {
   DeviceVersions,
 } from "@/amfitrackSDK";
 import { useViewerStore } from "@/stores/useViewerStore";
-import useTxIds from "@/hooks/useTxIds";
+import useTxIds from "@/hooks/sensor/useTxIds";
 import { useEffect, useState } from "react";
 import { Radio, Router, CircleHelp } from "lucide-react";
 import Image from "next/image";

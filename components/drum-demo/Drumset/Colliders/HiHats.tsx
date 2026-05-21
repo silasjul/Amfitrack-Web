@@ -3,9 +3,9 @@ import { button, folder, useControls } from "leva";
 import { useRef } from "react";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
-import { useDrumAudio } from "@/hooks/useDrumAudio";
+import { useDrumAudio } from "@/hooks/drum/useDrumAudio";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
-import { classifyHiHatHit } from "@/hooks/classifyHiHatHit";
+import { classifyHiHatHit } from "@/hooks/drum/classifyHiHatHit";
 
 type Vec3Tuple = [number, number, number];
 

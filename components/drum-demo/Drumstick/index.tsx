@@ -1,5 +1,5 @@
-import useEnableModelShadow from "@/hooks/useEnableModelShadow";
-import { useSensorSync } from "@/hooks/useSensorSync";
+import useEnableModelShadow from "@/hooks/ui/useEnableModelShadow";
+import { useSensorSync } from "@/hooks/sensor/useSensorSync";
 import { Center, useGLTF } from "@react-three/drei";
 import { useControls } from "leva";
 import React, { useEffect, useMemo, useRef } from "react";

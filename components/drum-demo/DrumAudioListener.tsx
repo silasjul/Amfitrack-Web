@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
-import { getAudioListener } from "@/hooks/useDrumAudio";
+import { getAudioListener } from "@/hooks/drum/useDrumAudio";
 
 export default function DrumAudioListener() {
   const { camera } = useThree();
