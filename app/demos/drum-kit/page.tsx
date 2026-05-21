@@ -3,10 +3,10 @@
 import { Physics } from "@react-three/cannon";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { Suspense, useEffect, useRef } from "react";
+import React, { Suspense, useEffect } from "react";
 import Drumset from "@/components/drum-demo/Drumset";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
-import { button, folder, Leva, useControls } from "leva";
+import { folder, Leva, useControls } from "leva";
 import { XR, XROrigin, useXR } from "@react-three/xr";
 import { xrStore } from "@/stores/xrStore";
 import Drumstick from "@/components/drum-demo/Drumstick";
@@ -16,7 +16,6 @@ import useTxIds from "@/hooks/sensor/useTxIds";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStore";
 import { useLevaToggle } from "@/hooks/ui/useLevaToggle";
-import { useKeyPress } from "@/hooks/ui/useKeyPress";
 import R3fLoader from "@/components/general/r3f-loader";
 import SensorSyncControls from "@/components/sensor/SensorSyncControls";
 
@@ -31,8 +30,6 @@ const XR_ORIGIN_POSITION: [number, number, number] = [
 export default function Home() {
   const levaHidden = useLevaToggle();
   const { sensorTxIds } = useTxIds();
-  const resetRefs = useRef<Array<() => void>>([]);
-  useKeyPress("space", () => resetRefs.current.forEach((fn) => fn()));
   const setIsDebug = useDrumDemoStore((s) => s.setIsDebug);
   const setDrumHeight = useDrumDemoStore((s) => s.setDrumHeight);
   const setTopNormalDeg = useDrumAudioThresholdsStore((s) => s.setTopNormalDeg);
@@ -75,7 +72,6 @@ export default function Home() {
       step: 0.001,
     },
     isDebug: { value: false, label: "Show Colliders" },
-    resetAllCenters: button(() => resetRefs.current.forEach((fn) => fn())),
     Environment: folder(
       {
         environmentHeight: {
@@ -229,30 +225,9 @@ export default function Home() {
             <Light />
             <Physics gravity={[0, -9.81, 0]}>
               <Drumset drumHeight={drumHeight} />
-              {sensorTxIds[0] && (
-                <Drumstick
-                  sensorId={sensorTxIds[0]}
-                  onRegisterReset={(fn) => {
-                    resetRefs.current[0] = fn;
-                  }}
-                />
-              )}
-              {sensorTxIds[1] && (
-                <Drumstick
-                  sensorId={sensorTxIds[1]}
-                  onRegisterReset={(fn) => {
-                    resetRefs.current[1] = fn;
-                  }}
-                />
-              )}
-              {sensorTxIds[2] && (
-                <Shoe
-                  sensorId={sensorTxIds[2]}
-                  onRegisterReset={(fn) => {
-                    resetRefs.current[2] = fn;
-                  }}
-                />
-              )}
+              {sensorTxIds[0] && <Drumstick sensorId={sensorTxIds[0]} />}
+              {sensorTxIds[1] && <Drumstick sensorId={sensorTxIds[1]} />}
+              {sensorTxIds[2] && <Shoe sensorId={sensorTxIds[2]} />}
             </Physics>
           </Suspense>
         </XR>

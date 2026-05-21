@@ -36,6 +36,7 @@ export class EmfImuFrameIdPayload implements IPayloadDecoder<EmfImuFrameIdData> 
     const sensorState = this.parseSourceState(payload[44]);
     const metalDistortion = payload[45];
     const gpioState = view.getUint16(46, LE);
+    const buttonPressed = (gpioState & 0x01) !== 0;
     const rssi = payload[48];
     const frameId = payload[49] | (payload[50] << 8) | (payload[51] << 16);
 
@@ -51,6 +52,7 @@ export class EmfImuFrameIdPayload implements IPayloadDecoder<EmfImuFrameIdData> 
       sensorState,
       metalDistortion,
       gpioState,
+      buttonPressed,
       rssi,
       frameId,
     };

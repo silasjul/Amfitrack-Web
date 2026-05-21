@@ -172,6 +172,10 @@ function SensorInspector({
           </div>
         </Section>
 
+        <Section title="Button State">
+          <ButtonCell pressed={data.buttonPressed} />
+        </Section>
+
         <Section title="Device">
           <div className="grid grid-cols-2 gap-1.5">
             <ValueCell label="Battery" value={data.sensorStatus.batteryLevel} />
@@ -426,6 +430,36 @@ function DetailHeader({ label }: { label: string }) {
     <div className="flex items-center justify-between px-3 pt-4 pb-2 border-b border-sidebar-border/30 shrink-0">
       <span className="text-xs font-semibold text-sidebar-foreground">
         {label}
+      </span>
+    </div>
+  );
+}
+
+function ButtonCell({ pressed }: { pressed: boolean }) {
+  return (
+    <div
+      aria-label={pressed ? "Button pressed" : "Button released"}
+      className={cn(
+        "relative flex items-center justify-center gap-2.5 rounded-md px-3 py-2.5 overflow-hidden",
+        "transition-colors duration-100",
+        pressed
+          ? "bg-emerald-500/15 ring-1 ring-inset ring-emerald-400/40"
+          : "bg-sidebar-accent ring-1 ring-inset ring-transparent",
+      )}
+    >
+      {pressed && (
+        <span className="pointer-events-none absolute inset-0 animate-pulse bg-emerald-500/5" />
+      )}
+
+      
+
+      <span
+        className={cn(
+          "text-[11px] font-mono tabular-nums leading-tight transition-colors",
+          pressed ? "text-emerald-300" : "text-sidebar-foreground/80",
+        )}
+      >
+        {pressed ? "Pressed" : "Released"}
       </span>
     </div>
   );

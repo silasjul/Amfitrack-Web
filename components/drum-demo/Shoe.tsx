@@ -1,10 +1,11 @@
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { folder, useControls } from "leva";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
 import { useSensorSync } from "@/hooks/sensor/useSensorSync";
+import { useSensorButton } from "@/hooks/sensor/useSensorButton";
 import useEnableModelShadow from "@/hooks/ui/useEnableModelShadow";
 import { useDrumAudio } from "@/hooks/drum/useDrumAudio";
 
@@ -12,10 +13,9 @@ useGLTF.preload("/drum-kit/models/shoe.glb");
 
 interface ShoeProps {
   sensorId: number;
-  onRegisterReset?: (fn: () => void) => void;
 }
 
-export default function Shoe({ sensorId, onRegisterReset }: ShoeProps) {
+export default function Shoe({ sensorId }: ShoeProps) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { scene } = useGLTF("/drum-kit/models/shoe.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
@@ -94,14 +94,14 @@ export default function Shoe({ sensorId, onRegisterReset }: ShoeProps) {
   const top = hbY + hbHeight / 2;
   const bottom = hbY - hbHeight / 2;
 
-  useEffect(() => {
-    onRegisterReset?.(() => {
+  useSensorButton(sensorId, {
+    onPress: () => {
       armedRef.current = true;
       prevYRef.current = null;
       // Land the shoe at the top of the hitbox so it's primed but not triggering.
       resetCenter([-hbX, -(top - 0.18), -hbZ]);
-    });
-  }, [onRegisterReset, hbX, hbZ, top, reArmOffset, resetCenter]);
+    },
+  });
 
   useFrame((_, dt) => {
     const group = groupRef.current;

@@ -1,8 +1,9 @@
 import useEnableModelShadow from "@/hooks/ui/useEnableModelShadow";
 import { useSensorSync } from "@/hooks/sensor/useSensorSync";
+import { useSensorButton } from "@/hooks/sensor/useSensorButton";
 import { Center, useGLTF } from "@react-three/drei";
 import { useControls } from "leva";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import DrumstickCollider from "./DrumstickCollider";
 import { useDrumDemoStore } from "@/stores/useDrumDemoStore";
@@ -11,19 +12,16 @@ useGLTF.preload("/drum-kit/models/drumstick.glb");
 
 interface DrumstickProps {
   sensorId: number;
-  onRegisterReset?: (fn: () => void) => void;
 }
 
-export default function Drumstick({
-  sensorId,
-  onRegisterReset,
-}: DrumstickProps) {
+export default function Drumstick({ sensorId }: DrumstickProps) {
   const isDebug = useDrumDemoStore((s) => s.isDebug);
   const { scene } = useGLTF("/drum-kit/models/drumstick.glb");
   const clone = useMemo(() => scene.clone(), [scene]);
   const sensorPointRef = useRef<THREE.Mesh>(null!);
 
   const { resetCenter } = useSensorSync(sensorPointRef, sensorId);
+  useSensorButton(sensorId, { onPress: () => resetCenter([0, -4.5, -2]) });
   useEnableModelShadow(clone);
 
   const { positionY, positionZ, scale } = useControls(
@@ -47,10 +45,6 @@ export default function Drumstick({
     },
     { collapsed: true },
   );
-
-  useEffect(() => {
-    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
-  }, [onRegisterReset]);
 
   return (
     <>
