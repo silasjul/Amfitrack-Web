@@ -32,16 +32,16 @@ export function useDrumstickSpringFollow(
         },
         Position: folder({
           posStiffness: {
-            value: 800,
+            value: 1500,
             min: 0,
-            max: 2000,
+            max: 4000,
             step: 1,
             label: "Stiffness",
           },
           posDamping: {
-            value: 40,
+            value: 80,
             min: 0,
-            max: 200,
+            max: 250,
             step: 0.1,
             label: "Damping",
           },
@@ -55,16 +55,16 @@ export function useDrumstickSpringFollow(
         }),
         Rotation: folder({
           rotStiffness: {
-            value: 800,
+            value: 1500,
             min: 0,
-            max: 2000,
+            max: 4000,
             step: 1,
             label: "Stiffness",
           },
           rotDamping: {
-            value: 40,
+            value: 80,
             min: 0,
-            max: 200,
+            max: 250,
             step: 0.1,
             label: "Damping",
           },
