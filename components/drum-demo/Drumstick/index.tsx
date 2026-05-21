@@ -26,10 +26,6 @@ export default function Drumstick({
   const { resetCenter } = useSensorSync(sensorPointRef, sensorId);
   useEnableModelShadow(clone);
 
-  useEffect(() => {
-    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
-  }, [onRegisterReset]);
-
   const { positionY, positionZ, scale } = useControls(
     "Drumstick model",
     {
@@ -51,6 +47,10 @@ export default function Drumstick({
     },
     { collapsed: true },
   );
+
+  useEffect(() => {
+    onRegisterReset?.(() => resetCenter([0, -4.5, -2]));
+  }, [onRegisterReset]);
 
   return (
     <>

@@ -24,7 +24,7 @@ export function useDrumstickSpringFollow(
     drumstickPhysics: folder(
       {
         gripOffsetZ: {
-          value: -0.57,
+          value: 0.21,
           min: -3,
           max: 3,
           step: 0.01,

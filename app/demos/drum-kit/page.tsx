@@ -18,6 +18,7 @@ import { useDrumAudioThresholdsStore } from "@/stores/useDrumAudioThresholdsStor
 import { useLevaToggle } from "@/hooks/ui/useLevaToggle";
 import { useKeyPress } from "@/hooks/ui/useKeyPress";
 import R3fLoader from "@/components/general/r3f-loader";
+import SensorSyncControls from "@/components/sensor/SensorSyncControls";
 
 const GL_PROPS = { toneMapping: THREE.ReinhardToneMapping };
 const CAMERA_POSITION: [number, number, number] = [0.2, 7.3, -4.6];
@@ -223,6 +224,7 @@ export default function Home() {
             <XROrigin position={XR_ORIGIN_POSITION} />
             <DesktopCameraControls target={[0, drumHeight + 3.8, 0]} />
             <CameraRig fov={fov} />
+            <SensorSyncControls />
             <DrumAudioListener />
             <Light />
             <Physics gravity={[0, -9.81, 0]}>
